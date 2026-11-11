@@ -371,6 +371,7 @@ Erstreview je Lauf: Claude Opus 5.5 (frische Sitzung); Delta-Prüfung der Leitst
 - 11.11.2026: Teil 1 (einziger Teil) fertig – `docs/formate/spielstand.md`: Kopf, 26 globale Werte, je Spieler Satz + Steuerart
   [+ 7 Byte Intelligenz], Teamtabelle, Länge 654 + 118·n + 7·c; Beleg `tools/reverse-engineering/tws.py befunde` (29 von 29).
   Offen: Bedeutung einzelner Satzfelder und globaler Laufwerte (unbelegt markiert), kein Originalstand (Liste für DOSBox im Dokument).
+- 11.11.2026: Fixlauf – `main` gemergt (#83, #85), P3 aus dem Review behoben: #86 (T6b/T6d an fester Stelle), #87, #88.
 
 ### Status abschluss
 
