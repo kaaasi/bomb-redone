@@ -11,6 +11,7 @@ Die vom Nutzer bereitgestellte Fassung **Tank Wars Release 3.2** liegt im privat
 | Herkunft, Vollständigkeit, Formate | `original/README.md` |
 | Spielstände `*.TWS` und `BOMB.CFG` aus DOSBox | `original/spielstaende/` (noch leer) |
 | Referenzbilder aus DOSBox | `bilder/<aufnahme>/` (noch leer) |
+| VGA-8 × 8-Schrift von DOSBox 0.74-3 (GPL, R1-schrift-1 = D), Herkunft, `SHA256SUMS` | `schriften/` |
 
 SHA-256 der unveränderten ZIP: `8c38643090097d1601fb404163dc91d41890ed955e82b03673f2b6705e7b7e8c`.
 Nachweis des Inhalts sind die Prüfsummen, nicht ein fester Commit.
@@ -18,7 +19,7 @@ Nachweis des Inhalts sind die Prüfsummen, nicht ein fester Commit.
 ## Laden in einer neuen Umgebung
 
 ```bash
-tools/claude/fetch-reference.sh original     # Sparse-Klon nach ~/referenz (REFERENZ=<pfad> ändert das Ziel), prüft SHA256SUMS
+tools/claude/fetch-reference.sh              # original/ und schriften/ als Sparse-Klon nach ~/referenz (REFERENZ=<pfad> ändert das Ziel), prüft SHA256SUMS
 ln -s ~/referenz/original/gamedata gamedata  # oder: tools/claude/setup-workspace.sh ~/referenz/original/gamedata
 ```
 
