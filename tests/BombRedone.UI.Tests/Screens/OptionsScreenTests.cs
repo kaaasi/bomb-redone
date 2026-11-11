@@ -40,6 +40,10 @@ public class OptionsScreenTests
         Assert.Equal(line, screen.Selection);
     }
 
+    /// <summary>
+    /// The loader O2:6611 sets these values before it reads BOMB.CFG; they are never visible in the original (BOMB.CFG
+    /// overwrites them or the program halts). At program start <see cref="OptionsSettings.ForConfig"/> applies.
+    /// </summary>
     [Fact]
     public void DefaultsAreTheValuesBeforeBombCfgIsRead()
     {
@@ -51,6 +55,22 @@ public class OptionsScreenTests
         Assert.True(values.TanksFall);
         Assert.True(values.ComputersBuy);
         Assert.Equal(0, values.Background);
+        Assert.Equal(WindSetting.Normal, values.Wind);
+        Assert.False(values.TeamPlay);
+    }
+
+    /// <summary>#79: without BOMB.CFG the defaults of BOMBCFG.EXE apply (R1-D5 = C), not those of the loader O2:6611.</summary>
+    [Fact]
+    public void WithoutBombCfgTheBombCfgExeDefaultsApply()
+    {
+        var values = OptionsSettings.ForConfig(null);
+        Assert.Equal(75, values.CrumblePercent);
+        Assert.Equal(WallSetting.None, values.Walls);
+        Assert.True(values.TrailVisible);
+        Assert.False(values.InvisibleShot);
+        Assert.True(values.TanksFall);
+        Assert.True(values.ComputersBuy);
+        Assert.Equal(9, values.Background);
         Assert.Equal(WindSetting.Normal, values.Wind);
         Assert.False(values.TeamPlay);
     }

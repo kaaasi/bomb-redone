@@ -123,8 +123,9 @@ public sealed class DesktopGame : Game
         var fonts = MenuFonts.Load(gameData, BitmapFontSource.Load().Font);
         var configPath = gameData.Find("BOMB.CFG");
         var config = configPath is null ? null : GameConfig.Load(configPath);
-        var settings = config is null ? new MenuSettings() : MenuSettings.FromConfig(config, mouseAvailable: true);
-        var options = config is null ? new OptionsSettings() : OptionsSettings.FromConfig(config);
+        // Without BOMB.CFG the defaults of BOMBCFG.EXE apply (R1-D5 = C); the original halts instead.
+        var settings = MenuSettings.ForConfig(config, mouseAvailable: true);
+        var options = OptionsSettings.ForConfig(config);
         var random = TurboPascalRandom.FromClock(DateTime.Now);
         var roster = new PlayerRoster();
         var teams = new PlayerSelectTeams(options, BgiFontLibrary.Load(gameData)[BgiFontLibrary.Tiny]);

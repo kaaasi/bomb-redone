@@ -52,6 +52,13 @@ public sealed record MenuSettings(
     int PaletteSpeed = 0,
     bool PaletteUsesRetrace = false)
 {
+    /// <summary>
+    /// The settings at program start: from BOMB.CFG, or without it the defaults of BOMBCFG.EXE
+    /// (<see cref="GameConfig.BombCfgDefaults"/>, decision R1-D5 = C; the original halts without BOMB.CFG).
+    /// </summary>
+    public static MenuSettings ForConfig(GameConfig? config, bool mouseAvailable) =>
+        FromConfig(config ?? GameConfig.BombCfgDefaults, mouseAvailable);
+
     /// <summary>Settings from BOMB.CFG as the original applies them before the main menu.</summary>
     public static MenuSettings FromConfig(GameConfig config, bool mouseAvailable)
     {

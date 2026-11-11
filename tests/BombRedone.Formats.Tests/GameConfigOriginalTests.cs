@@ -99,4 +99,11 @@ public class GameConfigOriginalTests
         Assert.Equal(63, config.BossScreenMemoryKiB);
         Assert.Equal(64000, config.BossScreenMemoryBytes);
     }
+
+    /// <summary>The example written by BOMBCFG.EXE with its defaults equals <see cref="GameConfig.BombCfgDefaults"/>.</summary>
+    [GameDataFact]
+    public void ExampleEqualsBombCfgDefaults()
+    {
+        Assert.Equal(GameConfig.BombCfgDefaults, GameConfig.Load(ExamplePath()));
+    }
 }

@@ -97,8 +97,11 @@ an Texten falsch ausgerichtet).
   | 9 | Team Play: | `E8BC` | YES/NO | wie 2 | (195,138)–(225,146) |
 
   „Rechts“ = Pfeil rechts oder rechte Maustaste (+ 1 bis zur Grenze), „links“ = Pfeil links oder linke Taste (− 1 bis 0).
-  Geänderte Werte: `SetColor(14)`, `SetFillStyle(SolidFill, 18)`, Bar, neuer Text. Voreinstellungen: Crumble 10, Walls 0,
-  Trail aus, Inviso aus, Tanks Fall an, Computer Can Buy an, Background 0, Wind 2, Team aus, Pspeed 0.
+  Geänderte Werte: `SetColor(14)`, `SetFillStyle(SolidFill, 18)`, Bar, neuer Text. Vorbelegung vor dem Lesen von `BOMB.CFG`
+  (`O2:6611`): Crumble 10, Walls 0, Trail aus, Inviso aus, Tanks Fall an, Computer Can Buy an, Background 0, Wind 2, Team aus,
+  Pspeed 0 – im Original nie sichtbar (`BOMB.CFG` überschreibt sie, ohne Datei endet das Programm). Ohne `BOMB.CFG` nimmt das
+  Remake die Voreinstellungen von `BOMBCFG.EXE` (`GameConfig.BombCfgDefaults`, R1-D5 = C): Crumble 75, Walls None, Trail an,
+  Background 9 (Random), sonst wie oben; PV an (#79).
 - **Tasten** (je Durchlauf ein `ReadKey`, nur bei `KeyPressed`): Leertaste ändert die markierte Zeile (Spalte „Leertaste“),
   Enter und Esc (Menge `O2:118C` = {13, 27}) verlassen; nach Zeichen 0 die erweiterte Taste aus `DS:3716`: auf/ab 0..9 ohne
   Umlauf, rechts/links ändern die markierte Zeile.

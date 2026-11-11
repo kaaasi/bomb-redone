@@ -242,4 +242,18 @@ public class GameConfigTests
             File.Delete(path);
         }
     }
+
+    /// <summary>#79: the defaults of BOMBCFG.EXE 0x7008 as R1-D5 = C takes them (Crumble 75, Walls None).</summary>
+    [Fact]
+    public void BombCfgDefaultsHoldTheValuesOfBombCfgExe()
+    {
+        var defaults = GameConfig.BombCfgDefaults;
+        Assert.Equal(75, defaults.CrumblePercent);
+        Assert.Equal(WallSetting.None, defaults.Wall);
+        Assert.Equal(10, defaults.GamesToPlay);
+        Assert.Equal(BackgroundKind.Random, defaults.BackgroundKind);
+        Assert.True(defaults.ShotTrail);
+        Assert.True(defaults.PaletteUsesRetrace);
+        Assert.Equal(64000, defaults.BossScreenMemoryBytes);
+    }
 }

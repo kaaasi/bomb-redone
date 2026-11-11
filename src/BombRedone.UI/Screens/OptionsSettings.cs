@@ -41,6 +41,12 @@ public sealed class OptionsSettings
     /// <summary>"Team Play" (DS:E8BC); default off (O2:66BC).</summary>
     public bool TeamPlay { get; set; }
 
+    /// <summary>
+    /// The settings at program start: from BOMB.CFG, or without it the defaults of BOMBCFG.EXE
+    /// (<see cref="GameConfig.BombCfgDefaults"/>, decision R1-D5 = C; the original halts without BOMB.CFG).
+    /// </summary>
+    public static OptionsSettings ForConfig(GameConfig? config) => FromConfig(config ?? GameConfig.BombCfgDefaults);
+
     /// <summary>The settings BOMB.CFG gives (same variables as the loader O2:6611 fills).</summary>
     public static OptionsSettings FromConfig(GameConfig config)
     {

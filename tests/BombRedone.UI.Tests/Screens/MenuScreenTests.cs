@@ -53,6 +53,15 @@ public class MenuScreenTests
         Assert.Equal(pick == 0 ? 30 : 55, menu.Screen[145, 60]);
     }
 
+    /// <summary>#79: without BOMB.CFG the menu starts with the defaults of BOMBCFG.EXE (R1-D5 = C).</summary>
+    [Fact]
+    public void WithoutBombCfgTheBombCfgExeDefaultsApply()
+    {
+        Assert.Equal(MenuSettings.FromConfig(GameConfig.BombCfgDefaults, mouseAvailable: true),
+            MenuSettings.ForConfig(null, mouseAvailable: true));
+        Assert.True(MenuSettings.ForConfig(null, mouseAvailable: true).PaletteUsesRetrace);
+    }
+
     [Fact]
     public void RandomOutsideZeroAndOneIsRejected()
     {
