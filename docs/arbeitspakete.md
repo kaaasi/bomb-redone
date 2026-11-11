@@ -282,3 +282,5 @@ Integrationsfolge 2a: `titel` → `schrift`. Bilder der DOSBox-Aufnahme sind, so
 ### Status menue
 
 - 11.11.2026: begonnen (Claude Code, Claude Opus 5.5, geplanter Lauf), Base `3b2a7c6`.
+- 11.11.2026: Teil 1 fertig – `BitmapFontSource` (Referenzschrift DOSBox 0.74-3, sonst gemeinfreier Ersatz `BitmapFontSubstitute`),
+  Referenzdatei per kaaasi/bomb-referenz#8 (nicht gemergt). PR #55 (Draft), Teile 2–3 offen.
