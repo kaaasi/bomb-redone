@@ -76,7 +76,9 @@ Der BGI-Kern der Unit `Graph` (Segment `0E26`) adressiert seine Variablen relati
   ein NUL beendet die Ausgabe (`0x1341C`); Zeichen außerhalb des Vorrats werden ohne Vorschub übersprungen (`0x13299`).
 - **DefaultFont:** Ausrichtung im Kern (`0x130AE`, `0x130D5`), danach ist (x, y) die linke obere Ecke; mit x < 0 wird nichts
   gezeichnet (`0x1307D`). Zellgröße liefert der Treiber (Funktion 24h); angenommen 8 · Größe (`[APPROX]`, Treiber-Status-
-  tabelle: Zeichenzelle 8 × 8 bei `0x08023`). Das Zeichnen selbst (Treiberfunktion 26h) ist nicht abgeleitet (`[APPROX]`).
+  tabelle: Zeichenzelle 8 × 8 bei `0x08023`). Treiberfunktion 26h (`0x080FA`–`0x08135`): waagrecht ab dem ersten, senkrecht ab
+  dem letzten Zeichen rückwärts, je eine Zelle weiter; ein NUL beendet die Ausgabe in dieser Reihenfolge (`0x08104`). Das
+  Zeichnen eines Zeichens (`0x08650`) ist nicht abgeleitet (`[APPROX]`).
 
 ## 4. DefaultFont 8 × 8
 

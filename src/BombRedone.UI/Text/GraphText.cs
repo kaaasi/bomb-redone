@@ -280,12 +280,19 @@ public sealed class GraphText
         if (x < 0)
             return;
 
-        // [APPROX] Drawing itself is driver function 26h (VGA256); assumed: set pixels become size x size blocks,
+        // [ORIGINAL] Driver function 26h (VGA256, BOMB.EXE 0x080FA-0x08135): horizontal text runs from the first
+        // character, vertical text from the last one backwards (0x080FA-0x08103), each drawn one cell further
+        // (0x0811C-0x08132); a NUL ends the output in this order (0x08104-0x08109). The justification above still uses
+        // the full length.
+        // [APPROX] Drawing a character (0x08650) is not derived; assumed: set pixels become size x size blocks,
         // background untouched; vertical text is the horizontal cell rotated counterclockwise, running upwards from the
         // bottom left corner (x, y + length * cell width - 1). The program uses the DefaultFont only horizontally.
         var size = cellWidth / BitmapFont.CellSize;
-        for (var i = 0; i < text.Length; i++)
+        for (var n = 0; n < text.Length; n++)
         {
+            var i = vertical ? text.Length - 1 - n : n;
+            if (text[i] == 0)
+                return;
             var rows = _defaultFont.GetRows(text[i]);
             for (var row = 0; row < BitmapFont.CellSize; row++)
             for (var column = 0; column < BitmapFont.CellSize; column++)
