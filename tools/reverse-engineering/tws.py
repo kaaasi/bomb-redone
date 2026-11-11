@@ -134,6 +134,12 @@ def imm(text, reg):
     return int(m.group(1), 16) if "0x" in text else int(m.group(1))
 
 
+def seq_at(code, ofs, texts):
+    """True if the instructions starting exactly at 'ofs' have exactly the given texts (fixed-position check)."""
+    k = next((n for n, i in enumerate(code) if i.ofs == ofs), None)
+    return k is not None and [i.text for i in code[k:k + len(texts)]] == texts
+
+
 def h(v):
     return "%X" % v
 
@@ -392,7 +398,19 @@ def cmd_befunde(t, args):
     check("T6b", "Dialog: S Sichern, N neuer Name, C Abbruch, A Autosave umschalten, Q Sichern und Ende; Name String[20], "
           "Vorschlag GAMEn mit erstem freien n",
           [chr(int(k.split(",0x")[1], 16)) for k in keys] == list("QACNS")
-          and pascal(t.o3["code"], 0x4651) == b"GAME" and pascal(t.o3["code"], 0x465B) == b"SAVE GAME", t.o3_file(SAVE_DIALOG))
+          and pascal(t.o3["code"], 0x4651) == b"GAME" and pascal(t.o3["code"], 0x465B) == b"SAVE GAME"
+          # key -> choice at fixed places: Q = 5 (O3:4AC9), S = 1 (O3:4AF9)
+          and seq_at(dlg, 0x4AC2, ["cmp byte [0x47ef],0x51", "jnz 0x4ace", "mov word [bp-0x2],0x5"])
+          and seq_at(dlg, 0x4AF2, ["cmp byte [0x47ef],0x53", "jnz 0x4afe", "mov word [bp-0x2],0x1"])
+          # choice 1 (S): save under DS:4822; choice 5 (Q): save under DS:4822, then Halt(0)
+          and seq_at(dlg, 0x4CBA, ["cmp word [bp-0x2],byte +0x1", "jnz 0x4cc9", "mov di,0x4822", "push ds", "push di",
+                                   "push cs", "call 0x%x" % SAVE])
+          and seq_at(dlg, 0x4CC9, ["cmp word [bp-0x2],byte +0x5", "jnz 0x4ce8", "mov di,0x4822", "push ds", "push di",
+                                   "push cs", "call 0x%x" % SAVE, "mov ax,0x3", "push ax", "call 0x11f8:0x16b",
+                                   "xor ax,ax", "call 0x%x:0x%x" % (SYS, HALT)])
+          # name DS:4822 is String[20]: StrStore with maximum length 20 (O3:476E)
+          and seq_at(dlg, 0x4769, ["mov di,0x4822", "push ds", "push di", "mov ax,0x14", "push ax",
+                                   "call 0x%x:0x%x" % (SYS, STR_STORE)]), t.o3_file(SAVE_DIALOG))
     boss = disasm(t.g.seg_bytes(0x0C02), 0x01F9, t.out, stop_at_ret=False, end=0x02B0)
     bcalls = [far_target(i) for i in boss if far_target(i)]
     check("T6c", "Boss-Taste (UC02): Sichern unter <Verzeichnis>\\BOSS, dann Halt(0)",
@@ -405,7 +423,11 @@ def cmd_befunde(t, args):
           any(near_target(i) == LOAD for i in ld_dlg) and pascal(t.o3["code"], 0x4D4C) == b"*.TWS"
           and pascal(t.o3["code"], 0x4D54) == b"No Save Files Found" and any(far_target(i) == (SYS, HALT) for i in ld_dlg)
           and menu[:3] == ["cmp byte [0x4817],0x0", "jz 0x3f0f", "call 0xb08:0x2a"] and "call 0x52dd" in menu
-          and "call 0x2749" in menu and {"mov ax,0xb", "mov ax,0xa"} <= {i.text for i in ld_dlg}, t.o3_file(LOAD_DIALOG))
+          and "call 0x2749" in menu
+          # name list: element i at bp-0x592+11*i, StrStore with maximum length 10 (String[10], O3:4E1D..4E30)
+          and seq_at(ld_dlg, 0x4E1D, ["mov ax,0xb", "mul word [bp-0x594]", "mov di,ax", "lea di,[bp+di-0x592]", "push ss",
+                                      "push di", "mov ax,0xa", "push ax", "call 0x%x:0x%x" % (SYS, STR_STORE)]),
+          t.o3_file(LOAD_DIALOG))
 
     # T7: meaning of the global variables from other code
     o4 = t.g.overlays[3]["code"]
