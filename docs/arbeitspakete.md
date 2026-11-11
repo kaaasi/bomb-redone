@@ -174,3 +174,9 @@ einer Zeile in `src/BombRedone.Tools/Program.cs` bei `formate` und `konfiguratio
 - `src/BombRedone.Tools/Program.cs`: je Spur eine Registrierungszeile (`formate`, `konfiguration`).
 - `src/BombRedone.Desktop/*`: in Welle 1 niemand.
 - `docs/arbeitspakete.md`: jede Spur nur ihr eigener Statusabschnitt (unten anfügen: `### Status <spur>`).
+
+### Status bildschirme-inventar
+
+- Teil 1 (einziger Teil): `docs/anforderungen/bildschirme.md` fertig, PR #11 (Claude Sonnet 5.5). Zuordnung aller 591 Videobilder
+  geprüft; Lesefehler als „unsicher“ markiert; Liste fehlender Bildschirme für die DOSBox-Aufnahme in Abschnitt 6. Review: Claude
+  Sonnet 5.5, frische Sitzung (Leitstelle).
