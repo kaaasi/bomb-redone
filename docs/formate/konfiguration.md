@@ -83,8 +83,8 @@ Die Beispieldatei enthält die Voreinstellungen von `BOMBCFG.EXE` (Routine `0x70
 | Crumbling Hills | „Default 50%“ | 75 (Zeichenkette `'75'`, `BOMBCFG.EXE 0x6FFC`) |
 | Walls | „Default Random“ | 0 = None (`BOMBCFG.EXE 0x7030`: `xor ax,ax; mov [0xff4],ax`) |
 
-Alle übrigen in `BOMB.DOC` genannten Voreinstellungen stimmen überein (Test `ExampleMatchesDocumentedDefaults`). Welche
-Voreinstellung das Remake übernimmt, ist offen (Entscheidung Leitstelle/Nutzer).
+Alle übrigen in `BOMB.DOC` genannten Voreinstellungen stimmen überein (Test `ExampleMatchesDocumentedDefaults`). Das Remake
+übernimmt die Werte von `BOMBCFG.EXE` (Entscheidung R1-D5 = C, 11.11.2026, `docs/entscheidungen.md`).
 
 ## Restlücken (`[APPROX]` im Code)
 

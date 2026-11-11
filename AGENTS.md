@@ -18,7 +18,7 @@ originalgetreu (Pixel, Regeln, Abläufe), danach Erweiterungen. Grundsatzentsche
 1. **Originaldateien, Spielstände, Bildschirmfotos und Ausschnitte daraus niemals committen** – auch nicht in Tests, Doku oder
    PR-Texten als Bild. Alles Originale liegt nur im privaten Repo `kaaasi/bomb-referenz` und wird nie in dieses Repo kopiert.
    **Ablage im Arbeitsverzeichnis nur in den Schutzordnern** `gamedata/`, `aufnahmen/`, `capture/`, `bilder/`, `videos/`,
-   `analyse/`, `referenz/`, `original/` (alle im Stamm, per `.gitignore` gesperrt) oder außerhalb des Repos (`~/referenz`) –
+   `analyse/`, `referenz/`, `original/`, `export/` (alle im Stamm, per `.gitignore` gesperrt; `export/` auch tiefer) oder außerhalb des Repos (`~/referenz`) –
    Dateinamen schützen nicht, umbenannte Konfigurationen und Bildschirmfotos sehen aus wie eigene Dateien. Die CI prüft
    zusätzlich die eingecheckten Dateien (`.github/scripts/originalschutz_pruefen.py`: Prüfsummen der Originale, gesperrte
    Dateitypen wie `.png`, `.cfg`, `.tws`); eigene Dateien solcher Typen brauchen einen Eintrag in
