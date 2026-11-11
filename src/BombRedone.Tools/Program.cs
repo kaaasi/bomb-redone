@@ -11,6 +11,7 @@ switch (args[0])
 {
     case "info":
         return Info(args.ElementAtOrDefault(1));
+    case "cfg": return BombRedone.Tools.ConfigCommand.Run(args[1..]);
     default:
         Console.Error.WriteLine($"Unknown command: {args[0]}");
         return 2;

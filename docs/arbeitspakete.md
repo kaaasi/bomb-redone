@@ -178,3 +178,4 @@ einer Zeile in `src/BombRedone.Tools/Program.cs` bei `formate` und `konfiguratio
 ### Status konfiguration
 
 - 11.11.2026: begonnen (Claude Code, geplanter Lauf), Base `ca689e9`.
+- 11.11.2026: fertig – Review. Alle 28 Felder aus der Leseroutine `BOMB.OVR 0x6BF9` belegt, keins unbelegt; zwei Voreinstellungen weichen von `BOMB.DOC` ab (Crumble 75, Walls None), siehe `formate/konfiguration.md`. PR #10.
