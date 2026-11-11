@@ -88,6 +88,15 @@ public class GraphTextTests
     }
 
     [Fact]
+    public void TextHeightUsesTheYFactorAndTextWidthTheXFactor()
+    {
+        var text = Stroked(4);
+        text.SetUserCharSize(1, 1, 3, 1);
+        Assert.Equal(15, text.TextHeight("I")); // 5 * 3; the x factor would give 5
+        Assert.Equal(3, text.TextWidth("I")); // 3 * 1; the y factor would give 9
+    }
+
+    [Fact]
     public void LeftBottomDrawsFromTheBaselineUpwards()
     {
         var surface = new Surface(40, 30);
@@ -132,6 +141,24 @@ public class GraphTextTests
         var text = Stroked(1); // 3/5: y 4 -> 2, advance 3 -> 1
         text.OutTextXY(surface, 10, 20, "II");
         Assert.Equal([(10, 18), (11, 18), (10, 19), (11, 19), (10, 20), (11, 20)], SetPixels(surface));
+
+        // Negative coordinates: 'N' moves to x = -1 -> -1 * 3 / 5 = 0 (rounding down would give -1).
+        surface = new Surface(40, 30);
+        text.OutTextXY(surface, 10, 20, "NI");
+        Assert.Equal([(10, 18), (10, 19), (10, 20)], SetPixels(surface));
+    }
+
+    [Fact]
+    public void ScanCommandsAreSkippedAndDoNotMoveThePen()
+    {
+        var font = BgiFont.Parse(SyntheticFont.Build("SCAN", 65,
+            [new G(2, ('M', 0, 0), ('S', 3, 3), ('D', 0, 4), ('M', 2, 0))], top: 4, bottom: -1));
+        var text = new GraphText { Color = 9 };
+        text.SetTextStyle(font, TextDirection.Horizontal, 4);
+        text.SetTextJustify(HorizontalJustify.Left, VerticalJustify.Bottom);
+        var surface = new Surface(40, 30);
+        text.OutTextXY(surface, 10, 20, "A");
+        Assert.Equal([(10, 16), (10, 17), (10, 18), (10, 19), (10, 20)], SetPixels(surface));
     }
 
     [Theory]

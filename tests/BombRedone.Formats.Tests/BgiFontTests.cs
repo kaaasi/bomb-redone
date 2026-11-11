@@ -135,6 +135,15 @@ public class BgiFontTests
     }
 
     [Fact]
+    public void LibraryRejectsAnotherFontAtTheOffsetEvenIfTheNamedOneFollows()
+    {
+        var program = new byte[BgiFontLibrary.ProgramOffsets[BgiFontLibrary.Tiny]]
+            .Concat(SyntheticFont.Build("ABCD", 32, [new G(1, ('M', 1, 0))]))
+            .Concat(SyntheticFont.Build("TINY", 32, [new G(4, ('M', 4, 0))])).ToArray();
+        Assert.Throws<FormatException>(() => BgiFontLibrary.Parse(program, BgiFontLibrary.Tiny));
+    }
+
+    [Fact]
     public void LibraryReadsAFontAtItsKnownOffset()
     {
         var program = new byte[BgiFontLibrary.ProgramOffsets[BgiFontLibrary.Tiny]]

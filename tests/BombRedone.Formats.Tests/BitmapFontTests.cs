@@ -41,6 +41,7 @@ public class BitmapFontTests
     {
         var font = new BitmapFont(Rows(128));
         Assert.Equal(new byte[8], font.GetRows(200).ToArray());
+        Assert.Equal(new byte[8], font.GetRows(128 + 65).ToArray()); // would be 'A' if wrapped around
     }
 
     [Fact]
