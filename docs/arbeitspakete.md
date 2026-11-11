@@ -364,3 +364,7 @@ Erstreview je Lauf: Claude Opus 5.5 (frische Sitzung); Delta-Prüfung der Leitst
 - 11.11.2026: Teil 2 fertig (Fortsetzung 1) – Teams `PlayerSelectTeamScreen` nach O2:2749 (Panzer U431:07BA, Prüfung, Abbruch)
   und Teamnamen `PlayerSelectTeamNamesScreen` nach O2:35CF/31A8/2EBD/300A, `TeamPlay` und `PlayerSetup.Team`/`GameSetup.Teams`;
   Fix Absturz bei 13-Zeichen-Namen. Übergänge als Bewegung bleiben `[APPROX]`. Spur fertig – Review.
+
+### Status abschluss
+
+- 11.11.2026: begonnen (Claude Code, Claude Opus 5.5, geplanter Lauf), Base `35d8b42`, Branch `fix/abschluss-runde-1`.
