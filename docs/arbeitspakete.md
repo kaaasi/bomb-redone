@@ -179,3 +179,9 @@ einer Zeile in `src/BombRedone.Tools/Program.cs` bei `formate` und `konfiguratio
 
 - Teil 1 (einziger Teil): umgesetzt in PR #12 – `RawImage`, `Palette`, `bombtool export`, Tests, `docs/formate/dateiformate.md`.
   `[APPROX]`: 6→8-Bit-Dehnung (`Palette.DefaultScaling`), bis ein DOSBox-Bild sie belegt. Offen für `re-grundlagen`: Überlagerung von `BOMB2` über `BOMB1` (durchsichtiger Index, zwei Paletten).
+
+### Status bildschirme-inventar
+
+- Teil 1 (einziger Teil): `docs/anforderungen/bildschirme.md` fertig, PR #11 (Claude Sonnet 5.5). Zuordnung aller 591 Videobilder
+  geprüft; Lesefehler als „unsicher“ markiert; Liste fehlender Bildschirme für die DOSBox-Aufnahme in Abschnitt 6. Review: Claude
+  Sonnet 5.5, frische Sitzung (Leitstelle).
