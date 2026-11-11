@@ -221,9 +221,15 @@ public sealed class PlayerSelectTeamScreen : IScreen
     /// Palette of the team screens: the menu palette, DAC 19 + n = colour of player n at 100 % (O2:2965–2978, O10:01AC)
     /// and DAC 19 := (63, 63, 63) (O2:29D0, routine DS:E8F6).
     /// </summary>
-    internal static void PlayerDac(MenuScreen menu, Span<byte> dac)
+    internal static void PlayerDac(MenuScreen menu, Span<byte> dac) => TeamDac(menu.Dac, dac);
+
+    /// <summary>
+    /// Palette of the team screens from a given menu palette <paramref name="menuDac"/> (768 six-bit values): player
+    /// colours in DAC 20..29 and DAC 19 := (63, 63, 63) (O2:29D0), see <see cref="PlayerDac"/>.
+    /// </summary>
+    public static void TeamDac(ReadOnlySpan<byte> menuDac, Span<byte> dac)
     {
-        menu.Dac.CopyTo(dac);
+        menuDac.CopyTo(dac);
         for (var n = 1; n <= GameLimits.MaxPlayers; n++)
         {
             var (r, g, b) = PlayerSelectScreen.PlayerColor(n);
