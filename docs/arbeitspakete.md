@@ -201,11 +201,32 @@ Integrationsfolge 2a: `titel` → `schrift`. Bilder der DOSBox-Aufnahme sind, so
   gelesen, Zeichenanzahl, Breiten, Prüfsumme gerenderter Probetexte); Abgleich „TANK WARS 3.2“ (EURO, Größe 1) mit
   Videobild LP 00009 nach Lage und Form (`[APPROX]`, bis ein DOSBox-Bild vorliegt); Skalierungsregel der BGI-Größen mit Beleg.
 
-#### Spätere Stufen (Zuschnitt nach Merge von 2a)
+#### Spur `menue` – Stufe 2b: Standardschrift, Hauptmenü, Game Options
 
-- **`menue`** (2b) – Hauptmenü mit Hintergrund, Kopfzeile, Knöpfen und Einträgen (`O2:06BD`, `O2:07BA`, `O2:1E7F`, `O2:0909`),
-  Game Options, Bedienung mit Maus und Tastatur.
-- **`spielerauswahl`**, **`wertung-einkauf`** (2c) – weitere statische Bildschirme (Karte in `re-grundlagen` §6).
+- **Base:** `main` nach Merge von `titel` und `schrift` (SHA im Startaufruf). **Teile** (geordnet, je ein Teil je Lauf möglich):
+  1. **Standardschrift nach R1-schrift-1 = D:** VGA-8 × 8-Schrift aus dem Quelltext von DOSBox 0.74-3 (GitHub-Spiegel des
+     Quelltexts, Herkunft und Lizenz GPL im PR nennen) als Datei im Referenz-Repo: eigener PR vom Branch
+     `daten/vga-schrift-dosbox` (nur `schriften/`, mit README zu Herkunft, Lizenz, SHA-256), nicht mergen – diese Schreibaktion
+     ist für diese Spur autorisiert (wie R1-D4). Eingebauter Ersatz: gemeinfreie 8 × 8-Schrift mit belegter Herkunft im
+     Code-Repo; Laden der Referenzdatei wie Originaldaten (`TestGameData`/`GameData`-Weg), sonst Ersatz.
+  2. **Hauptmenü:** Hintergrund, Kopfzeile „TANK WARS 3.2“ (EURO, Schatten), START, Einträge, „Main Menu“ nach `O2:06BD`,
+     `O2:07BA`, `O2:1E7F`, `O2:0909` (`re-grundlagen` §6); Übergang vom Titel (ersetzt den Platzhalter von `titel`).
+  3. **Game Options und Bedienung:** `O2:11CC`, `O2:0E35`, `O2:0F81`, `O2:1042`; Maus und Tastatur nach der Disassembly
+     (Eingabe über `ScreenInput`); Werte aus `GameConfig` (R1-D5); Ziele ohne Umsetzung (Spielerauswahl, Laden) als Platzhalter.
+- **Dateien:** `src/BombRedone.Formats/BitmapFont*.cs`, `src/BombRedone.UI/Text/*` (Ergänzungen), `src/BombRedone.UI/Screens/Menu*`,
+  `src/BombRedone.UI/Screens/Options*`, `src/BombRedone.UI/Screens/ScreenInput.cs` (nur additiv), `src/BombRedone.Desktop/*`,
+  `tests/BombRedone.Formats.Tests/BitmapFont*`, `tests/BombRedone.UI.Tests/Screens/Menu*`, `…/Options*`, `…/Text/*`,
+  `docs/anforderungen/menue.md`, `docs/formate/schriften.md` (§4). Gemeinfreie Schrift: Dateityp in
+  `.github/originalschutz-erlaubt.txt` nur über die Leitstelle (im PR melden).
+- **Abnahme:** synthetische Tests je Element und Bedienschritt (Takt und Eingabe von außen); Originaldaten-Tests: Prüfsummen der
+  gezeichneten Bildschirme; mit Referenzschrift pixelgleich zu DOSBox-Bildern der Aufnahme `runde-1`, sobald sie gemergt sind,
+  sonst Abgleich mit Videobildern nach Lage und Form (`[APPROX]`); jede Lage, Farbe und Taste mit `[ORIGINAL]`-Fundstelle oder
+  `[APPROX]`. Fortsetzungen nur, wenn ein Teil nicht in einen Lauf passt.
+- **Modell:** Claude Opus 5.5. **Review:** Claude Opus 5.5 (Erstreview, frische Sitzung).
+
+#### Spätere Stufe 2c (Zuschnitt nach Merge von `menue`)
+
+- **`spielerauswahl`**, **`wertung-einkauf`** – weitere statische Bildschirme (Karte in `re-grundlagen` §6).
 
 **Rundenende:** Gesamtreview durch ChatGPT (`prozess/anhang.md` C), danach Plan Runde 2 (Spielfeld, Gelände, Schuss).
 
@@ -214,7 +235,7 @@ Integrationsfolge 2a: `titel` → `schrift`. Bilder der DOSBox-Aufnahme sind, so
 - `AGENTS.md`, `CLAUDE.md`, `docs/prozess/*`, `docs/vorlagen/*`, `docs/entscheidungen.md`, `tools/pruefen*.sh`,
   `tools/originalschutz-selbsttest.sh`, `.gitignore`, `.github/*`, `tests/**/Support/`: allein die Leitstelle.
 - `src/BombRedone.Tools/Program.cs`: je Spur eine Registrierungszeile (`formate`, `konfiguration`).
-- `src/BombRedone.Desktop/*`: in Welle 1 niemand, in Stufe 2a nur `titel`.
+- `src/BombRedone.Desktop/*`: in Welle 1 niemand, in Stufe 2a nur `titel`, in Stufe 2b nur `menue`.
 - `docs/arbeitspakete.md`: jede Spur nur ihr eigener Statusabschnitt (unten anfügen: `### Status <spur>`).
 
 ### Status formate
