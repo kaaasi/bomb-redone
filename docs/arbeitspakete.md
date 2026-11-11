@@ -13,7 +13,7 @@ Den Status pflegt jede Spur nur in ihrem eigenen Abschnitt. Abgeschlossene Runde
 |---|---|
 | Referenz-Repo: Struktur und Originaldateien | [bomb-referenz #1](https://github.com/kaaasi/bomb-referenz/pull/1) gemergt (Nutzer, 11.11.2026) |
 | Einrichtungs-PR | [#1](https://github.com/kaaasi/bomb-redone/pull/1) gemergt (Nutzer, 11.11.2026), CI auf `main` grün |
-| Unabhängiges Review | **nicht erfolgt** – #1 wurde ohne Review-Datei gemergt. Nachholen als Review von `main` (`4c54c4a`) oder vom Nutzer ausdrücklich erlassen |
+| Unabhängiges Review | [reviews/2026-11-11-einrichtung.md](reviews/2026-11-11-einrichtung.md) (ChatGPT, PR #2): **Nein**, zwei P2 zu `.gitignore`; #1 war da schon gemergt. Fixlauf: [#4](https://github.com/kaaasi/bomb-redone/pull/4), Nachprüfung bzw. Entscheidung des Nutzers offen |
 | Werkzeug-Release `claude-werkzeuge` | vorhanden (Workflow nach dem Merge gelaufen); `fetch-reference.sh original` gegen `main` geprüft, Prüfsummen stimmen |
 | Ablagen `analyse/` und `videos/` im Referenz-Repo | [bomb-referenz #2](https://github.com/kaaasi/bomb-referenz/pull/2) offen |
 
