@@ -24,7 +24,8 @@ und Nachteilen, Empfehlung); hier steht nur das Ergebnis mit der gewählten Opti
 | R1-D3 | Ziel für `BOMB.CFG` und `*.TWS` | **A** (11.11.2026): in Runde 1 nur lesen. Schreiben und Rundreise sind späteres Ziel. |
 | – | Maßgebliche Fassung | **Release 3.2** bleibt die Vorlage (Nutzer 11.11.2026). |
 
-Offen: R1-D1 (DOSBox-Referenz) – wird erst vor der DOSBox-Aufnahme gebraucht, siehe `docs/arbeitspakete.md`.
+Offen: R1-D1 (DOSBox-Referenz, erst vor der DOSBox-Aufnahme nötig) und R1-D4 (Ablageweg der Listings, mit dem Go für
+Welle 1) – siehe `docs/arbeitspakete.md`.
 
 Arbeitsweise (Nutzer 11.11.2026): `main` nur über Branch und PR; Deutsch in Doku und Commits, Quelltext und Kommentare englisch;
 knappe Antworten; je Aufgabe ein Claude-Modell; ChatGPT nur für Reviews; Spuren erst nach Go; Entscheidungen gesammelt.

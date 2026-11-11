@@ -133,4 +133,4 @@ Jede Nachricht und jede gelesene Datei kostet Tokens – bei allen Agenten:
 | Kurzaufrufe: Spurstart, Review-Anfrage, Leitstelle, DOSBox-Aufnahme, Videobilder | `docs/vorlagen/` |
 | Unabhängige Reviews / abgeschlossene Runden | `docs/reviews/` / `docs/archiv/` |
 | Originaldateien: Ablage, Laden, Erstbefund | `docs/originaldateien.md` |
-| Dateiformate, Analysen (ab Runde 1) | `docs/formate/`, `docs/analyse/` |
+| Dateiformate, Analysen, Bildschirme (ab Runde 1) | `docs/formate/`, `docs/analyse/`, `docs/anforderungen/` |

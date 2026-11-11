@@ -7,55 +7,36 @@ Den Status pflegt jede Spur nur in ihrem eigenen Abschnitt. Abgeschlossene Runde
 **Koordination:** Die Leitstelle verteilt Pakete, prüft und mergt Pull Requests und pflegt Plan und Doku
 (Rollen: [prozess/zusammenarbeit.md](prozess/zusammenarbeit.md)). **Spuren starten erst nach dem Go des Nutzers.**
 
-## Aktuelle Runde: Runde 0 – Einrichtung (11.11.2026)
+## Aktuelle Runde: Runde 1 – Dateiformate, Reverse Engineering, erste Bildschirme (Plan 11.11.2026, **wartet auf Go**)
 
-| Ergebnis | Stand |
-|---|---|
-| Referenz-Repo: Struktur und Originaldateien | [bomb-referenz #1](https://github.com/kaaasi/bomb-referenz/pull/1) gemergt (Nutzer, 11.11.2026) |
-| Einrichtungs-PR | [#1](https://github.com/kaaasi/bomb-redone/pull/1) gemergt (Nutzer, 11.11.2026), CI auf `main` grün |
-| Unabhängiges Review | [reviews/2026-11-11-einrichtung.md](reviews/2026-11-11-einrichtung.md) (ChatGPT, PR #2): **Nein**, zwei P2 zu `.gitignore`; #1 war da schon gemergt. Fixlauf: [#4](https://github.com/kaaasi/bomb-redone/pull/4), Nachprüfung bzw. Entscheidung des Nutzers offen |
-| Werkzeug-Release `claude-werkzeuge` | vorhanden (Workflow nach dem Merge gelaufen); `fetch-reference.sh original` gegen `main` geprüft, Prüfsummen stimmen |
-| Ablagen `analyse/` und `videos/` im Referenz-Repo | [bomb-referenz #2](https://github.com/kaaasi/bomb-referenz/pull/2) offen |
+Runde 0 abgeschlossen: [archiv/runde-0.md](archiv/runde-0.md). Grundlagen: Erstbefund [originaldateien.md](originaldateien.md),
+Entscheidungen [entscheidungen.md](entscheidungen.md) (E1–E7, R1-D2 = B, R1-D3 = A, Vorlage Release 3.2).
 
-## Plan Runde 1 – Dateiformate, Reverse Engineering, erste Bildschirme (Entwurf 11.11.2026, **kein Go**)
+**Kernaussage:** Außer zwei Titelbildern gibt es keine Grafikdateien; fast alles Sichtbare zeichnet das Programm selbst.
 
-Grundlage: Erstbefund in [originaldateien.md](originaldateien.md). Kernaussage: Außer zwei Titelbildern gibt es keine
-Grafikdateien; fast alles Sichtbare zeichnet das Programm selbst. Runde 1 braucht deshalb früh Bildschirmfotos aus DOSBox und
-einen Überblick über den Programmcode.
+**Base für alle Spuren:** aktueller `main` (Planstand nach Merge dieses Plans); tatsächlichen Base-SHA in den Draft-PR. Regeln:
+Befund reproduzieren, roter Test, dann grün; `[ORIGINAL]` mit `BOMB.EXE 0x…`/`BOMB.OVR 0x…`/Anleitung/Referenzbild, sonst
+`[APPROX]`; Quelltext und Kommentare englisch; höchstens drei Fortsetzungen je Spur. Bei Unklarheit „wie im Original“; bleibt
+es unklar, Teil blockiert lassen, die Leitstelle bündelt die Fragen. Originalmaterial im Arbeitsverzeichnis nur in den
+Schutzordnern (`AGENTS.md` §2.1).
 
-**Base für alle Spuren:** aktueller `main` nach Merge von Runde 0. Regeln: Befund reproduzieren, roter Test, dann grün;
-`[ORIGINAL]` mit `BOMB.EXE 0x…`/`BOMB.OVR 0x…`/Anleitung/Referenzbild, sonst `[APPROX]`; Quelltext und Kommentare englisch;
-höchstens drei Fortsetzungen je Spur. Bei Unklarheit „wie im Original“; bleibt es unklar, Teil blockiert lassen, die Leitstelle
-bündelt die Fragen.
+### Vorlagen im Referenz-Repo (Stand 11.11.2026)
 
-### Nachträge vom 11.11.2026 (nach Rückmeldung des Nutzers)
+- `original/gamedata/` – Release 3.2; `original/spielstaende/nutzer-2026-11-11.CFG` – `BOMB.CFG` mit **Voreinstellungen** (45 Byte).
+- `videos/tank-wars-longplay/` (439 Bilder, 576 × 360, 1 Bild/s) und `videos/tank-wars/` (152 Bilder, Spielbild 570 × 356).
+  Sichtung der Leitstelle (Übersichtsbilder, nicht jedes Bild): Das Longplay zeigt **„TANK WARS 3.2“** in der Kopfzeile des
+  Menüs (Sekunde 10 ff.) – dieselbe Fassung wie die Vorlage. Abgedeckt sind: Titelfolge (zwei Bilder, Sekunden 0–9 und am
+  Ende), Hauptmenü (Sound Options, Game Options, Players, Games, START), Fenster „Game Options“, Spielerauswahl (10 Felder
+  Keyboard/Mouse/Computer, Namenseingabe, START), Spielfeld mit Kopfzeile und Waffenleiste, mehrere erzeugte Hintergründe
+  (Quadrate, Strahlen, Ringe, Rauschen, einfarbig, Sterne), Wandmodi als Beschriftung links (WARP, ACCELERATE, ELASTIC, STICKY),
+  Schussbahnen, Explosionen, Wertungstafel („n Games Played out of 10“, Add/Continue|Exit/Save), Einkauf (Purchase/Done,
+  ein- und zweispaltige Waffenliste), Überblendungen. **Nicht abgedeckt:** `BOMBCFG.EXE`, Inhalt von „Sound Options“,
+  Menüs für Laden und Sichern, Teamspiel, Tastaturbedienung.
+- Grenze: Beide Videos sind auf nicht ganzzahlige Faktoren skaliert (576/320 = 1,8) und komprimiert. Sie belegen Aufbau,
+  Abläufe und ungefähre Lage, nicht einzelne Pixel und keine exakten Farben. Abnahmen gegen Videobilder sind vorläufig
+  (`[APPROX]`), bis ein DOSBox-Bild sie belegt.
 
-- **R1-D2 = B** (Listings im Referenz-Repo, `analyse/`).
-- **Videos zuerst:** Der Nutzer hat zwei Gameplay-Videos; sie ersetzen am Anfang die DOSBox-Aufnahme. Dazu braucht die
-  Leitstelle die Adressen und die Einzelbilder (YouTube ist aus der Arbeitsumgebung nicht ladbar): der Nutzer entnimmt sie
-  lokal (z. B. `ffmpeg -i <video> -vf fps=1 %05d.png`) und lädt sie als ZIP hoch, Ablage in `videos/<kurzname>/` des
-  Referenz-Repos. Grenze: Videobilder belegen Abläufe und Aufbau, nicht die Pixel; Abnahmen der Bildschirm-Spuren gegen
-  Videobilder gelten als vorläufig (`[APPROX]`), die DOSBox-Aufnahme `runde-1` folgt gezielt für die Bildschirme, die
-  umgesetzt sind. Damit wird R1-D1 erst vor dieser Aufnahme gebraucht, nicht vor dem Go.
-- **`BOMB.CFG` vom Nutzer (für R1-D3):** Die hochgeladene Datei ist **beim Hochladen beschädigt** worden (30 Byte; zwei
-  Stellen enthalten das UTF-8-Ersatzzeichen `EF BF BD`, das letzte Byte ist `3F` – Bytes ab 0x80 wurden ersetzt). Sie ist
-  deshalb nicht abgelegt. Erkennbar bleibt: Die Datei beginnt mit der Versionskennung „3.2“ und ist danach eine kurze Folge
-  einzelner Bytes mit kleinen Werten (vermutlich etwa 26 Byte im Original). Bitte als ZIP erneut hochladen.
-- **Befund zur Geschwindigkeit (E4, R1-D1):** `BOMB.DOC` nennt eigene Geschwindigkeitsoptionen des Spiels (`ESnn`
-  Explosion, `FSnn` Fall, `PSnn` Projectile, `SSnn` Shot) und Einstellungen wie Wind, Wandverhalten und Hintergrund. Der Takt
-  hängt also nicht nur von DOSBox ab, sondern auch von `BOMB.CFG`; die Referenz für Aufnahmen ist DOSBox-Einstellung **und**
-  Konfigurationsdatei.
-
-- **Stand 11.11.2026, 11:40:** Review-Befunde aus Runde 0 behoben (#4 gemergt), #3 und bomb-referenz #2 gemergt.
-  **R1-D3 = A** (nur lesen), **Release 3.2 bleibt die Vorlage.** Die `BOMB.CFG` des Nutzers liegt unbeschädigt vor (45 Byte,
-  [bomb-referenz #3](https://github.com/kaaasi/bomb-referenz/pull/3)); welche Einstellungen gewählt waren, ist offen. Für die
-  Videobilder gibt es den Kurzaufruf [vorlagen/video-bilder.md](vorlagen/video-bilder.md).
-
-- **Stand 11.11.2026, 11:47:** #5 und bomb-referenz #3 gemergt. Die `BOMB.CFG` des Nutzers
-  (`original/spielstaende/nutzer-2026-11-11.CFG`) wurde mit den **Voreinstellungen** gespeichert. **Welle 1 startet erst,
-  wenn die beiden Videos verarbeitet sind** (Nutzer 11.11.2026; Ablage nach `vorlagen/video-bilder.md`); bis dahin kein Go.
-
-### Offene Entscheidungen
+### Entscheidungen der Runde
 
 **R1-D1 – DOSBox-Referenz (folgt aus E4).** Problem: Aufnahmen und Takt brauchen genau eine Einstellung.
 
@@ -89,59 +70,89 @@ Empfehlung: **B**, Ablage durch die Leitstelle per PR aus dem, was die Spur als 
 
 Empfehlung: **A in Runde 1** (Felder benennen, soweit belegbar), B als späteres Ziel.
 
+**Neu mit dem Go zu bestätigen – R1-D4, Ablageweg der Listings.** R1-D2 legt den Ort fest (Referenz-Repo). Problem: Spuren
+dürfen dort bisher nicht schreiben, und eine Spur kann der Leitstelle keine Dateien übergeben.
+
+| Option | Vorteil | Nachteil |
+|---|---|---|
+| A: Die Spur `re-grundlagen` öffnet selbst einen PR im Referenz-Repo (Branch `daten/listings-…`), merged nicht | ein Schritt, Listings sofort prüfbar | Ausnahme von „Spuren lesen nur“; die Sitzung braucht Schreibzugriff auf das Referenz-Repo |
+| B: Die Spur liefert nur das Skript, die Leitstelle erzeugt und legt ab | Regel bleibt ohne Ausnahme | Anmerkungen der Spur im Listing gehen nicht mit; zweiter Arbeitsgang |
+| C: Der Nutzer legt ab (Datei aus dem Chat der Spur) | keine Rechte für Agenten nötig | Handarbeit, fehleranfällig bei großen Dateien |
+
+Empfehlung: **A**, beschränkt auf `analyse/` und auf diese Spur.
+
 ### Welle 1 (parallel, nach Go)
+
+Integrationsfolge: `bildschirme-inventar` → `formate` → `konfiguration` → `re-grundlagen` (keine gemeinsamen Dateien außer
+einer Zeile in `src/BombRedone.Tools/Program.cs` bei `formate` und `konfiguration`).
 
 #### Spur `formate` – Titelbilder lesen und exportieren
 
 - **Inhalt:** `RawImage` (320 × 200 Indizes + Palette, 6 Bit → 8 Bit) in `src/BombRedone.Formats/`, `bombtool export` (PNG nach
-  `export/`), `docs/formate/dateiformate.md`. Prüfen, ob die Palette am Dateiende wirklich so verwendet wird (Abgleich mit
-  Bildschirmfoto aus der Aufnahme, sobald vorhanden; bis dahin `[APPROX]`).
+  `export/`), `docs/formate/dateiformate.md`. Abgleich mit den Titelbildern des Longplays (Sekunden 0–9): Motiv, Lage und
+  Farbeindruck; die 6-Bit-Dehnung (×4 oder ×255/63) bleibt `[APPROX]`, bis ein DOSBox-Bild sie belegt.
 - **Dateien:** `src/BombRedone.Formats/RawImage*.cs`, `Palette*.cs`, `src/BombRedone.Tools/Export*.cs` (+ eine Zeile in
-  `Program.cs`), `tests/BombRedone.Formats.Tests/RawImage*`, `docs/formate/*`.
-- **Abnahme:** synthetische Tests (Rundreise, Fehlerfälle: zu kurz, zu lang), Originaldaten-Tests (Maße, Farbanzahl,
-  Prüfsumme des dekodierten Bildes), Export läuft. **Modell:** Claude Sonnet 5.5. **Review:** Claude Opus 5.5 (Erstreview).
+  `Program.cs`), `tests/BombRedone.Formats.Tests/RawImage*`, `docs/formate/dateiformate.md`.
+- **Abnahme:** synthetische Tests (Rundreise, Fehlerfälle: zu kurz, zu lang, Palettenwert > 63), Originaldaten-Tests (Maße,
+  Farbanzahl, Prüfsumme des dekodierten Bildes), Export läuft.
+- **Modell:** Claude Sonnet 5.5. **Review:** Claude Opus 5.5 (Erstreview, frische Sitzung).
+
+#### Spur `konfiguration` – `BOMB.CFG` lesen (R1-D3 = A)
+
+- **Inhalt:** Format von `BOMB.CFG` aus der Lese- und Schreibroutine in `BOMBCFG.EXE`/`BOMB.EXE` (Meldungen „BOMB.CFG
+  Version“, „A valid BOMB.CFG …“ als Einstieg), der Beispieldatei mit Voreinstellungen und der Optionsliste in `BOMB.DOC`
+  (Sound, Flysound, Games, Background, Wind, Wall, Crumble, Invisible, Trace, Tanks Fall, Computers Buy, Team, Mouse, Video,
+  Palette, Speed). Leser `GameConfig` in `Formats` (nur lesen), `bombtool cfg <datei>`, `docs/formate/konfiguration.md`.
+- **Dateien:** `src/BombRedone.Formats/GameConfig*.cs`, `src/BombRedone.Tools/Config*.cs` (+ eine Zeile in `Program.cs`),
+  `tests/BombRedone.Formats.Tests/GameConfig*`, `docs/formate/konfiguration.md`.
+- **Abnahme:** jedes Feld mit Fundstelle im Code **oder** als „unbelegt“ markiert (eine Beispieldatei allein belegt keine
+  Feldzuordnung); synthetische Tests je Feld und für Fehlerfälle (falsche Version, zu kurz); Originaldaten-Test liest die
+  Beispieldatei aus `~/referenz/original/spielstaende/` und vergleicht mit den Voreinstellungen der Anleitung. Liste der
+  Einstellungen, für die eine zweite Beispieldatei nötig wäre.
+- **Modell:** Claude Opus 5.5. **Review:** Claude Opus 5.5 (Erstreview, frische Sitzung).
 
 #### Spur `re-grundlagen` – Programmaufbau erschließen (Analyse, kein Produktcode)
 
 - **Inhalt:** MZ-Kopf und Segmente von `BOMB.EXE`; Aufbau von `BOMB.OVR` (`FBOV`, Overlay-Einheiten und ihre Zuordnung);
-  Erkennen der Turbo-Pascal-6-Laufzeit und der Bibliothekseinheiten (System, Crt, Graph/BGI, Overlay), damit nur Spielcode übrig
-  bleibt; eingebundene BGI-Treiber und Schriften; Zufallsgenerator (`Random`/`Randomize`, `RandSeed`) und Zahlentyp der Physik
-  (Real48, 8087 oder Festkomma); Zeitschleifen und Tonausgabe (Ports 0x42/0x43/0x61); Tabelle aller Texte mit Offsets;
-  Karte „Bildschirm → Prozeduren“ als Arbeitsgrundlage für die Bildschirm-Spuren. Vorschlag für R1-D1 (Zyklen).
-- **Dateien:** `docs/analyse/re-grundlagen.md`, `tools/reverse-engineering/*` (Skripte, die aus `gamedata/` lesen und nach
-  `export/` schreiben).
+  Erkennen der Turbo-Pascal-6-Laufzeit und der Bibliothekseinheiten (System, Crt, Graph/BGI, Overlay), damit nur Spielcode
+  übrig bleibt; eingebundene BGI-Treiber und Schriften (die Schrift der Kopfzeile „TANK WARS 3.2“ und der Knöpfe); Zufallsgenerator
+  (`Random`/`Randomize`, `RandSeed`) und Zahlentyp der Physik (Real48, 8087 oder Festkomma); Zeitschleifen, die
+  Geschwindigkeitsoptionen `ES/FS/PS/SS` und Tonausgabe (Ports 0x42/0x43/0x61); Palettenrotation; Tabelle aller Texte mit
+  Offsets; Karte „Bildschirm → Prozeduren“ für die Bildschirme aus `docs/anforderungen/bildschirme.md` (Titel, Hauptmenü,
+  Game Options, Spielerauswahl, Spielfeld, Hintergründe, Wertung, Einkauf). Vorschlag für R1-D1 (Zyklen).
+- **Dateien:** `docs/analyse/re-grundlagen.md`, `tools/reverse-engineering/*` (Skripte lesen aus `gamedata/`, schreiben nach
+  `analyse/` im Arbeitsverzeichnis – Schutzordner). Listings: nach R1-D4.
 - **Abnahme:** jede Aussage mit Offset und ausführbarem Beleg (Skriptaufruf, Ergebnis); Liste „nicht entscheidbar ohne DOSBox“.
-  **Modell:** Claude Opus 5.5. **Review:** Claude Opus 5.5 (frische Sitzung).
+- **Modell:** Claude Opus 5.5. **Review:** Claude Opus 5.5 (frische Sitzung).
 
-#### Aufnahme `runde-1` – Bildschirmfotos, `BOMB.CFG`, Spielstände (mit dem Nutzer)
+#### Spur `bildschirme-inventar` – Bildschirme und Abläufe aus den Videos (Analyse, kein Produktcode)
 
-- Ablauf und Schritte: [vorlagen/dosbox-aufnahme.md](vorlagen/dosbox-aufnahme.md), Abschnitt „Aufnahme `runde-1`“.
-  **Modell:** Claude Sonnet 5.5. Braucht R1-D1. Ergebnis im Referenz-Repo (`bilder/runde-1/`, `original/spielstaende/`).
+- **Inhalt:** `docs/anforderungen/bildschirme.md`: je Bildschirm ein Abschnitt mit Zweck, Elementen (Texte wörtlich,
+  Knöpfe, Felder), Übergängen und Fundstellen als Bildnummern (`videos/<kurzname>/<nnnnn>.png`), dazu der Ablauf einer Partie
+  als Zustandsfolge und die Liste der Waffen mit Preisen, soweit lesbar. Abgleich mit `BOMB.DOC` (was die Anleitung nennt, die
+  Videos aber nicht zeigen). Nur Beschreibung, **keine Bilder oder Ausschnitte** ins Code-Repo.
+- **Dateien:** `docs/anforderungen/bildschirme.md`.
+- **Abnahme:** jedes Bild beider Videos ist genau einem Bildschirm oder Übergang zugeordnet (Tabelle Bildbereiche →
+  Bildschirm); jede Aussage mit Bildnummer oder Abschnitt der Anleitung; Lesefehler wegen der Videoqualität als „unsicher“
+  markiert; Liste der fehlenden Bildschirme für die DOSBox-Aufnahme.
+- **Modell:** Claude Sonnet 5.5. **Review:** Claude Sonnet 5.5 (reine Doku-Prüfung, frische Sitzung).
 
-### Welle 2 (nach Merge von Welle 1 und abgelegter Aufnahme)
+### Welle 2 (nach Merge von Welle 1; Zuschnitt endgültig mit deren Ergebnissen)
 
-#### Spur `titel` – erste Bildschirme: Titelfolge
-
-- **Inhalt:** `Screen`-Grundgerüst in `UI` (ein Bildschirm, Eingabe, Takt als Eingabe), Titelfolge mit `BOMB1.RAW`/`BOMB2.RAW`
-  einschließlich des Verhaltens bei fehlenden Dateien (`BOMB.TXT` „GRAPHICS FILES“), Anzeige im Fenster.
-- **Abnahme:** Pixelvergleich gegen die Bilder der Aufnahme (Sitzung 1), Test je Bild. **Modell:** Claude Opus 5.5.
-
-#### Spur `schrift-menue` – Schrift und Hauptmenü
-
-- **Inhalt:** Schriftdarstellung des Originals (aus `re-grundlagen`: BGI-Schrift oder eigene Zeichenroutine), Hauptmenü als
-  statischer Bildschirm, danach Bedienung mit Maus und Tastatur.
-- **Abnahme:** Pixelvergleich gegen die Aufnahme (Sitzung 2), jeder Zustand ein Test. **Modell:** Claude Opus 5.5.
-
-#### Spur `formate-2` – `BOMB.CFG` und `*.TWS` (nach R1-D3)
-
-- **Inhalt:** Formatbeschreibung aus den Beispieldateien (Differenzen zwischen Dateien mit genau einer Änderung) und den
-  Lese-/Schreibroutinen im Programm; Leser in `Formats`. **Modell:** Claude Opus 5.5.
+- **`titel`** – `Screen`-Grundgerüst in `UI`, Titelfolge mit `BOMB1.RAW`/`BOMB2.RAW` samt Verhalten bei fehlenden Dateien
+  (`BOMB.TXT` „GRAPHICS FILES“), Anzeige im Fenster. Claude Opus 5.5.
+- **`schrift-menue`** – Schrift des Originals, Hauptmenü mit Hintergrund und Knöpfen, Bedienung mit Maus und Tastatur.
+  Claude Opus 5.5.
+- **`spielerauswahl`**, **`wertung-einkauf`** – weitere statische Bildschirme, sobald Schrift und Knöpfe stehen.
+- **DOSBox-Aufnahme `runde-1`** (braucht R1-D1) – gezielt für die umgesetzten Bildschirme und für das, was die Videos nicht
+  zeigen; `*.TWS`-Beispiele für eine spätere Spur `spielstand`. Claude Sonnet 5.5.
 
 **Rundenende:** Gesamtreview durch ChatGPT (`prozess/anhang.md` C), danach Plan Runde 2 (Spielfeld, Gelände, Schuss).
 
 ### Zuständigkeit für gemeinsame Dateien (Runde 1)
 
-- `AGENTS.md`, `CLAUDE.md`, `docs/prozess/*`, `docs/vorlagen/*`, `docs/entscheidungen.md`, `tools/pruefen*.sh`, `.github/*`,
-  `tests/**/Support/`: allein die Leitstelle.
-- `src/BombRedone.Tools/Program.cs`: je Spur eine Registrierungszeile.
-- `src/BombRedone.Desktop/*`: allein `titel`.
+- `AGENTS.md`, `CLAUDE.md`, `docs/prozess/*`, `docs/vorlagen/*`, `docs/entscheidungen.md`, `tools/pruefen*.sh`,
+  `tools/originalschutz-selbsttest.sh`, `.gitignore`, `.github/*`, `tests/**/Support/`: allein die Leitstelle.
+- `src/BombRedone.Tools/Program.cs`: je Spur eine Registrierungszeile (`formate`, `konfiguration`).
+- `src/BombRedone.Desktop/*`: in Welle 1 niemand.
+- `docs/arbeitspakete.md`: jede Spur nur ihr eigener Statusabschnitt (unten anfügen: `### Status <spur>`).
