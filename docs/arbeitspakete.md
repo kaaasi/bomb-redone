@@ -70,7 +70,8 @@ Empfehlung: **B**, Ablage durch die Leitstelle per PR aus dem, was die Spur als 
 
 Empfehlung: **A in Runde 1** (Felder benennen, soweit belegbar), B als späteres Ziel.
 
-**Neu mit dem Go zu bestätigen – R1-D4, Ablageweg der Listings.** R1-D2 legt den Ort fest (Referenz-Repo). Problem: Spuren
+**R1-D4 – Ablageweg der Listings – entschieden: A (Nutzer 11.11.2026; geschrieben „R1-D2 = A“, als R1-D4 verstanden, weil
+R1-D2 = B am selben Tag ausdrücklich entschieden wurde).** R1-D2 legt den Ort fest (Referenz-Repo). Problem: Spuren
 dürfen dort bisher nicht schreiben, und eine Spur kann der Leitstelle keine Dateien übergeben.
 
 | Option | Vorteil | Nachteil |
@@ -121,7 +122,8 @@ einer Zeile in `src/BombRedone.Tools/Program.cs` bei `formate` und `konfiguratio
   Offsets; Karte „Bildschirm → Prozeduren“ für die Bildschirme aus `docs/anforderungen/bildschirme.md` (Titel, Hauptmenü,
   Game Options, Spielerauswahl, Spielfeld, Hintergründe, Wertung, Einkauf). Vorschlag für R1-D1 (Zyklen).
 - **Dateien:** `docs/analyse/re-grundlagen.md`, `tools/reverse-engineering/*` (Skripte lesen aus `gamedata/`, schreiben nach
-  `analyse/` im Arbeitsverzeichnis – Schutzordner). Listings: nach R1-D4.
+  `analyse/` im Arbeitsverzeichnis – Schutzordner). Listings: eigener PR der Spur im Referenz-Repo (Branch
+  `daten/listings-re-grundlagen`, nur `analyse/`, nicht mergen; R1-D4 = A).
 - **Abnahme:** jede Aussage mit Offset und ausführbarem Beleg (Skriptaufruf, Ergebnis); Liste „nicht entscheidbar ohne DOSBox“.
 - **Modell:** Claude Opus 5.5. **Review:** Claude Opus 5.5 (frische Sitzung).
 
