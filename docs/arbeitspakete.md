@@ -11,10 +11,11 @@ Den Status pflegt jede Spur nur in ihrem eigenen Abschnitt. Abgeschlossene Runde
 
 | Ergebnis | Stand |
 |---|---|
-| Referenz-Repo: Struktur und Originaldateien | [bomb-referenz #1](https://github.com/kaaasi/bomb-referenz/pull/1) – offen, merged der Nutzer oder die Leitstelle nach Sichtung |
-| Einrichtungs-PR (Prozess, Gerüst, Prüfung, CI, Werkzeuge) | [#1](https://github.com/kaaasi/bomb-redone/pull/1) (`prozess/einrichtung`) – wartet auf unabhängiges Review |
-| Unabhängiges Review | ausstehend (ChatGPT, Kurzaufruf von der Leitstelle) |
-| Nach dem Merge | Workflow „Werkzeuge für Claude“ läuft automatisch und legt das Release `claude-werkzeuge` an; bis dahin geht `REPO=kaaasi/eishockey-manager-redone tools/claude/setup-workspace.sh` (gleiche SDK- und Paketversionen) |
+| Referenz-Repo: Struktur und Originaldateien | [bomb-referenz #1](https://github.com/kaaasi/bomb-referenz/pull/1) gemergt (Nutzer, 11.11.2026) |
+| Einrichtungs-PR | [#1](https://github.com/kaaasi/bomb-redone/pull/1) gemergt (Nutzer, 11.11.2026), CI auf `main` grün |
+| Unabhängiges Review | **nicht erfolgt** – #1 wurde ohne Review-Datei gemergt. Nachholen als Review von `main` (`4c54c4a`) oder vom Nutzer ausdrücklich erlassen |
+| Werkzeug-Release `claude-werkzeuge` | vorhanden (Workflow nach dem Merge gelaufen); `fetch-reference.sh original` gegen `main` geprüft, Prüfsummen stimmen |
+| Ablagen `analyse/` und `videos/` im Referenz-Repo | [bomb-referenz #2](https://github.com/kaaasi/bomb-referenz/pull/2) offen |
 
 ## Plan Runde 1 – Dateiformate, Reverse Engineering, erste Bildschirme (Entwurf 11.11.2026, **kein Go**)
 
@@ -27,7 +28,25 @@ einen Überblick über den Programmcode.
 höchstens drei Fortsetzungen je Spur. Bei Unklarheit „wie im Original“; bleibt es unklar, Teil blockiert lassen, die Leitstelle
 bündelt die Fragen.
 
-### Offene Entscheidungen vor dem Go
+### Nachträge vom 11.11.2026 (nach Rückmeldung des Nutzers)
+
+- **R1-D2 = B** (Listings im Referenz-Repo, `analyse/`).
+- **Videos zuerst:** Der Nutzer hat zwei Gameplay-Videos; sie ersetzen am Anfang die DOSBox-Aufnahme. Dazu braucht die
+  Leitstelle die Adressen und die Einzelbilder (YouTube ist aus der Arbeitsumgebung nicht ladbar): der Nutzer entnimmt sie
+  lokal (z. B. `ffmpeg -i <video> -vf fps=1 %05d.png`) und lädt sie als ZIP hoch, Ablage in `videos/<kurzname>/` des
+  Referenz-Repos. Grenze: Videobilder belegen Abläufe und Aufbau, nicht die Pixel; Abnahmen der Bildschirm-Spuren gegen
+  Videobilder gelten als vorläufig (`[APPROX]`), die DOSBox-Aufnahme `runde-1` folgt gezielt für die Bildschirme, die
+  umgesetzt sind. Damit wird R1-D1 erst vor dieser Aufnahme gebraucht, nicht vor dem Go.
+- **`BOMB.CFG` vom Nutzer (für R1-D3):** Die hochgeladene Datei ist **beim Hochladen beschädigt** worden (30 Byte; zwei
+  Stellen enthalten das UTF-8-Ersatzzeichen `EF BF BD`, das letzte Byte ist `3F` – Bytes ab 0x80 wurden ersetzt). Sie ist
+  deshalb nicht abgelegt. Erkennbar bleibt: Die Datei beginnt mit der Versionskennung „3.2“ und ist danach eine kurze Folge
+  einzelner Bytes mit kleinen Werten (vermutlich etwa 26 Byte im Original). Bitte als ZIP erneut hochladen.
+- **Befund zur Geschwindigkeit (E4, R1-D1):** `BOMB.DOC` nennt eigene Geschwindigkeitsoptionen des Spiels (`ESnn`
+  Explosion, `FSnn` Fall, `PSnn` Projectile, `SSnn` Shot) und Einstellungen wie Wind, Wandverhalten und Hintergrund. Der Takt
+  hängt also nicht nur von DOSBox ab, sondern auch von `BOMB.CFG`; die Referenz für Aufnahmen ist DOSBox-Einstellung **und**
+  Konfigurationsdatei.
+
+### Offene Entscheidungen
 
 **R1-D1 – DOSBox-Referenz (folgt aus E4).** Problem: Aufnahmen und Takt brauchen genau eine Einstellung.
 
@@ -41,7 +60,7 @@ bündelt die Fragen.
 Empfehlung: **D mit B** – statische Bilder jetzt mit DOSBox Staging (Version in der README), Zyklenwert als Vorschlag aus
 `re-grundlagen`. Der Wert 3000 ist eine Schätzung ohne Beleg.
 
-**R1-D2 – Ablage von Disassembly-Listings.** Problem: Listings sind abgeleiteter Originalcode.
+**R1-D2 – Ablage von Disassembly-Listings – entschieden: B (Nutzer 11.11.2026).** Problem: Listings sind abgeleiteter Originalcode.
 
 | Option | Vorteil | Nachteil |
 |---|---|---|

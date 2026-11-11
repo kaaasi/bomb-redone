@@ -15,6 +15,15 @@ und Nachteilen, Empfehlung); hier steht nur das Ergebnis mit der gewählten Opti
 | E6 | Darstellung im Fenster | **B:** ganzzahlige Skalierung, dazu optional die 4:3-Korrektur (320 × 200 hat nichtquadratische Pixel). |
 | E7 | Sichtbarkeit von `bomb-redone` | **B:** privat. Folge: GitHub Free ohne Branch-Schutz und mit begrenzten Actions-Minuten (`docs/prozess/anhang.md` B). |
 
+## Runde 1 (Vorbereitung)
+
+| Nr. | Frage | Entscheidung |
+|---|---|---|
+| R1-D2 | Ablage von Disassembly-Listings | **B** (11.11.2026): annotierte Listings im privaten Referenz-Repo (`analyse/`), im Code-Repo nur eigene Beschreibungen mit Offsets. Ablage durch Leitstelle oder Nutzer per PR. |
+| – | Frühe Bildvorlage | Vorschlag des Nutzers (11.11.2026): zwei Gameplay-Videos zuerst statt der DOSBox-Aufnahme. Übernommen mit Grenze: Videobilder belegen Abläufe und Aufbau, keine Pixelgenauigkeit (E3); was nur aus Videos stammt, bleibt `[APPROX]`, bis ein DOSBox-Bild es belegt. |
+
+Offen: R1-D1 (DOSBox-Referenz), R1-D3 (Ziel für `BOMB.CFG`/`*.TWS`), Bestätigung der Fassung 3.2 – siehe `docs/arbeitspakete.md`.
+
 Arbeitsweise (Nutzer 11.11.2026): `main` nur über Branch und PR; Deutsch in Doku und Commits, Quelltext und Kommentare englisch;
 knappe Antworten; je Aufgabe ein Claude-Modell; ChatGPT nur für Reviews; Spuren erst nach Go; Entscheidungen gesammelt.
 
