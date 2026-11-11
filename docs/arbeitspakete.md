@@ -248,3 +248,10 @@ Integrationsfolge 2a: `titel` → `schrift`. Bilder der DOSBox-Aufnahme sind, so
 - 11.11.2026, Claude Opus 5.5 (geplanter Lauf), Base `1fc3d68`: fertig – Review, PR #43. Strichschriften LITT/EURO/TINY lesen,
   Textausgabe mit Kern-Semantik (Fundstellen im Graph-Kern), `docs/formate/schriften.md`. Kopfzeile und Menüeintrag stimmen mit
   Longplay 00009 auf etwa 1 Bildpunkt. Offen: Quelle der 8 × 8-Schrift (ROM, nicht im Original) – Entscheidung Nutzer.
+
+### Status titel
+
+- 11.11.2026: begonnen (Claude Code, Claude Opus 5.5, geplanter Lauf), Base `1fc3d68`.
+- 11.11.2026: fertig – Review. Grundgerüst (`IScreen`, `ScreenHost`, `ScreenInput`), Titelfolge nach O1:0014 mit Fundstellen,
+  Desktop zeigt den Titel; PR #44, Anforderungen `anforderungen/titel.md`. `[APPROX]`: Dauer eines Kopierdurchgangs (85 ms),
+  DAC-Maske 6 Bit, Palette vor dem Titel.
