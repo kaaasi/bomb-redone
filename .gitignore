@@ -1,0 +1,42 @@
+# --- Original game: never commit ---------------------------------------------
+# The original files of Tank Wars are copyrighted. Keep them locally in
+# gamedata/ (see README); the private repository kaaasi/bomb-referenz holds them.
+gamedata
+original/
+referenz/
+# Original file names and types (case variants included), wherever they are placed
+[Bb][Oo][Mm][Bb]*.[Ee][Xx][Ee]
+[Bb][Oo][Mm][Bb]*.[Oo][Vv][Rr]
+[Bb][Oo][Mm][Bb]*.[Rr][Aa][Ww]
+[Bb][Oo][Mm][Bb]*.[Hh][Ll][Pp]
+[Bb][Oo][Mm][Bb]*.[Ii][Cc][Oo]
+[Bb][Oo][Mm][Bb]*.[Ii][Cc][Pp]
+[Bb][Oo][Mm][Bb]*.[Cc][Ff][Gg]
+[Bb][Oo][Mm][Bb].[Dd][Oo][Cc]
+[Bb][Oo][Mm][Bb].[Tt][Xx][Tt]
+[Rr][Ee][Vv][Ii][Ss][Ii][Oo][Nn].[Hh][Ss][Tt]
+*.[Tt][Ww][Ss]
+[Bb][Oo][Mm][Bb]*.[Zz][Ii][Pp]
+
+# Screenshots and captures of the original (DOSBox)
+capture/
+*.zmbv
+
+# Assets exported by the tools
+export/
+
+# --- .NET ---------------------------------------------------------------------
+bin/
+obj/
+*.user
+*.suo
+.vs/
+.idea/
+*.DotSettings.user
+TestResults/
+artifacts/
+nuget-packages/
+
+# --- Operating system ---------------------------------------------------------
+.DS_Store
+Thumbs.db

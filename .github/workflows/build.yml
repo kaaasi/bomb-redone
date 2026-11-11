@@ -1,0 +1,86 @@
+name: Build
+
+# Saves Actions minutes: pure documentation changes do not build, draft PRs build only on "Ready for review",
+# a new push cancels the outdated run of the same PR.
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+    paths-ignore: ['docs/**', '**/*.md']
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths-ignore: ['docs/**', '**/*.md']
+  workflow_dispatch:   # "Run workflow" in Actions: additionally builds the downloads (job publish)
+
+concurrency:
+  group: build-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build:
+    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Versionen festgeschrieben (global.json, Paketversionen)
+        run: python3 .github/scripts/versionen_pruefen.py .
+
+      - name: Selbsttest der Prüfung
+        run: tools/pruefen-selbsttest.sh
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json   # SDK version pinned in global.json
+
+      - name: Restore
+        run: dotnet restore BombRedone.slnx
+
+      # Warnings count as errors.
+      - name: Build
+        run: dotnet build BombRedone.slnx -c Release --no-restore -warnaserror
+
+      # Separate runs: synthetic tests and tests with original data (trait Category=OriginalData).
+      # Without the original files (always the case here) the second run reports real skips; the report shows them.
+      - name: Test (synthetisch)
+        run: >
+          dotnet test BombRedone.slnx -c Release --no-build --verbosity normal
+          --filter "Category!=OriginalData" --logger "trx;LogFilePrefix=synthetisch" --results-directory TestResults/synthetisch
+
+      - name: Test (Originaldaten)
+        if: success() || failure()
+        run: >
+          dotnet test BombRedone.slnx -c Release --no-build --verbosity normal
+          --filter "Category=OriginalData" --logger "trx;LogFilePrefix=originaldaten" --results-directory TestResults/originaldaten
+
+      - name: Testbericht
+        if: success() || failure()
+        run: python3 .github/scripts/testbericht.py TestResults   # appends to $GITHUB_STEP_SUMMARY, annotations to the log
+
+  # Runnable intermediate builds for download (Actions -> run -> Artifacts).
+  # The original files have to be placed next to them in the folder "gamedata".
+  # Only on request (workflow_dispatch) or for version tags v*, to stay inside the artifact storage of GitHub Free.
+  publish:
+    needs: build
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        rid: [win-x64, linux-x64, osx-arm64]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Veröffentlichen
+        run: |
+          dotnet publish src/BombRedone.Desktop -c Release -r ${{ matrix.rid }} --self-contained -o out
+          dotnet publish src/BombRedone.Tools -c Release -r ${{ matrix.rid }} --self-contained -o out
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: BombRedone-${{ matrix.rid }}-${{ github.sha }}
+          path: out
+          retention-days: 7

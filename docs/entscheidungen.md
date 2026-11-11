@@ -1,0 +1,23 @@
+# Grundsatzentscheidungen
+
+Entscheidungen des Nutzers, je mit Datum. Vorlage durch die Leitstelle nach `AGENTS.md` §2.9 (Problem, 3–5 Optionen mit Vor-
+und Nachteilen, Empfehlung); hier steht nur das Ergebnis mit der gewählten Option. Änderungen nur per PR mit neuem Datum.
+
+## Runde 0 (11.11.2026)
+
+| Nr. | Frage | Entscheidung |
+|---|---|---|
+| E1 | Zielplattform, Grafikbibliothek | **A:** MonoGame DesktopGL (Windows, Linux, macOS). |
+| E2 | Welcher Grafikmodus gilt als Original? | **D:** höchster Modus zuerst, Puffer modusneutral (Breite, Höhe, Palette als Parameter). **Befund aus den Originaldateien:** Release 3.2 kennt nur 320 × 200 mit 256 Farben (VGA/MCGA, `BOMB.TXT` „REQUIREMENTS“) – das ist der Maßstab; weitere Modi gibt es im Original nicht. |
+| E3 | Maßstab der Originaltreue | **B als Pflicht:** statische Bildschirme pixelgenau, Regeln und Formeln aus der Disassembly belegt. **A als Ziel je Baustein:** bitgleich (gleicher Zufallsgenerator, gleiche Arithmetik), wo belegbar. Markierung `[ORIGINAL]`/`[APPROX]`. |
+| E4 | Zeitverhalten | **A:** eine feste DOSBox-Einstellung ist die Referenz für Aufnahmen und Takt. Den Wert schlägt die Leitstelle in Runde 1 nach der Analyse vor (Entscheidung R1-D1). |
+| E5 | Audio | **C:** Runde 1 stumm, Projekt `Audio` nur als Gerüst; danach eigene Synthese aus belegten Tonfolgen. Keine Originalaufnahmen im Code-Repo. |
+| E6 | Darstellung im Fenster | **B:** ganzzahlige Skalierung, dazu optional die 4:3-Korrektur (320 × 200 hat nichtquadratische Pixel). |
+| E7 | Sichtbarkeit von `bomb-redone` | **B:** privat. Folge: GitHub Free ohne Branch-Schutz und mit begrenzten Actions-Minuten (`docs/prozess/anhang.md` B). |
+
+Arbeitsweise (Nutzer 11.11.2026): `main` nur über Branch und PR; Deutsch in Doku und Commits, Quelltext und Kommentare englisch;
+knappe Antworten; je Aufgabe ein Claude-Modell; ChatGPT nur für Reviews; Spuren erst nach Go; Entscheidungen gesammelt.
+
+**Vorlage ist Release 3.2** (Dateien vom 04.07.1992, Copyright 1990–1992): Der Nutzer hat diese Fassung bereitgestellt; eine
+Fassung von 1990 liegt nicht vor. Ob eine andere Fassung maßgeblich sein soll, ist nicht gefragt worden – bei Bedarf als
+Entscheidung vorlegen.

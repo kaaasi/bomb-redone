@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>BombRedone.UI</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\BombRedone.Formats\BombRedone.Formats.csproj" />
+    <ProjectReference Include="..\BombRedone.Core\BombRedone.Core.csproj" />
+  </ItemGroup>
+</Project>

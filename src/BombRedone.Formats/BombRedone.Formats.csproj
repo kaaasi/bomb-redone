@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>BombRedone.Formats</RootNamespace>
+  </PropertyGroup>
+</Project>

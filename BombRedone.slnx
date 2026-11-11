@@ -1,0 +1,16 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/BombRedone.Formats/BombRedone.Formats.csproj" />
+    <Project Path="src/BombRedone.Core/BombRedone.Core.csproj" />
+    <Project Path="src/BombRedone.UI/BombRedone.UI.csproj" />
+    <Project Path="src/BombRedone.Audio/BombRedone.Audio.csproj" />
+    <Project Path="src/BombRedone.Desktop/BombRedone.Desktop.csproj" />
+    <Project Path="src/BombRedone.Tools/BombRedone.Tools.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/BombRedone.Formats.Tests/BombRedone.Formats.Tests.csproj" />
+    <Project Path="tests/BombRedone.Core.Tests/BombRedone.Core.Tests.csproj" />
+    <Project Path="tests/BombRedone.UI.Tests/BombRedone.UI.Tests.csproj" />
+    <Project Path="tests/BombRedone.Audio.Tests/BombRedone.Audio.Tests.csproj" />
+  </Folder>
+</Solution>

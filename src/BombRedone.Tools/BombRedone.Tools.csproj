@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>BombRedone.Tools</RootNamespace>
+    <AssemblyName>bombtool</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\BombRedone.Formats\BombRedone.Formats.csproj" />
+    <ProjectReference Include="..\BombRedone.UI\BombRedone.UI.csproj" />
+  </ItemGroup>
+</Project>
