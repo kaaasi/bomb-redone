@@ -41,9 +41,10 @@ public sealed class BgiGlyph
 /// </summary>
 /// <remarks>
 /// [ORIGINAL] Layout of the font data header as read by the Graph kernel: the kernel copies 16 bytes from the start of the
-/// font data and checks the signature '+' (BOMB.EXE 0x131E0..0x131FB), takes the character count from +1, the first
-/// character from +5 (0x13295), the stroke offset from +7 (0x132B2), the scan flag from +9 (0x132B6), the heights
-/// top/bottom from +10/+12 (0x13214) and the offset table at +16 followed by the width table (0x13247, 0x132AA).
+/// font data to CS:15F2 and checks the signature '+' (BOMB.EXE 0x131E0..0x131F6), takes the character count from +1,
+/// the first character from +4 (CS:15F6, 0x13295), the stroke offset from +5 (CS:15F7, 0x132B2), the heights
+/// top/bottom from +8/+10 (CS:15FA/15FC, 0x13214) and the offset table at +16 followed by the width table (0x13247,
+/// 0x132AA). The scan flag at +7 (CS:15F9) is cleared right after the copy (0x131FB), so filling is never active.
 /// The file header (size of the header at the byte after 1Ah, name, data size, versions) follows the three embedded
 /// fonts (BOMB.EXE 0x08BE9, 0x09FF5, 0x0C0FA); its use by the kernel is not derived.
 /// </remarks>
@@ -94,16 +95,19 @@ public sealed class BgiFont
     /// <summary>Number of characters in the font.</summary>
     public int CharCount => _glyphs.Length;
 
-    /// <summary>Origin to top of capital (font data header +10, signed).</summary>
+    /// <summary>Origin to top of capital (font data header +8, signed).</summary>
     public int Top { get; }
 
-    /// <summary>Origin to baseline (font data header +11, signed).</summary>
+    /// <summary>Origin to baseline (font data header +9, signed).</summary>
     public int Baseline { get; }
 
-    /// <summary>Origin to bottom of descender (font data header +12, signed).</summary>
+    /// <summary>Origin to bottom of descender (font data header +10, signed).</summary>
     public int Bottom { get; }
 
-    /// <summary>Scan flag of the font data header (+9); the kernel then fills characters, unused by the three fonts.</summary>
+    /// <summary>
+    /// Scan flag of the font data header (+7), as stored in the file; the kernel clears it after copying the header
+    /// (BOMB.EXE 0x131FB), so it has no effect.
+    /// </summary>
     public bool HasScanFlag { get; }
 
     /// <summary>Bytes of the whole font file: header plus font data.</summary>

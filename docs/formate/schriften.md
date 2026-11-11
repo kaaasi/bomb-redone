@@ -35,7 +35,7 @@ Keine Schriftdaten im Code-Repo: Tests mit Originaldaten lesen `gamedata/BOMB.EX
 | +1 | 2 | Zeichenanzahl | 223 / 223 / 96 |
 | +4 | 1 | erstes Zeichen | 32 / 32 / 32 |
 | +5 | 2 | Offset der Strichdaten (ab Schriftdaten) | 685 / 685 / 304 |
-| +7 | 1 | Scan-Kennung (Füllen; ungenutzt) | 0 |
+| +7 | 1 | Scan-Kennung (Füllen; der Kern löscht sie nach der Kopie, `0x131FB`) | 0 |
 | +8 | 1 | Ursprung → Oberkante (vorzeichenbehaftet) | 7 / 45 / 4 |
 | +9 | 1 | Ursprung → Grundlinie | 0 |
 | +10 | 1 | Ursprung → Unterlänge | −2 / −10 / −7 |
