@@ -7,7 +7,7 @@ Den Status pflegt jede Spur nur in ihrem eigenen Abschnitt. Abgeschlossene Runde
 **Koordination:** Die Leitstelle verteilt Pakete, prüft und mergt Pull Requests und pflegt Plan und Doku
 (Rollen: [prozess/zusammenarbeit.md](prozess/zusammenarbeit.md)). **Spuren starten erst nach dem Go des Nutzers.**
 
-## Aktuelle Runde: Runde 1 – Dateiformate, Reverse Engineering, erste Bildschirme (Plan 11.11.2026, **Go für Welle 1: 11.11.2026**)
+## Aktuelle Runde: Runde 1 – Dateiformate, Reverse Engineering, erste Bildschirme (Plan 11.11.2026, **Go für Welle 1 und 2: 11.11.2026**)
 
 Runde 0 abgeschlossen: [archiv/runde-0.md](archiv/runde-0.md). Grundlagen: Erstbefund [originaldateien.md](originaldateien.md),
 Entscheidungen [entscheidungen.md](entscheidungen.md) (E1–E7, R1-D1 = A, R1-D2 = B, R1-D3 = A, R1-D4 = A, R1-D5 = C, R1-D6 = A, Vorlage Release 3.2).
@@ -155,15 +155,57 @@ einer Zeile in `src/BombRedone.Tools/Program.cs` bei `formate` und `konfiguratio
   markiert; Liste der fehlenden Bildschirme für die DOSBox-Aufnahme.
 - **Modell:** Claude Sonnet 5.5. **Review:** Claude Sonnet 5.5 (reine Doku-Prüfung, frische Sitzung).
 
-### Welle 2 (nach Merge von Welle 1; Zuschnitt endgültig mit deren Ergebnissen)
+### Welle 2 – Go des Nutzers am 11.11.2026, 14:02 (Zuschnitt Leitstelle 11.11.2026)
 
-- **`titel`** – `Screen`-Grundgerüst in `UI`, Titelfolge mit `BOMB1.RAW`/`BOMB2.RAW` samt Verhalten bei fehlenden Dateien
-  (`BOMB.TXT` „GRAPHICS FILES“), Anzeige im Fenster. Claude Opus 5.5.
-- **`schrift-menue`** – Schrift des Originals, Hauptmenü mit Hintergrund und Knöpfen, Bedienung mit Maus und Tastatur.
-  Claude Opus 5.5.
-- **`spielerauswahl`**, **`wertung-einkauf`** – weitere statische Bildschirme, sobald Schrift und Knöpfe stehen.
-- **DOSBox-Aufnahme `runde-1`** (braucht R1-D1) – gezielt für die umgesetzten Bildschirme und für das, was die Videos nicht
-  zeigen; `*.TWS`-Beispiele für eine spätere Spur `spielstand`. Claude Sonnet 5.5.
+Base aller Spuren der Stufe 2a: `2f51fa0deb84793e999c3b14653ec5edd42e6e70` (`main` nach Welle 1 und R1-D1). Gegenüber dem
+Stichpunktplan ist `schrift-menue` geteilt: Die Schrift braucht kein Bildschirm-Grundgerüst und läuft parallel zu `titel`, das
+Menü braucht beides. Start wie Welle 1 (unbeaufsichtigte geplante Läufe, Selbstfortsetzung, höchstens 3 je Spur, Kurzaufruf
+„Geplanter Lauf mit Teilen“). Erstreview je Spur: Claude Opus 5.5, frische Sitzung. Stufen nacheinander; die nächste Stufe legt die
+Leitstelle nach dem Merge der vorigen an (Base dann der neue `main`, im Startaufruf genannt).
+
+| Stufe | Spur | Modell | braucht |
+|---|---|---|---|
+| 2a | `titel` | Claude Opus 5.5 | – |
+| 2a | `schrift` | Claude Opus 5.5 | – |
+| 2a | DOSBox-Aufnahme `runde-1` (Nutzer mit Agent, `vorlagen/dosbox-aufnahme.md`) | Claude Sonnet 5.5 | R1-D1 |
+| 2b | `menue` | Claude Opus 5.5 | `titel`, `schrift` |
+| 2c | `spielerauswahl`, `wertung-einkauf` (parallel) | Claude Opus 5.5 | `menue` |
+
+Integrationsfolge 2a: `titel` → `schrift`. Bilder der DOSBox-Aufnahme sind, sobald im Referenz-Repo gemergt, Abnahmevorlage
+(E3: pixelgenau); bis dahin gelten die dekodierten Originaldateien und die Disassembly, Videobilder nur für Abläufe (`[APPROX]`).
+
+#### Spur `titel` – Bildschirm-Grundgerüst und Titelfolge
+
+- **Inhalt:** Grundgerüst in `UI`: Bildschirm mit `Update(Takt, Eingabe)` und `Draw(Surface)` (Zeit und Eingabe von außen,
+  `AGENTS.md` §4), Bildschirmwechsel; Titelfolge nach `O1:0014` (`BOMB.OVR 0x0001C`, `docs/analyse/re-grundlagen.md` §6):
+  `BOMB1.RAW`/`BOMB2.RAW` (Überlagerung, Paletten, Wartezeiten, Abbruch per Taste) und Verhalten bei fehlenden Dateien
+  (`BOMB.TXT` „GRAPHICS FILES“, Disassembly). Anzeige im Fenster (`Desktop`): `Surface` → Textur über `Presentation`
+  (E6), Eingabe an den Bildschirm. Ende der Titelfolge führt vorerst zu einem leeren Platzhalter-Bildschirm (Hauptmenü folgt in `menue`).
+- **Dateien:** `src/BombRedone.UI/Screens/*` (Grundgerüst, `TitleScreen*`), `src/BombRedone.Desktop/*`,
+  `tests/BombRedone.UI.Tests/Screens/*`, `docs/anforderungen/titel.md`.
+- **Abnahme:** synthetische Tests für Ablauf und Zeiten mit vorgegebenem Takt (kein Systemtakt), fehlende Dateien je Fall;
+  Originaldaten-Test: gezeichnete `Surface` je Zustand pixelgleich zu den dekodierten Bildern (Prüfsummen wie in `formate`);
+  Zeiten und Übergänge mit Fundstelle `[ORIGINAL]` oder `[APPROX]`; Desktop startet und zeigt den Titel (Beleg im PR:
+  Bildschirmfoto nur als Beschreibung, kein Bild einchecken).
+
+#### Spur `schrift` – Schriften des Originals lesen und zeichnen
+
+- **Inhalt:** Leser für die in `BOMB.EXE` eingebundenen BGI-Strichschriften LITT, EURO, TINY (Offsets aus
+  `re-grundlagen` §4, F1–F4) und die 8 × 8-Standardschrift der Graph-Einheit (Fundstelle suchen; ist sie nicht in `BOMB.EXE`,
+  `[APPROX]` mit Begründung); Textausgabe in `UI` mit der Semantik von `SetTextStyle`/`SetTextJustify`/`OutTextXY`/`SetColor`
+  (Größe, Richtung waagrecht/senkrecht, Ausrichtung). Formatbeschreibung in `docs/formate/schriften.md`. Keine Schriftdaten
+  ins Code-Repo (Tests mit Originaldaten lesen aus `gamedata/`, synthetische Tests mit selbst erzeugten Schriften).
+- **Dateien:** `src/BombRedone.Formats/BgiFont*.cs`, `src/BombRedone.Formats/BitmapFont*.cs`, `src/BombRedone.UI/Text/*`,
+  `tests/BombRedone.Formats.Tests/*Font*`, `tests/BombRedone.UI.Tests/Text/*`, `docs/formate/schriften.md`.
+- **Abnahme:** synthetische Tests (Kopf, Zeichentabelle, Strichbefehle, Fehlerfälle); Originaldaten-Tests (drei Schriften
+  gelesen, Zeichenanzahl, Breiten, Prüfsumme gerenderter Probetexte); Abgleich „TANK WARS 3.2“ (EURO, Größe 1) mit
+  Videobild LP 00009 nach Lage und Form (`[APPROX]`, bis ein DOSBox-Bild vorliegt); Skalierungsregel der BGI-Größen mit Beleg.
+
+#### Spätere Stufen (Zuschnitt nach Merge von 2a)
+
+- **`menue`** (2b) – Hauptmenü mit Hintergrund, Kopfzeile, Knöpfen und Einträgen (`O2:06BD`, `O2:07BA`, `O2:1E7F`, `O2:0909`),
+  Game Options, Bedienung mit Maus und Tastatur.
+- **`spielerauswahl`**, **`wertung-einkauf`** (2c) – weitere statische Bildschirme (Karte in `re-grundlagen` §6).
 
 **Rundenende:** Gesamtreview durch ChatGPT (`prozess/anhang.md` C), danach Plan Runde 2 (Spielfeld, Gelände, Schuss).
 
@@ -172,7 +214,7 @@ einer Zeile in `src/BombRedone.Tools/Program.cs` bei `formate` und `konfiguratio
 - `AGENTS.md`, `CLAUDE.md`, `docs/prozess/*`, `docs/vorlagen/*`, `docs/entscheidungen.md`, `tools/pruefen*.sh`,
   `tools/originalschutz-selbsttest.sh`, `.gitignore`, `.github/*`, `tests/**/Support/`: allein die Leitstelle.
 - `src/BombRedone.Tools/Program.cs`: je Spur eine Registrierungszeile (`formate`, `konfiguration`).
-- `src/BombRedone.Desktop/*`: in Welle 1 niemand.
+- `src/BombRedone.Desktop/*`: in Welle 1 niemand, in Stufe 2a nur `titel`.
 - `docs/arbeitspakete.md`: jede Spur nur ihr eigener Statusabschnitt (unten anfügen: `### Status <spur>`).
 
 ### Status formate
