@@ -177,4 +177,5 @@ einer Zeile in `src/BombRedone.Tools/Program.cs` bei `formate` und `konfiguratio
 
 ### Status formate
 
-- Teil 1 (einziger Teil): in Arbeit (Claude Code, Claude Sonnet 5.5, geplanter Lauf 11.11.2026).
+- Teil 1 (einziger Teil): umgesetzt in PR #12 – `RawImage`, `Palette`, `bombtool export`, Tests, `docs/formate/dateiformate.md`.
+  `[APPROX]`: 6→8-Bit-Dehnung (`Palette.DefaultScaling`), bis ein DOSBox-Bild sie belegt. Offen für `re-grundlagen`: Durchsichtigkeit von Index 0 in `BOMB2`.
