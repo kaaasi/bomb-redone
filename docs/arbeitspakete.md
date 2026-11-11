@@ -326,3 +326,6 @@ Fortsetzungen legt die Leitstelle an. Erstreview je Spur: Claude Opus 5.5, frisc
 - 11.11.2026: Spielerauswahl `PlayerSelectScreen` nach O2:52DD/07BA/4F0E/509C/42E8/481B mit Bedienung, Spielaufstellung
   `Core/Setup` (Random erst beim Start), Desktop-Übergang vom Hauptmenü; `anforderungen/spielerauswahl.md`. Offen: Teams
   (O2:2749/35CF) und Übergänge.
+- 11.11.2026: Teil 2 fertig (Fortsetzung 1) – Teams `PlayerSelectTeamScreen` nach O2:2749 (Panzer U431:07BA, Prüfung, Abbruch)
+  und Teamnamen `PlayerSelectTeamNamesScreen` nach O2:35CF/31A8/2EBD/300A, `TeamPlay` und `PlayerSetup.Team`/`GameSetup.Teams`;
+  Fix Absturz bei 13-Zeichen-Namen. Übergänge als Bewegung bleiben `[APPROX]`. Spur fertig – Review.

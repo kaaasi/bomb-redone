@@ -9,11 +9,13 @@ public sealed class PlayerSlot
     public const int MaxNameLength = 13;
 
     private string _name;
+    private int _team;
 
     internal PlayerSlot(int number)
     {
         Number = number;
         _name = DefaultName(number);
+        _team = number;
     }
 
     /// <summary>Player number 1..10 (byte 0 of the record, O10:0161).</summary>
@@ -34,6 +36,22 @@ public sealed class PlayerSlot
 
     /// <summary>Who controls the player.</summary>
     public PlayerControl Control { get; set; } = PlayerControl.Keyboard;
+
+    /// <summary>
+    /// Team number 1..10, word 0x66 of the record (DS:4094 + 116 · n). [ORIGINAL] O2:0216 sets n (BOMB.OVR 0x0091A);
+    /// the team setup O2:2749 changes it and keeps it for the next game; cancelled team play sets n again
+    /// (O2:2E8E, BOMB.OVR 0x03476).
+    /// </summary>
+    public int Team
+    {
+        get => _team;
+        set
+        {
+            if (value is < 1 or > GameLimits.MaxPlayers)
+                throw new ArgumentOutOfRangeException(nameof(value));
+            _team = value;
+        }
+    }
 
     /// <summary>[ORIGINAL] O2:0216 (BOMB.OVR 0x007FE): "Player " + Str(n).</summary>
     public static string DefaultName(int number) => "Player " + number.ToString(CultureInfo.InvariantCulture);
@@ -123,12 +141,17 @@ public sealed class PlayerRoster
 /// for that player whatever the control), otherwise null.
 /// </param>
 /// <param name="Team">
-/// Team number; 0 = none. [APPROX] Always 0 here: teams come from the team setup O2:2749 (BOMB.OVR 0x02D31), which
-/// O2:3D49 calls after the selection only with "Team Play" on and which is not part of this screen yet.
+/// Team number 1..count with team play (<see cref="TeamPlay.Apply"/>), otherwise 0. [ORIGINAL] The original keeps a
+/// team number in every record (word 0x66, set by O2:0216 and O2:2749); without team play it is not looked at, here it
+/// is 0 then.
 /// </param>
 public sealed record PlayerSetup(int Number, string Name, PlayerControl Control, int? Intelligence, int Team);
 
 /// <summary>Players of a game as the player selection leaves them.</summary>
 /// <param name="Players">Players 1..count in order.</param>
 /// <param name="AllComputers">[ORIGINAL] DS:4812: every player is a computer (O2:5A2C, O2:5ABE).</param>
-public sealed record GameSetup(IReadOnlyList<PlayerSetup> Players, bool AllComputers);
+public sealed record GameSetup(IReadOnlyList<PlayerSetup> Players, bool AllComputers)
+{
+    /// <summary>Teams with at least one player in team order; empty without team play (<see cref="TeamPlay.Apply"/>).</summary>
+    public IReadOnlyList<TeamSetup> Teams { get; init; } = [];
+}

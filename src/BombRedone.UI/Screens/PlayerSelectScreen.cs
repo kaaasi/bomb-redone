@@ -100,6 +100,7 @@ public sealed class PlayerSelectScreen : IScreen
     private readonly PlayerRoster _roster;
     private readonly Func<int, int> _random;
     private readonly Func<GameSetup, IScreen?> _start;
+    private readonly PlayerSelectTeams? _teams;
     private readonly GraphText _text;
     private readonly Surface _covered = new();
     private readonly byte[] _playerDac = new byte[GameLimits.MaxPlayers * 3];
@@ -116,9 +117,10 @@ public sealed class PlayerSelectScreen : IScreen
     private PlayerControl _oldControl;
     private int _actionStep;
 
-    // O2:42E8: name characters 1..13 (index 0 unused), length, cursor [bp-6], new cursor [bp-8], changed [bp-C],
-    // finished [bp-B].
-    private readonly char[] _nameChars = new char[PlayerSlot.MaxNameLength + 1];
+    // O2:42E8: name characters 1..14 (index 0 unused), length, cursor [bp-6], new cursor [bp-8], changed [bp-C],
+    // finished [bp-B]. A name of 13 characters puts the cursor on 14, the byte behind the String[13] (low byte of the
+    // word +0Fh, x of the tank). [APPROX] Taken as #0 here; whatever is typed there is cut off by the limit of 13.
+    private readonly char[] _nameChars = new char[PlayerSlot.MaxNameLength + 2];
     private int _nameLength, _cursor, _newCursor;
     private bool _changed, _nameDone, _cursorShown;
 
@@ -130,7 +132,12 @@ public sealed class PlayerSelectScreen : IScreen
     /// <param name="roster">The player records; names and controls are changed in place.</param>
     /// <param name="random">Turbo Pascal Random(n), used when START resolves "Random" computers.</param>
     /// <param name="start">Called with the setup when the selection ends; returns the next screen.</param>
-    public PlayerSelectScreen(MenuScreen menu, PlayerRoster roster, Func<int, int> random, Func<GameSetup, IScreen?> start)
+    /// <param name="teams">
+    /// Team play: with "Team Play" on when START is chosen, the team setup O2:2749 and the team names O2:35CF follow
+    /// before <paramref name="start"/>; null = never.
+    /// </param>
+    public PlayerSelectScreen(MenuScreen menu, PlayerRoster roster, Func<int, int> random, Func<GameSetup, IScreen?> start,
+        PlayerSelectTeams? teams = null)
     {
         ArgumentNullException.ThrowIfNull(menu);
         ArgumentNullException.ThrowIfNull(roster);
@@ -140,6 +147,7 @@ public sealed class PlayerSelectScreen : IScreen
         _roster = roster;
         _random = random;
         _start = start;
+        _teams = teams;
         _roster.Players = menu.Players;
         _text = new GraphText(menu.Fonts.Default);
 
@@ -195,10 +203,14 @@ public sealed class PlayerSelectScreen : IScreen
         {
             if (_waitingBeforeStart)
             {
-                // [ORIGINAL] O2:5ACB–5AE3: wait until both buttons are released, then the wipe and the game follow.
+                // [ORIGINAL] O2:5ACB–5AE3: wait until both buttons are released, then the wipe and the game follow;
+                // with "Team Play" (DS:E8BC) first the team setup (O2:3F21–3F29).
                 if (ButtonHeld(input))
                     return this;
-                return _start(_roster.Start(_random));
+                var setup = _roster.Start(_random);
+                if (_teams is { Options.TeamPlay: true })
+                    return new PlayerSelectTeamScreen(_menu, _roster, Screen, setup, _teams, _random, _start);
+                return _start(setup);
             }
 
             if (Blocked(input))
@@ -628,6 +640,7 @@ public sealed class PlayerSelectScreen : IScreen
         _mode = Mode.Name;
         var name = _roster[number].Name;
         Array.Fill(_nameChars, ' ');
+        _nameChars[PlayerSlot.MaxNameLength + 1] = '\0';
         name.CopyTo(0, _nameChars, 1, name.Length);
         _nameLength = name.Length;
 
@@ -776,7 +789,7 @@ public sealed class PlayerSelectScreen : IScreen
     public bool CursorShown => _mode == Mode.Name && _cursorShown;
 
     /// <summary>Name as typed so far, without the cursor space (for tests).</summary>
-    public string NameBeingEntered => new(_nameChars, 1, Math.Max(0, _nameLength));
+    public string NameBeingEntered => new(_nameChars, 1, Math.Max(0, Math.Min(_nameLength, PlayerSlot.MaxNameLength)));
 
     // ---------------------------------------------------------------- O2:481B opponent list
 

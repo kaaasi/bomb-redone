@@ -13,10 +13,11 @@ Spielaufstellung `src/BombRedone.Core/Setup/*`.
 2. Hauptmenü, dann Übergang `UCC8:0687` (Kreise aus dem Puffer `DS:E5BC` um (50,150) und (160,100)), dann **`O2:52DD`**.
 3. Danach bei „Team Play“ (`DS:E8BC`) `O2:2749` (Teams), Wischen `UCC8:0AC0`, bei Teams `O2:35CF` (Teamnamen), schwarzes
    Wischen `UCC8:09E4`, Palettenrotation aus.
-- **Umgesetzt:** `O2:52DD` mit `O2:07BA`, `O2:4F0E`, `O2:509C`, `O2:42E8`, `O2:481B` und Spielaufstellung. **Nicht umgesetzt:**
-  alle Übergänge (`[APPROX]`: die Auswahl beginnt auf dem Puffer `DS:E5BC` – Hintergrund und Kopfzeile; die Kreise decken Tafel,
-  Überschrift und Load Game ab, ob lückenlos, ist ungeprüft), Teams `O2:2749`/`O2:35CF`, Wischen am Ende; nach START folgt ein
-  Platzhalter.
+- **Umgesetzt:** `O2:52DD` mit `O2:07BA`, `O2:4F0E`, `O2:509C`, `O2:42E8`, `O2:481B`, Teams `O2:2749` (§7), Teamnamen
+  `O2:35CF` (§8) und Spielaufstellung. **Nicht umgesetzt:** die Übergänge als Bewegung (`[APPROX]`: die Auswahl beginnt auf dem
+  Puffer `DS:E5BC` – Hintergrund und Kopfzeile; die Kreise decken Tafel, Überschrift und Load Game ab, ob lückenlos, ist
+  ungeprüft; die Teamnamen beginnen auf dem Endzustand von `UCC8:0AC0` = Puffer), schwarzes Wischen am Ende (`O2:3F9C`, Linien
+  `UCC8:09E4`); nach START bzw. den Teamnamen folgt ein Platzhalter.
 
 ## 2. Bild `O2:52DD` (`BOMB.OVR 0x058C5`, `[ORIGINAL]`)
 
@@ -76,11 +77,60 @@ Spielaufstellung `src/BombRedone.Core/Setup/*`.
 
 ## 6. Spielaufstellung (`Core/Setup`)
 
-`PlayerRoster` hält die zehn Sätze (Name, Steuerart) und die Spielerzahl; `Start(random)` liefert `GameSetup` (Spieler in Reihenfolge
-mit Name, Steuerart, Intelligenz 1..7 laut Name, Team 0) und „alle Computer“. Zufall nur über den übergebenen Generator; Random
-wird erst beim Start aufgelöst. `[APPROX]` Team immer 0, bis `O2:2749` umgesetzt ist.
+`PlayerRoster` hält die zehn Sätze (Name, Steuerart, Team) und die Spielerzahl; `Start(random)` liefert `GameSetup` (Spieler in
+Reihenfolge mit Name, Steuerart, Intelligenz 1..7 laut Name, Team 0) und „alle Computer“. Zufall nur über den übergebenen
+Generator; Random wird erst beim Start aufgelöst. Mit Team Play setzt `TeamPlay.Apply` die Teamnummern und hängt die Teams
+(Nummer, Name, Mitglieder) an (`GameSetup.Teams`); ohne Team Play bleibt Team 0 und die Liste leer.
 
-## 7. Abnahme und Restlücken
+- **Team im Satz** (`[ORIGINAL]`): Wort +66h (`DS:4094 + 116·n`), `O2:0216` setzt n (`BOMB.OVR 0x0091A`); die Teamwahl ändert
+  es, es bleibt fürs nächste Spiel. Ein Name aus 13 Zeichen stellt die Schreibmarke auf Stelle 14 (Byte hinter dem `String[13]`);
+  `[APPROX]` als #0 nachgebildet, Getipptes dort fällt durch die Grenze 13 weg (vorher Absturz, Regressionstest).
+
+## 7. Teams `O2:2749` (`BOMB.OVR 0x02D31`, `[ORIGINAL]`)
+
+Aufruf in `O2:3D49` nach `O2:52DD`, wenn kein Spielstand geladen ist (`DS:4817`) und Team Play (`DS:E8BC`) an ist. Zeichnet auf das
+Bild der Spielerauswahl.
+
+- **Bild:** SmallFont, `SetUserCharSize(1,1,1,1)`; Knopf (60,62)–(260,182); Knopf (130,47)–(190,57) mit „Team Setup“ hellgrün (10)
+  Mitte/unten bei (160,55); Knopf (130,187)–(190,197) mit „-- Done --“ magenta (5) Mitte/oben bei (160,186); „Team # -->“ gelb (14)
+  links/oben bei (64,62); Teamnummern t = 1..10 Mitte/oben bei (140+10t, 62), ab Spielerzahl + 1 schwarz; Namen links/oben bei
+  (64, 62+10p) in Farbe 19+p (über der Spielerzahl schwarz); DAC 19+p := Spielerfarbe (`O10:01AC`, 100 %), DAC 19 := weiß
+  (`DS:E8F6`).
+- **Panzer** `U431:07BA` (`BOMB.EXE 0x0616A`) bei (140+10·Team, 71+10p), Farbe 19+p: Körper `U431:05ED` (Zeilen y: x−4..x+4;
+  y−1: x−4..x−2, x, x+2..x+4; y−2, y−3: x−3..x+3; y−4: x−1..x+1), Rohr `UCC8:09E4` von (x,y) nach (x + Trunc(8·cos a)·w,
+  y − Trunc(8·sin a)), a = Wort +1Dh (90), w = Wort +1Fh (1) – hier senkrecht bis y−8. `[APPROX]` Real48 als `double`.
+- **Bedienung** (je Durchlauf): `UpCase(ReadKey)`; Enter, Esc, D (Menge `O2:26DF`) = Done; auf/ab 1..Spielerzahl ohne Umlauf,
+  rechts/links = Team + 1 / − 1 (Grenzen 1 und Spielerzahl). Maus (Taste 1 oder 2): 60<x<260 und 64+10p ≤ y ≤ 71+10p wählt p,
+  Taste 1 = links, Taste 2 = rechts, dann `Delay(40)`; 130<x<190, 187<y<197 = Done. Gehaltene Taste wiederholt.
+- **Nach einer Eingabe:** Marke bei (55, 68+10·Auswahl) aus dem Puffer löschen; Panzer: Fläche (x−5, y−8)–(x+5, y) Farbe 18,
+  Team ändern, neu zeichnen; Marke neu (Plus, Farbe 19).
+- **Prüfung** (`O2:2CA8`): gültig, wenn ein Spieler nicht im Team von Spieler 1 ist und ein Team mindestens zwei Spieler hat. Sonst
+  Warten auf das Loslassen, Knopf (90,114)–(230,142), braun (6) Mitte/oben „Team play canceled due“ (160,112), „to extreme
+  stupidity.“ (160,122), TINY (`DS:E91A`) rot (4) „PRESS ANY KEY TO CONTINUE...“ (160,129); Warten auf Taste oder Maustaste,
+  Tastaturpuffer leeren, Team Play aus (bleibt aus), Team n := n für alle zehn Sätze.
+
+## 8. Teamnamen `O2:35CF` (`BOMB.OVR 0x03BB7`, `[ORIGINAL]`)
+
+Aufruf nach dem Wischen `UCC8:0AC0` (Endzustand: ganzer Puffer `DS:E5BC`), nur wenn Team Play noch an ist.
+
+- **Tabelle** `DS:4838 + 53·t`: Name `String[13]`, +0Eh „alle Computer“, +0Fh Mitgliederzahl. Teams mit Mitgliedern heißen
+  „Team k“ (k = laufende Zahl der Teams mit Mitgliedern), ein Team aus einem Spieler heißt wie dieser.
+- **Je Team mit Mitgliedern:** Knopf (10,50)–(110,60), SmallFont Größe 4 mit `SetUserCharSize(1,1,1,1)`, braun (6) links/oben
+  „Team #t:“ bei (15,50); Mitglied k: Knopf (20, 52+15k)–(120, 62+15k), Name in Farbe 19+p bei (25, 51+15k).
+  - Mit Mensch: Eingabe `O2:31A8` (unten).
+  - Nur Computer, mindestens zwei: Name := Liste[`Random(11)`] (Bushwackers, Crazy CPUs, Tank Trashers, Studs, Human Mashers,
+    Crackshots, Dungheaps, Ugly Ducks, Martians, Gravy, Boneheads), wiederholt, solange ein anderes Team 1..Spielerzahl so heißt.
+  - Danach je Mitglied (18, 50+15k)–(122, 64+15k) aus dem Puffer.
+- **Ende:** Spalten x = 103..250 aus dem Puffer (`UCC8:0AC0` je Spalte); Knopf und Überschrift des letzten Teams bleiben stehen.
+
+## 9. Teamname `O2:31A8` (`BOMB.OVR 0x03790`, `[ORIGINAL]`)
+
+Wie die Namenseingabe `O2:42E8` (§4), aber ohne `GetImage`/`PutImage` und ohne `UpCase`: Knopf (135,85)–(235,115), „New Team
+Name:“ magenta (5) links/oben bei (138,85), vertieftes Feld (140,100)–(230,110); Zellen `O2:2EBD` (mit Schreibmarke) und `O2:300A`
+bei x = 143 + 6(k−1), y = 104. Mengen: Rückschritt `O2:3125` = {8}, Ende `O2:3145` = {13, 27}, Zeichen `O2:3165` = 32..125,
+abschneiden `O2:3188` = {0, 32}. Stelle 14 ist das Byte „alle Computer“ (0) – `[APPROX]` wie in §6.
+
+## 10. Abnahme und Restlücken
 
 - Tests: `PlayerRosterTests`, `ComputerOpponentsOriginalTests` (Namen aus `BOMB.EXE`, `BOMB.DOC`), `PlayerSelectScreenTests`
   (Lage, Farben, Tasten, Maus, Namenseingabe, Gegnerliste, START; synthetische Schriften), `PlayerSelectScreenOriginalTests`
@@ -89,5 +139,10 @@ wird erst beim Start aufgelöst. `[APPROX]` Team immer 0, bis `O2:2749` umgesetz
   00031 (Namenseingabe) nach Lage und Form – stimmt. Das Video zeigt beim Tippen „J_“ statt angehängt: der Spieler hat vorher
   gelöscht (Rückschritt/Pos1), der Code hängt an.
 - `[APPROX]` `DS:E8B6` (Maus gefunden) und `DS:E94E` (Maus benutzt) sind hier eine Einstellung (`MenuSettings.MouseAvailable`).
-- Offen: Übergänge (`UCC8:0687`, `UCC8:0AC0`, `UCC8:09E4`), Teams (`O2:2749`, `O2:2EBD`, `O2:300A`, `O2:31A8`, `O2:35CF`),
-  Rückweg ins Hauptmenü (gibt es im Original nicht: Esc startet).
+- Teams: `TeamPlayTests` (Prüfung, Zurücksetzen, Tabelle, Zufallsnamen, Übernahme), `PlayerSelectTeamScreenTests` (Panzerform,
+  Lage, Tasten, Maus mit `Delay(40)`, Abbruch, Teamnamen-Eingabe, Puffer), `PlayerSelectTeamScreenOriginalTests` (Texte und
+  Zeichenmengen mit Dateioffset aus `BOMB.OVR`, Prüfsummen von fünf Zuständen, Farben). `[APPROX]` Kein Video- oder DOSBox-Bild
+  der Teambildschirme (`bildschirme.md`: nicht im Video); Abgleich nur mit `BOMB.DOC` „TEAM PLAY“ (Spieler links, Teams oben,
+  rechts/links bzw. Maustasten, Computerteams benennen sich selbst) – stimmt.
+- Offen: Übergänge als Bewegung (`UCC8:0687`, `UCC8:0AC0`) und das schwarze Wischen (`O2:3F9C`, `UCC8:09E4`), Rückweg ins
+  Hauptmenü (gibt es im Original nicht: Esc startet).

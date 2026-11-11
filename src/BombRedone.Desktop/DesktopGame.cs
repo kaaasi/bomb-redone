@@ -127,11 +127,12 @@ public sealed class DesktopGame : Game
         var options = config is null ? new OptionsSettings() : OptionsSettings.FromConfig(config);
         var random = TurboPascalRandom.FromClock(DateTime.Now);
         var roster = new PlayerRoster();
+        var teams = new PlayerSelectTeams(options, BgiFontLibrary.Load(gameData)[BgiFontLibrary.Tiny]);
         return new MenuScreen(fonts, settings, random.Next, (choice, menu) => choice switch
         {
             MenuChoice.GameOptions => new OptionsScreen(menu, options),
             MenuChoice.SoundOptions => menu,
-            MenuChoice.Start => new PlayerSelectScreen(menu, roster, random.Next, _ => new PlaceholderScreen()),
+            MenuChoice.Start => new PlayerSelectScreen(menu, roster, random.Next, _ => new PlaceholderScreen(), teams),
             _ => new PlaceholderScreen(),
         });
     }

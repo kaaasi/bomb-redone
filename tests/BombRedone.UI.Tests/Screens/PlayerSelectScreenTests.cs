@@ -468,4 +468,18 @@ public class PlayerSelectScreenTests
         Assert.Same(h.Next, h.Release());
         Assert.NotNull(h.Setup);
     }
+
+    [Fact]
+    public void ThirteenCharacterNamesCanBeEdited()
+    {
+        // [ORIGINAL] O2:42E8 puts the cursor behind the pad space, at position 14 for a name of 13 characters.
+        var roster = new PlayerRoster();
+        roster[1].Name = "ABCDEFGHIJKLM";
+        var h = new Harness(roster: roster);
+        h.Press(BiosKey.Enter);
+        Assert.True(h.Screen.EnteringName);
+        h.Press(BiosKey.Char('Z'), BiosKey.Enter);
+        Assert.False(h.Screen.EnteringName);
+        Assert.Equal("ABCDEFGHIJKLM", roster[1].Name);
+    }
 }
