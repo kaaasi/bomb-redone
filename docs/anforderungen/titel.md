@@ -13,7 +13,11 @@ Spur `titel` (Runde 1, Welle 2, Stufe 2a). Quelle: Disassembly von O1:0014 (`BOM
   Aufruf (Restzeit verfällt).
 - Eingabe (`ScreenInput`): „Taste gedrückt“ (seit dem letzten Update, nur Tasten, die das BIOS in den Tastaturpuffer legt –
   nicht Shift, Strg, Alt allein), „beide Shift gehalten“, gehaltene Maustasten (links = 1, rechts = 2 wie INT 33h).
-- Desktop: Esc beendet, F10 schaltet 4:3, F11 Vollbild; diese Tasten gehen nicht an die Bildschirme. Ohne Originaldaten wird der
+- Desktop: F10 schaltet 4:3, F11 Vollbild; diese Tasten gehen nicht an die Bildschirme. Esc geht wie jede Taste an die
+  Bildschirme (#75), beendet wird über das Fenster (Schließen, Alt+F4) oder wenn die Bildschirme enden. Druckbare Zeichen
+  (0x21..0x7E, mit Tastaturbelegung und Shift, z. B. „?“ und Satzzeichen) kommen aus der Texteingabe des Fensters, Leertaste,
+  Enter, Esc und Sondertasten aus der Taste selbst (`BiosKey.FromTypedCharacter`; `[APPROX]` Reihenfolge innerhalb eines Bildes,
+  Zeichen über 0x7E entfallen, da Codepage 437). Ohne Originaldaten wird der
   Titel übersprungen (wie ohne `BOMB2.RAW`). Nach dem Titel folgt ein schwarzer Platzhalter (Hauptmenü: Spur `menue`).
 
 ## 2. Titelfolge (`[ORIGINAL]`, Offsets in `BOMB.OVR`)

@@ -122,8 +122,8 @@ an Texten falsch ausgerichtet).
 - `[APPROX]` Der Puffer von `GetMem(3940)` ist kleiner als das Bild (135 × 111 Punkte); das Original überschreibt den Heap
   dahinter. Nachgebildet ist die vollständige Wiederherstellung. Unbekannte Werte (z. B. Walls 7 aus `BOMB.CFG`) lassen das
   Funktionsergebnis in `O2:0E35/0F81/1042` unbesetzt (Text undefiniert); hier leerer Text. Wiederholrate bei gehaltener Taste =
-  ein Schritt je `Update` (Original: Prozessortakt). Esc beendet im Fenster weiterhin das Programm (Fenstertaste aus `titel`)
-  und erreicht das Optionsbild dort nicht; Enter und ein Klick neben die Zeilen verlassen es.
+  ein Schritt je `Update` (Original: Prozessortakt). Esc erreicht das Optionsbild im Fenster (#75); Enter, Esc und ein
+  Klick neben die Zeilen verlassen es.
 - **Abgleich:** Longplay 00017 (Werte wie im Bild) nach Lage und Form: Kasten, Zeilen, Werte, Marken an Zeile 0, verdeckte
   Menümarken – stimmt. Tests: `OptionsScreenTests` (Regeln je Zeile, Tasten, Maus, Warten, Rückweg; synthetisch),
   `OptionsScreenOriginalTests` (Prüfsumme mit EURO/LITT und Ersatzschrift, Farben, Neuzeichnen).

@@ -61,8 +61,8 @@ Spielaufstellung `src/BombRedone.Core/Setup/*`.
   (`O2:42A5`) an der Marke, Marke + 1, Länge wächst; Pos1 löscht von hinten alles und setzt den Namen auf zwei Leerzeichen
   (ohne Neuzeichnen der Marke); Entf löscht an der Marke; Ende springt ans Ende; links/rechts bewegen. Marke und Länge höchstens 13.
 - Ende: Leerzeichen und #0 am Ende entfernen (`O2:42C8`), `PutImage`.
-- `[APPROX]` `GetMem(1033)` ist kleiner als das Bild (105 × 35); nachgebildet ist die vollständige Wiederherstellung. Esc
-  beendet im Fenster das Programm (Fenstertaste aus `titel`) und erreicht die Eingabe dort nicht.
+- `[APPROX]` `GetMem(1033)` ist kleiner als das Bild (105 × 35); nachgebildet ist die vollständige Wiederherstellung. Esc,
+  „?“ und Satzzeichen erreichen die Bildschirme im Fenster (#75, `titel.md` §1).
 
 ## 5. Gegnerliste `O2:481B` (`BOMB.OVR 0x04E03`, `[ORIGINAL]`)
 
