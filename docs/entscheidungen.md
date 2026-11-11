@@ -21,12 +21,10 @@ und Nachteilen, Empfehlung); hier steht nur das Ergebnis mit der gewählten Opti
 |---|---|---|
 | R1-D2 | Ablage von Disassembly-Listings | **B** (11.11.2026): annotierte Listings im privaten Referenz-Repo (`analyse/`), im Code-Repo nur eigene Beschreibungen mit Offsets. Ablage durch Leitstelle oder Nutzer per PR. |
 | – | Frühe Bildvorlage | Vorschlag des Nutzers (11.11.2026): zwei Gameplay-Videos zuerst statt der DOSBox-Aufnahme. Übernommen mit Grenze: Videobilder belegen Abläufe und Aufbau, keine Pixelgenauigkeit (E3); was nur aus Videos stammt, bleibt `[APPROX]`, bis ein DOSBox-Bild es belegt. |
+| R1-D3 | Ziel für `BOMB.CFG` und `*.TWS` | **A** (11.11.2026): in Runde 1 nur lesen. Schreiben und Rundreise sind späteres Ziel. |
+| – | Maßgebliche Fassung | **Release 3.2** bleibt die Vorlage (Nutzer 11.11.2026). |
 
-Offen: R1-D1 (DOSBox-Referenz), R1-D3 (Ziel für `BOMB.CFG`/`*.TWS`), Bestätigung der Fassung 3.2 – siehe `docs/arbeitspakete.md`.
+Offen: R1-D1 (DOSBox-Referenz) – wird erst vor der DOSBox-Aufnahme gebraucht, siehe `docs/arbeitspakete.md`.
 
 Arbeitsweise (Nutzer 11.11.2026): `main` nur über Branch und PR; Deutsch in Doku und Commits, Quelltext und Kommentare englisch;
 knappe Antworten; je Aufgabe ein Claude-Modell; ChatGPT nur für Reviews; Spuren erst nach Go; Entscheidungen gesammelt.
-
-**Vorlage ist Release 3.2** (Dateien vom 04.07.1992, Copyright 1990–1992): Der Nutzer hat diese Fassung bereitgestellt; eine
-Fassung von 1990 liegt nicht vor. Ob eine andere Fassung maßgeblich sein soll, ist nicht gefragt worden – bei Bedarf als
-Entscheidung vorlegen.
