@@ -242,3 +242,10 @@ Integrationsfolge 2a: `titel` → `schrift`. Bilder der DOSBox-Aufnahme sind, so
 - 11.11.2026: begonnen (Claude Code, geplanter Lauf), Base `ca689e9`.
 - 11.11.2026: fertig – Review. Alle 28 Felder aus der Leseroutine `BOMB.OVR 0x6BF9` belegt, keins unbelegt; zwei Voreinstellungen weichen von `BOMB.DOC` ab (Crumble 75, Walls None), siehe `formate/konfiguration.md`. PR #10.
 - 11.11.2026: Fixlauf – `main` gemergt (#11, #12), R10-01 (#32) und R10-02 (#33) behoben; R10-03 (#34, `bombtool cfg` ohne Test) bleibt Restlücke. Voreinstellungen Crumble 75 / Walls None unverändert (Entscheidung Nutzer).
+
+### Status titel
+
+- 11.11.2026: begonnen (Claude Code, Claude Opus 5.5, geplanter Lauf), Base `1fc3d68`.
+- 11.11.2026: fertig – Review. Grundgerüst (`IScreen`, `ScreenHost`, `ScreenInput`), Titelfolge nach O1:0014 mit Fundstellen,
+  Desktop zeigt den Titel; PR #44, Anforderungen `anforderungen/titel.md`. `[APPROX]`: Dauer eines Kopierdurchgangs (85 ms),
+  DAC-Maske 6 Bit, Palette vor dem Titel.
