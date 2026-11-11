@@ -174,3 +174,7 @@ einer Zeile in `src/BombRedone.Tools/Program.cs` bei `formate` und `konfiguratio
 - `src/BombRedone.Tools/Program.cs`: je Spur eine Registrierungszeile (`formate`, `konfiguration`).
 - `src/BombRedone.Desktop/*`: in Welle 1 niemand.
 - `docs/arbeitspakete.md`: jede Spur nur ihr eigener Statusabschnitt (unten anfügen: `### Status <spur>`).
+
+### Status konfiguration
+
+- 11.11.2026: begonnen (Claude Code, geplanter Lauf), Base `ca689e9`.
