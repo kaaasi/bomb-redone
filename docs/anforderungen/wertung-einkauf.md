@@ -97,3 +97,70 @@ LP 00064: Lage, Texte und Farben stimmen nach Lage und Form.
 „   Name            Score   Wins“, ein Leerzeichen und 32 × `C4h`; in Farbe 10 je Spieler „ r.“ + „ “ + Name, `GotoXY(17)`
 Punkte in 8 Stellen, `GotoXY(28)` Siege in 4 Stellen (spätere Ausgabe überschreibt lange Namen); zwei Leerzeilen. Ausgabe:
 `bombtool render results`.
+
+## 7. Wertung Teams (`Core/Economy/TeamStandings`, `UI/Screens/ScoreTeamScreen`)
+
+`O3:6696` (`BOMB.OVR 0x0F122`), aufgerufen nach der Einzelwertung, wenn Team Play an ist (`DS:E8BC`, `O3:798F`); danach
+ggf. Sichern und Einkauf. Zeichnet **keinen eigenen Hintergrund**, sondern über das, was die Einzelwertung hinterlassen hat
+(`ScoreTeamScreen` bekommt Bild und DAC, z. B. `ScoreScreen.Background`/`Dac`).
+
+- **Teamsätze** zu 0x35 Byte ab `DS:4838` + 0x35 × Nummer (1..10): `+00h` Name (`string[14]`), `+0Fh` Mitgliederzahl (Word,
+  aus der Teamwahl), ab `+11h` sieben Real48-Summen, die die Routine neu füllt: Punkte (`+13h`), Spielerworte `+68h`..`+70h`
+  aller Spieler mit Team `+66h` = Nummer (`O3:6713–69BD`); `+68h` und Siege (`+6Ah`) danach durch die Mitgliederzahl geteilt
+  (`O3:69C9–6A79`). Angezeigt werden nur Punktsumme und mittlere Siege; die übrigen Summen gehören zur Statistik.
+- **Reihenfolge:** Index 1..10; 10 Durchläufe Blasensortierung nach Mitgliederzahl absteigend (`O3:6A86`), dann über die
+  ersten n Plätze (n = Teams 1..Spielerzahl mit Mitgliedern, `O3:66B8`) n Durchläufe nach mittleren Siegen absteigend
+  (`O3:6B03`) und n Durchläufe bei gleichen Siegen nach Punkten (`O3:6BCA`). Rang wie bei der Einzelwertung: wächst nach einem
+  Team, dessen Punkte oder mittlere Siege vom nächsten Platz abweichen (`O3:6F72–7003`). Mittelwerte werden hier exakt
+  verglichen (bei ≤ 10 Mitgliedern gleichwertig zum Real48-Vergleich).
+
+| Element | Lage, Schrift, Farbe | Fundstelle |
+|---|---|---|
+| Kasten | `(45, top)–(275, bottom)`, top = 100 − (5n + 15), bottom = 5n + 115 | `O3:669D`, `O3:6CD5` |
+| Titelkasten | `(69, top−20)–(251, top−5)`; Titel wie Einzelwertung, SmallFont 1, Farbe 6, mittig (160, top − 13) | `O3:6CFA–6DD4` |
+| Kopf | Farbe 17: „Team“ (50, top+5), Linie y = top + 16 (50..270), „Score“ rechts 270, „Wins“ rechts 185 | `O3:6E11–6E84`, `O3:701F`, `O3:70E7` |
+| Zeilen | y = top + 10 + 10·Platz, Farbe 14: „ r.“ bei 50, Name bei 72, `Str(Punkte:10:0)` rechts 270, `Str(Mittel:5:2)` rechts 185 | `O3:6EC1–7195` |
+| Knöpfe | Continue bzw. Exit nach dem letzten Spiel (85..135, Text 110), Save (185..235, Text 210); y bottom+5..bottom+15, Text Farbe 0 | `O3:71B2–7283` |
+
+Bedienung (`O3:7288–7467`): Ziffern 1..9, 0 = 10 → Statistik des sortierten Platzes (`O3:2C8B`), wenn die Ziffer ≤ Spielerzahl
+ist (auch ein leerer Platz); `S`/`s` → Sichern und weiter; jede andere Taste → weiter; kein „Add“. Maus: Zeile 1..n
+(45 < x < 275) → Statistik nach dem Loslassen; Knöpfe wie oben. Ohne Knöpfe (`DS:4812` ≠ 0) nach **5000 ms** weiter
+(`O3:7469`); anders als die Einzelwertung erzwingt die Teamwertung nach dem letzten Spiel keine Knöpfe (die Einzelwertung stellt
+`DS:4812` beim Verlassen wieder her, `O3:6574`). `O10[1]` setzt für jeden Spieler DAC 19 + n (`O3:6DD9`), ungenutzt; die DAC des
+vorigen Bildes bleibt.
+
+`[APPROX]`: Die Schlussblende (`O3:7472–74B6`, `UCC8:0687` mit dem Puffer `DS:E5BC`) fehlt; `Str(…:5:2)` rundet exakte Hälften
+(z. B. 1/8) hier von null weg, die Real48-Umwandlung `12CE:1BDE` ist nicht verfolgt. Kein Video mit Team Play: Prüfsumme
+(`ScoreTeamScreenOriginalTests`) hält den Stand der Disassembly fest. Ausgabe: `bombtool render team`.
+
+## 8. Statusfenster „Game Status“ (`UI/Screens/StatusWindow`)
+
+`U431:0F1B` (`BOMB.EXE 0x068CB`), im Spiel mit Strg-P (`UC02:041F`: Tastentabelle `DS:452A` + Scancode, P = 19h → `DS:4543`;
+die Basis folgt aus Strg-S = `DS:4549`, Strg-M = `DS:455C` und den Abfragen unten). Sichert den Bildschirm nach `DS:E5BC`,
+zeichnet darüber, wartet und kopiert ihn zurück (`U431:1725`); Text-, Füll- und Fenstereinstellungen werden gesichert und
+wiederhergestellt.
+
+- **Rahmen:** Bar `(10,25)–(310,175)` Farbe 0, Rechtecke `(10,25)–(310,175)` und `(12,27)–(308,173)` Farbe 13 (`UCC8:0031`).
+- **Titel** „Game Status“ Farbe 15, mittig bei (160, 35). **Zeilen** linksbündig/mittig ab x = 20, je Zeile `MoveTo` und
+  `OutText`: Bezeichnung Farbe 1, Text Farbe 5, Werte Farbe 14 (Texte `U431:0E30–0F11`, „Backgound“ wie im Original):
+
+  | y | Zeile | Werte |
+  |---:|---|---|
+  | 45 | Sound: Effect (…)   Fly (…) | `E8B3`, `E8B2` (YES/NO, `O2:0007`) |
+  | 55 | Ground: Crumbles (…%) | `E8A4` |
+  | 65 / 75 | The Walls: Rebound (…) / This Round (…) | `E8AA` / `47EC` (`O2:0F81`) |
+  | 85 / 95 | The Shot: Invisible (…) / Trail (…) | `E8B4` / `E8B5` |
+  | 105 | Game: Number (…) of (…) | `47E2`, `E8A6` |
+  | 115 | Tanks: Fall (…) | `E8B8` |
+  | 135 | Computers: Buy Weapons (…) | `E8BA` (y = 125 bleibt leer) |
+  | 145 | Screen: Backgound (…) | `E8AC` (`O2:0E35`) |
+  | 155 / 165 | The Wind: Control (…) / This Round (…) | `E8A8` / `47E4` (`O2:1042`) |
+
+  Die zweite Zeile einer Gruppe beginnt bei x = `GetX` nach der Bezeichnung (`U431:11A8`, `128B`, `15B0`).
+- **Schließen** (`U431:1660–16F0`): warten, bis eine Maustaste oder Esc, Enter oder Leertaste gedrückt ist (`DS:452B`, `4546`,
+  `4563`), dann, bis alle los sind.
+
+`[APPROX]`: Das Fenster setzt keine Schrift; angenommen ist die DefaultFont 8 × 8 des Spielfelds (`O4:44A7`), mit der
+Ersatzschrift gezeichnet. Tasten kommen als getippte Tastenwörter, nicht als gehaltene Tasten: eine getippte Esc/Enter/Leertaste
+gilt als gedrückt und im nächsten `Update` ohne sie als losgelassen. Kein Bild des Fensters: Prüfsumme (`StatusWindowTests`)
+hält den Stand fest. Ausgabe: `bombtool render status` (über schwarzem Spielfeld, Menüfarben).

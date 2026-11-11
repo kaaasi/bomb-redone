@@ -8,12 +8,12 @@ namespace BombRedone.Tools;
 /// <summary>
 /// <c>bombtool render &lt;screen&gt; [gamedata] [out.png]</c>: draws a screen of the status/shop package with fixed sample
 /// data (status screen: Longplay frame 00064; shop: short video frame TW 00100, drawn over the status
-/// background) and writes it as PNG. No window, no game round needed.
+/// background; team status over the status background; game status window over a black playfield) and writes it as PNG. No window, no game round needed.
 /// </summary>
 internal static class RenderCommand
 {
     /// <summary>Screens that can be rendered.</summary>
-    public static readonly IReadOnlyList<string> Screens = ["shop", "score", "results"];
+    public static readonly IReadOnlyList<string> Screens = ["shop", "score", "team", "results", "status"];
 
     public static int Run(string[] args)
     {
@@ -69,6 +69,16 @@ internal static class RenderCommand
                 var score = SampleScore();
                 score.Draw(surface);
                 return score.Dac.ToArray();
+            case "team":
+                var team = SampleTeams();
+                team.Draw(surface);
+                return team.Dac.ToArray();
+            case "status":
+                var dac = new byte[768];
+                MenuGraphics.DefaultColors.CopyTo(dac);
+                var window = new StatusWindow(fonts.Default, new Surface(), dac, SampleStatus(), () => null);
+                window.Draw(surface);
+                return window.Dac.ToArray();
             default:
                 throw new ArgumentOutOfRangeException(nameof(screen), screen, null);
         }
@@ -78,6 +88,17 @@ internal static class RenderCommand
                 new ScoreLine(new PlayerAccount(1, "Javier") { Wins = 1, Score = 4260 }, (63, 0, 0)),
                 new ScoreLine(new PlayerAccount(2, "Lob & Shoot") { Score = 0 }, (0, 63, 0)),
             ], 1, 10, buttons: true, (_, _, _) => null);
+
+        ScoreTeamScreen SampleTeams()
+        {
+            var status = SampleScore();
+            return new ScoreTeamScreen(fonts, status.Background, status.Dac,
+                [
+                    new Team(1, "Red Team", [new PlayerAccount(1, "Javier") { Wins = 1, Score = 4260 },
+                        new PlayerAccount(3, "Ann") { Score = 1200 }]),
+                    new Team(2, "Blue Team", [new PlayerAccount(2, "Lob & Shoot")]),
+                ], 1, 10, buttons: true, (_, _, _) => null);
+        }
 
         ShopScreen SampleShop()
         {
@@ -93,6 +114,10 @@ internal static class RenderCommand
             return screen;
         }
     }
+
+    /// <summary>Values of the status window: defaults of the game options, game 3 of 10.</summary>
+    internal static StatusWindowData SampleStatus() => new(new OptionsSettings(), SoundEffects: true, FlySound: false,
+        Game: 3, Games: 10, WallSetting.None, WindSetting.Normal);
 
     /// <summary>Player of TW 00100: "ZZZ" with 12930 dollars and the stock shown in the frame.</summary>
     internal static PlayerAccount SamplePlayer()

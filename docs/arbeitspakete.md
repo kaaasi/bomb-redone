@@ -327,3 +327,5 @@ Fortsetzungen legt die Leitstelle an. Erstreview je Spur: Claude Opus 5.5, frisc
   (`Core/Economy`). Teil 2 fertig – Einkaufsbildschirm nach `O3:015B`/`O3:0E1F`, `bombtool render shop`. Teil 3 teilweise:
   Rangfolge, Wertung einzeln (`O3:5AEF`), Endergebnis (`O3:7566`); offen Wertung Teams (`O3:6696`) und Statusfenster
   (`0431:0F1B`). #19 bestätigt (`anforderungen/wertung-einkauf.md` §1).
+- 11.11.2026: Teil 3 fertig (Fortsetzung 1) – Wertung Teams (`O3:6696`, `TeamStandings`, `ScoreTeamScreen`) und
+  Statusfenster (`U431:0F1B`, `StatusWindow`), `bombtool render team|status`; Spur fertig, Review offen.
