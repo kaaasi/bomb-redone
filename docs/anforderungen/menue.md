@@ -4,7 +4,7 @@ Spur `menue` (Runde 1, Welle 2, Stufe 2b). Quelle: Disassembly von O2 (`BOMB.OVR
 Offset `O2:xxxx`), `BOMB.EXE` (Segment `0431` ab 0x059B0, `0CC8` ab 0x0E320, `0C79` ab 0x0DE30, `0E11` ab 0x0F7B0, `0DBD` ab
 0x0F270); Listings im Referenz-Repo (`analyse/re-grundlagen/listings/`), `O2:1E7F` dort falsch ausgerichtet – mit `ndisasm -e
 0x2467 -o 0x1E7F` neu erzeugt. Bildschirm B2 in `bildschirme.md`, Vergleichsbild Longplay 00010 (nur Lage und Form).
-Umsetzung: `src/BombRedone.UI/Screens/Menu*`. Standardschrift: `docs/formate/schriften.md` §4 (Teil 1).
+Umsetzung: `src/BombRedone.UI/Screens/Menu*`, `Options*`. Standardschrift: `docs/formate/schriften.md` §4 (Teil 1).
 
 ## 1. Ablauf `O2:3D49` (O2[2])
 
@@ -13,7 +13,8 @@ Umsetzung: `src/BombRedone.UI/Screens/Menu*`. Standardschrift: `docs/formate/sch
 3. Hintergrund `O2:3B96(0)` (§2), Kopfzeile `O2:06BD`, **Kopie des Bildschirms** (64.000 Byte) in den Puffer `DS:E5BC`,
    Überschrift `O2:0909`, Menü und Schleife `O2:1E7F` (§3, §4).
 4. Danach Übergänge (`UCC8:0687`, `UCC8:0AC0`, `UCC8:09E4`) und je nach Wahl Laden (`O3[2]`) oder Spielerauswahl `O2:52DD`.
-   **Nicht umgesetzt:** Übergänge; START und Load Game führen vorerst auf einen Platzhalter (Stufe 2c).
+   **Nicht umgesetzt:** Übergänge; START und Load Game führen vorerst auf einen Platzhalter (Stufe 2c). Game Options: §6;
+   Sound Options (`O2:09E7`) ist nicht Teil der Spur – der Eintrag lässt das Menü stehen.
 
 ## 2. Hintergrund `O2:3B96(0)` (`BOMB.OVR 0x0417E`)
 
@@ -65,7 +66,58 @@ Umsetzung: `src/BombRedone.UI/Screens/Menu*`. Standardschrift: `docs/formate/sch
 
 - Tests: `MenuGraphicsTests` (Linien, Rahmen, Knopf, Kopie, Marken), `MenuScreenTests` (Muster je `Random(2)`, Palette, Puffer,
   Tasten, Maus, Rotation; synthetische Schriften), `MenuScreenOriginalTests` (Prüfsummen beider Muster mit EURO/LITT aus
-  `BOMB.EXE` und Ersatzschrift; Lage der Texte).
+  `BOMB.EXE` und Ersatzschrift; Lage der Texte); Game Options §6.
 - `[APPROX]` Kein DOSBox-Bild des Menüs: Abgleich mit Longplay 00010 nach Lage und Form (Kopfzeile, Tafel, Einträge, Load Game,
   Marken an „Sound Options“, Hintergrund mit Mittelbalken = Muster 1) stimmt; pixelgleich erst mit der Aufnahme `runde-1`.
-- Offen: Mauszeiger (zeichnet der Treiber, nicht nachgebildet), Übergänge nach dem Menü, Sonderweg `DS:E8BF`.
+- Offen: Mauszeiger (zeichnet der Treiber, nicht nachgebildet), Übergänge nach dem Menü, Sonderweg `DS:E8BF`, Sound Options.
+
+## 6. Game Options `O2:11CC` (`BOMB.OVR 0x017B4`, `[ORIGINAL]`)
+
+Aufruf aus der Menüschleife (`O2:2499`, Eintrag 1 mit Enter oder Maustaste). Zeichnet über das Hauptmenü und stellt beim
+Verlassen den verdeckten Bereich wieder her; danach geht das Menü bei `O2:21EF` weiter (Merker gelöscht, Marken neu).
+Neu disassembliert mit `ndisasm -b16 -e 0x17B4 -o 0x11CC BOMB.OVR` bis `retf` bei `O2:1DD7` (das Listing ist ab `O2:10E7`
+an Texten falsch ausgerichtet).
+
+- **Aufbau:** `GetMem(3940)`, `GetImage(93, 45, 227, 155)`; Knopf (95,47)–(225,153), Fläche 18, hell 15, dunkel 17. Schrift
+  bleibt die des Menüs (SmallFont, `SetUserCharSize(1,1,1,1)`). Bezeichnungen Farbe 0, linksbündig/mittig bei (100, 52 + 10n);
+  Werte Farbe 14, rechtsbündig/mittig bei (223, 52 + 10n). Marken (`U431:03C3`) bei x = 89 und 231, y = 52 + 10·Zeile.
+- **Zeilen und Werte** (Variablen wie der Lader `O2:6611` sie füllt; Voreinstellung vor `BOMB.CFG` `O2:662C–66BC`):
+
+  | n | Text | Variable (CFG) | Wert | Bereich, Leertaste | Bar zum Löschen |
+  |---|---|---|---|---|---|
+  | 0 | Crumble Percent: | `E8A4` Crumbper | `Str` + „%“ | 0..100; + 5, über 100 → − 100 | (195,48)–(225,56) |
+  | 1 | Walls: | `E8AA` Wallcontrol | `O2:0F81`: NO STICK ELASTIC ACCEL WARP RND | 0..5; (v+1) mod 6 | (175,58)–(225,66) |
+  | 2 | Trail Visible: | `E8B5` Trail | `O2:0007`: ≠ 0 YES, sonst NO | rechts 1, links 0; kippen | (195,68)–(225,76) |
+  | 3 | Ball Visible: | `E8B4` Inviso, **umgekehrt** | YES bei Inviso = 0 | rechts Inviso 0, links 1; kippen | (195,78)–(225,86) |
+  | 4 | Tanks Fall: | `E8B8` FallDown | YES/NO | wie 2 | (195,88)–(225,96) |
+  | 5 | Computer Can Buy: | `E8BA` CompuBuy | YES/NO | wie 2 | (195,98)–(225,106) |
+  | 6 | Background: | `E8AC` BackControl | `O2:0E35`: None Stars Bars Circles Spread Sky Static Rectangle Asterisk RND USER | 0..10; (v+1) mod 11 | (165,108)–(225,118) |
+  | 7 | Cycle Delay: | `E8C2` Pspeed | `Str` | 0..250; > 0 → 0, sonst 1; Rotor bekommt die Geschwindigkeit sofort (`UC79:008D`/`003D`) | (195,118)–(225,126) |
+  | 8 | Wind Force: | `E8A8` WindControl | `O2:1042`: None Low Norm High Gale RND | 0..5; + 1, über 5 → 0 | (195,128)–(225,138) |
+  | 9 | Team Play: | `E8BC` | YES/NO | wie 2 | (195,138)–(225,146) |
+
+  „Rechts“ = Pfeil rechts oder rechte Maustaste (+ 1 bis zur Grenze), „links“ = Pfeil links oder linke Taste (− 1 bis 0).
+  Geänderte Werte: `SetColor(14)`, `SetFillStyle(SolidFill, 18)`, Bar, neuer Text. Voreinstellungen: Crumble 10, Walls 0,
+  Trail aus, Inviso aus, Tanks Fall an, Computer Can Buy an, Background 0, Wind 2, Team aus, Pspeed 0.
+- **Tasten** (je Durchlauf ein `ReadKey`, nur bei `KeyPressed`): Leertaste ändert die markierte Zeile (Spalte „Leertaste“),
+  Enter und Esc (Menge `O2:118C` = {13, 27}) verlassen; nach Zeichen 0 die erweiterte Taste aus `DS:3716`: auf/ab 0..9 ohne
+  Umlauf, rechts/links ändern die markierte Zeile.
+- **Maus** (gedrückte Taste 1 oder 2; Merker links/rechts aus den Tasten): bei 95 < x < 225 Zeile n für 48 + 10n < y ≤ 58 + 10n
+  (Zeile 0 ab y = 50, Zeile 9 von 139 bis 152); sonst – auch außerhalb des Kastens – Zeile 10 = verlassen. Nach einer Änderung
+  wartet die Schleife, bis beide Tasten los sind – **außer** bei Crumble Percent und Cycle Delay, die bei gehaltener Taste in
+  jedem Durchlauf weiterzählen.
+- **Ablauf je Durchlauf** (`O2:14DF–16D6`): gewählte Zeile wird die Auswahl; ohne neue Auswahl und ohne Wahl nächster
+  Durchlauf. Sonst Maus aus, Marken an der vorigen Zeile aus dem Menüpuffer `DS:E5BC` löschen; ohne Wahl nur Marken neu. Mit
+  Wahl: Änderung, Wahl := −1, ggf. Warten, Merker löschen, Marken neu (`O2:1492`). Zeile 10: `PutImage(93, 45)`, `FreeMem`.
+- **Nachbildung:** `OptionsScreen` zeichnet in `MenuScreen.Screen`, lässt die Palettenrotation des Menüs weiterlaufen
+  (`MenuScreen.RunPaletteRotation`, `PaletteSpeed` veränderlich) und gibt beim Verlassen das Menü zurück (`MenuScreen.Resume`
+  zeichnet die Marken, die das Menü beim Öffnen gelöscht hat). Ein `Update` = ein Durchlauf je Taste, mindestens einer für die
+  Maus; Werte in `OptionsSettings` (aus `GameConfig`), für die folgenden Bildschirme gemeinsam.
+- `[APPROX]` Der Puffer von `GetMem(3940)` ist kleiner als das Bild (135 × 111 Punkte); das Original überschreibt den Heap
+  dahinter. Nachgebildet ist die vollständige Wiederherstellung. Unbekannte Werte (z. B. Walls 7 aus `BOMB.CFG`) lassen das
+  Funktionsergebnis in `O2:0E35/0F81/1042` unbesetzt (Text undefiniert); hier leerer Text. Wiederholrate bei gehaltener Taste =
+  ein Schritt je `Update` (Original: Prozessortakt). Esc beendet im Fenster weiterhin das Programm (Fenstertaste aus `titel`)
+  und erreicht das Optionsbild dort nicht; Enter und ein Klick neben die Zeilen verlassen es.
+- **Abgleich:** Longplay 00017 (Werte wie im Bild) nach Lage und Form: Kasten, Zeilen, Werte, Marken an Zeile 0, verdeckte
+  Menümarken – stimmt. Tests: `OptionsScreenTests` (Regeln je Zeile, Tasten, Maus, Warten, Rückweg; synthetisch),
+  `OptionsScreenOriginalTests` (Prüfsumme mit EURO/LITT und Ersatzschrift, Farben, Neuzeichnen).

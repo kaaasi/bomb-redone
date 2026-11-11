@@ -162,6 +162,9 @@ public class MenuScreenTests
         var recorder = new Recorder { StayOnOptions = false };
         var menu = Create(recorder);
         Assert.Same(recorder.Next, Press(menu, BiosKey.Enter));
+        // The markers stay erased while the options are shown; Resume (O2:21EF) draws them again.
+        Assert.Equal(menu.Saved[112, 95], menu.Screen[112, 95]);
+        menu.Resume();
         Assert.Equal(MenuGraphics.FrameWhite, menu.Screen[112, 95]);
         Assert.Same(menu, Press(menu, BiosKey.Down));
         Assert.Equal(1, menu.Selection);

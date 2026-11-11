@@ -50,6 +50,7 @@ public readonly record struct ScreenInput(bool KeyPressed = false, bool BothShif
 /// <summary>BIOS key words (INT 16h): high byte scan code, low byte character, 0 for extended keys.</summary>
 public static class BiosKey
 {
+    public const ushort Escape = 0x011B;
     public const ushort Enter = 0x1C0D;
     public const ushort Space = 0x3920;
     public const ushort Up = 0x4800;

@@ -102,8 +102,8 @@ public sealed class DesktopGame : Game
     }
 
     /// <summary>
-    /// Main menu after the title. Without the original files (fonts in BOMB.EXE) a placeholder stays; the targets of the
-    /// menu (options, player selection, loading) follow in later parts and are placeholders as well.
+    /// Main menu after the title. Without the original files (fonts in BOMB.EXE) a placeholder stays. Game Options open
+    /// the options screen; Sound Options, player selection and loading follow later (the menu stays or a placeholder).
     /// </summary>
     private static IScreen CreateMenu()
     {
@@ -120,13 +120,14 @@ public sealed class DesktopGame : Game
 
         var fonts = MenuFonts.Load(gameData, BitmapFontSource.Load().Font);
         var configPath = gameData.Find("BOMB.CFG");
-        var settings = configPath is null
-            ? new MenuSettings()
-            : MenuSettings.FromConfig(GameConfig.Load(configPath), mouseAvailable: true);
+        var config = configPath is null ? null : GameConfig.Load(configPath);
+        var settings = config is null ? new MenuSettings() : MenuSettings.FromConfig(config, mouseAvailable: true);
+        var options = config is null ? new OptionsSettings() : OptionsSettings.FromConfig(config);
         var random = TurboPascalRandom.FromClock(DateTime.Now);
         return new MenuScreen(fonts, settings, random.Next, (choice, menu) => choice switch
         {
-            MenuChoice.SoundOptions or MenuChoice.GameOptions => menu,
+            MenuChoice.GameOptions => new OptionsScreen(menu, options),
+            MenuChoice.SoundOptions => menu,
             _ => new PlaceholderScreen(),
         });
     }

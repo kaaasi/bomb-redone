@@ -286,3 +286,5 @@ Integrationsfolge 2a: `titel` → `schrift`. Bilder der DOSBox-Aufnahme sind, so
   Referenzdatei per kaaasi/bomb-referenz#8 (nicht gemergt). PR #55 (Draft), Teile 2–3 offen.
 - 11.11.2026: Teil 2 fertig (Fortsetzung 1) – Hauptmenü `MenuScreen` nach O2:3D49/3B96/06BD/0909/1E7F mit Bedienung, Palettenrotation
   und Desktop-Übergang vom Titel; `anforderungen/menue.md`. Teil 3 (Game Options) offen.
+- 11.11.2026: Teil 3 fertig (Fortsetzung 2) – Game Options `OptionsScreen` nach O2:11CC/0E35/0F81/1042 mit Bedienung, Werte in
+  `OptionsSettings` (aus `GameConfig`), Cycle Delay ändert die laufende Rotation; `anforderungen/menue.md` §6. Spur fertig – Review.

@@ -124,6 +124,7 @@ public sealed class MenuScreen : IScreen
     private int _chosen = -1;
     private bool _leftKey, _rightKey, _enter, _leftButton, _rightButton, _loadGame;
     private (int X, int Y)? _waitingForRelease;
+    private bool _resumePending;
 
     /// <param name="fonts">Fonts for header, entries and caption.</param>
     /// <param name="settings">Start values and palette rotation.</param>
@@ -144,6 +145,7 @@ public sealed class MenuScreen : IScreen
         _text = new GraphText(fonts.Default);
         Players = settings.Players;
         Games = settings.Games;
+        PaletteSpeed = settings.PaletteSpeed;
         BuildScreen(random);
     }
 
@@ -165,6 +167,19 @@ public sealed class MenuScreen : IScreen
     /// <summary>Games to play (DS:E8A6).</summary>
     public int Games { get; private set; }
 
+    /// <summary>Fonts of the menus (the options screens draw with the same ones).</summary>
+    public MenuFonts Fonts => _fonts;
+
+    /// <summary>Settings the menu was started with.</summary>
+    public MenuSettings Settings => _settings;
+
+    /// <summary>
+    /// Ticks per rotation step (DS:E8DD, low byte used). Starts with "Pspeed"; "Cycle Delay" of the game options changes
+    /// it while the rotation runs (O2:1C05–1C1A: UC79:008D reads the rotor, UC79:003D writes it back with the new speed,
+    /// position and tick counter stay).
+    /// </summary>
+    public int PaletteSpeed { get; set; }
+
     /// <summary>Which of the two background patterns Random(2) chose (frame limit 100 or 160).</summary>
     public int BackgroundFrameLimit { get; private set; }
 
@@ -172,7 +187,8 @@ public sealed class MenuScreen : IScreen
     {
         if (elapsed < TimeSpan.Zero)
             throw new ArgumentOutOfRangeException(nameof(elapsed), "Time cannot run backwards.");
-        AdvanceRotation(elapsed);
+        RunPaletteRotation(elapsed);
+        Resume();
         foreach (var key in input.Keys)
             _keys.Enqueue(key);
 
@@ -200,6 +216,19 @@ public sealed class MenuScreen : IScreen
         while (_keys.Count > 0);
 
         return this;
+    }
+
+    /// <summary>
+    /// Continues the menu after an options screen: [ORIGINAL] O2:21EF–2208 clears all flags (done when the options were
+    /// opened) and draws the markers at the selection. Options screens call this when they hand the menu back; the next
+    /// <see cref="Update"/> does it otherwise. Without a pending return nothing happens.
+    /// </summary>
+    public void Resume()
+    {
+        if (!_resumePending)
+            return;
+        _resumePending = false;
+        DrawMarkers();
     }
 
     public void Draw(Surface surface)
@@ -340,10 +369,11 @@ public sealed class MenuScreen : IScreen
                     var next = _choose(_chosen == 0 ? MenuChoice.SoundOptions : MenuChoice.GameOptions, this);
                     if (!ReferenceEquals(next, this))
                     {
-                        // The options return into the loop at O2:21EF: prepare that state before handing over.
+                        // The options return into the loop at O2:21EF; the markers follow in Resume, after the options
+                        // have restored what they covered.
                         _chosen = -1;
                         _leftKey = _rightKey = _enter = _leftButton = _rightButton = false;
-                        DrawMarkers();
+                        _resumePending = true;
                         return new Leave(next);
                     }
                 }
@@ -538,8 +568,13 @@ public sealed class MenuScreen : IScreen
     /// set from the doubled buffer at position DS:E8DA (0..29, reset above 29), which then advances by one.
     /// [APPROX] Tick lengths from PC hardware (<see cref="TimerTick"/>, <see cref="RetraceTick"/>); the counter starts at 0.
     /// </summary>
-    private void AdvanceRotation(TimeSpan elapsed)
+    /// <remarks>
+    /// The rotation runs on an interrupt, so screens shown on top of the menu (options) call this as well.
+    /// </remarks>
+    public void RunPaletteRotation(TimeSpan elapsed)
     {
+        if (elapsed < TimeSpan.Zero)
+            throw new ArgumentOutOfRangeException(nameof(elapsed), "Time cannot run backwards.");
         if (!_settings.PaletteRotation)
             return;
         var tick = _settings.PaletteUsesRetrace ? RetraceTick : TimerTick;
@@ -548,7 +583,7 @@ public sealed class MenuScreen : IScreen
         {
             _tickTime -= tick;
             _tickCounter = (_tickCounter + 1) & 0xFF;
-            if (_tickCounter < (_settings.PaletteSpeed & 0xFF))
+            if (_tickCounter < (PaletteSpeed & 0xFF))
                 continue;
             _tickCounter = 0;
             if (_rotationPosition > BackgroundColorCount - 1)
