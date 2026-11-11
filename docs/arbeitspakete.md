@@ -85,7 +85,7 @@ Empfehlung: **A**, beschränkt auf `analyse/` und auf diese Spur.
 ### Welle 1 (parallel) – Go des Nutzers am 11.11.2026, 11:58
 
 **Start (Nutzer 11.11.2026):** Eine neue Leitstellen-Sitzung (Claude Opus 5.5) legt die vier Spuren als unbeaufsichtigte
-geplante Läufe an (Start in wenigen Minuten, Selbstfortsetzung, höchstens 3 je Spur) und wartet auf die Labels. Startaufruf
+geplante Läufe an (Start in wenigen Minuten, Fortsetzungen legt die Leitstelle an, höchstens 3 je Spur) und wartet auf die Labels. Startaufruf
 je Spur: Kurzaufruf „Geplanter Lauf mit Teilen“ aus `vorlagen/spur-start.md` mit dem Modell der Spur und diesen Besonderheiten:
 
 | Spur | Modell | Besonderheiten im Startaufruf |
@@ -159,7 +159,7 @@ einer Zeile in `src/BombRedone.Tools/Program.cs` bei `formate` und `konfiguratio
 
 Base aller Spuren der Stufe 2a: `2f51fa0deb84793e999c3b14653ec5edd42e6e70` (`main` nach Welle 1 und R1-D1). Gegenüber dem
 Stichpunktplan ist `schrift-menue` geteilt: Die Schrift braucht kein Bildschirm-Grundgerüst und läuft parallel zu `titel`, das
-Menü braucht beides. Start wie Welle 1 (unbeaufsichtigte geplante Läufe, Selbstfortsetzung, höchstens 3 je Spur, Kurzaufruf
+Menü braucht beides. Start wie Welle 1 (unbeaufsichtigte geplante Läufe, Fortsetzungen legt die Leitstelle an, höchstens 3 je Spur, Kurzaufruf
 „Geplanter Lauf mit Teilen“). Erstreview je Spur: Claude Opus 5.5, frische Sitzung. Stufen nacheinander; die nächste Stufe legt die
 Leitstelle nach dem Merge der vorigen an (Base dann der neue `main`, im Startaufruf genannt).
 

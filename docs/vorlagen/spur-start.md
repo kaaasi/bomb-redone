@@ -8,8 +8,8 @@
 **Geplanter Lauf mit Teilen** (Startaufruf der Leitstelle; die Fortsetzung hängt `Fortsetzung <n> von 3, Übergabe in PR #<nr>.` an):
 
 > Repo kaaasi/bomb-redone. Arbeite nach `docs/vorlagen/spur-start.md`. Spur: `<name>`. Agent: Claude Code.
-> Unbeaufsichtigt, keine Rückfragen. Teile und Selbstfortsetzung nach Abschnitt „Teile und Fortsetzung“; das Anlegen
-> einer Fortsetzung per `create_trigger` ist autorisiert (höchstens 3 je Spur). Modell der Spur: `<modell>`.
+> Unbeaufsichtigt, keine Rückfragen. Teile nach Abschnitt „Teile und Fortsetzung“, so viele Teile wie in diesem Lauf
+> möglich; keine geplanten Aufgaben anlegen (Fortsetzungen legt nur die Leitstelle an, höchstens 3 je Spur). Modell der Spur: `<modell>`.
 > Zugriff zuerst prüfen: `git ls-remote https://github.com/kaaasi/bomb-referenz HEAD`. Scheitert das,
 > `add_repo` (ggf. erst per `ToolSearch` mit `select:mcp__claude-code-remote__add_repo` laden; meist nicht vorhanden) für
 > `kaaasi/bomb-referenz` (access read) und erneut prüfen; bleibt es unerreichbar, sofort blockiert melden (genaue
@@ -21,7 +21,7 @@ Der Zugriffsabsatz steht in **jedem** Startaufruf eines geplanten Spurlaufs (Spu
 `docs/prozess/anhang.md` F. Geplante Läufe erben Schreibrecht auf das Referenz-Repo, Spuren und Reviews schreiben dort trotzdem
 nie; fehlen Daten oder Bilder, im PR melden – ablegen nur Leitstelle oder Nutzer.
 
-**Einzelner Folgeteil ohne Fortsetzung:** wie oben, aber statt „Teile und Selbstfortsetzung … (höchstens 3 je Spur).“ der Satz
+**Einzelner Folgeteil ohne Fortsetzung:** wie oben, aber statt „Teile nach … (Fortsetzungen legt nur die Leitstelle an, höchstens 3 je Spur).“ der Satz
 „Teile nach Abschnitt ‚Teile und Fortsetzung‘; nur Teil <n>, keine Fortsetzung anlegen.“ – es gilt „Teile und Fortsetzung“ ohne
 Schritt 5.
 
@@ -52,7 +52,7 @@ Heads `review-nein` entfernen. Widerspricht der Lauf einem Befund mit eigenem Be
 
 ## Teile und Fortsetzung (geplante Läufe)
 
-Gilt, wenn die Spur in `docs/arbeitspakete.md` eine geordnete Liste von Teilen hat und der Startaufruf die Fortsetzung erlaubt
+Gilt, wenn die Spur in `docs/arbeitspakete.md` eine geordnete Liste von Teilen hat und der Startaufruf auf diesen Abschnitt verweist
 oder einen einzelnen Folgeteil nennt (dann ohne Schritt 5).
 
 1. **Stand ermitteln:** offenen PR (`paket/<spur>`) und letzten Übergabekommentar lesen; dort steht „Fortsetzungen verbraucht:
@@ -69,13 +69,10 @@ oder einen einzelnen Folgeteil nennt (dann ohne Schritt 5).
 4. **Teil blockiert** (kein grünes `--schnell`, Beleg fehlt, Referenz-Repo unerreichbar, fremde Datei nötig): Draft mit
    Übergabe, Label `spur-wartet`, in der Übergabe „blockiert – Entscheidung Nutzer“ und Grund. **Keine Fortsetzung**, den Teil
    nicht erneut versuchen.
-5. **Fortsetzung anlegen** (nur wenn Teile offen sind, nichts blockiert und n < 3): vorher `list_triggers` – steht für die Spur
-   schon eine Aufgabe aus, keine weitere; `create_trigger` mit `run_once_at` etwa 10 Minuten später, Name
-   `Spur <name> – Fortsetzung <n+1>`, Prompt = Startaufruf oben mit `Fortsetzung <n+1> von 3, Übergabe in PR #<nr>.`; das Modell
-   lässt sich nicht wählen und darf vom Lauf nicht umgestellt werden → in der Übergabe „Modell der Fortsetzung prüfen (Soll:
-   <modell>)“ sowie Name und Zeitpunkt der Aufgabe. Lehnt die Freigabe `create_trigger` ab (kommt häufig vor):
-   `spur-wartet`, in der Übergabe „Fortsetzung anlegen – Leitstelle“ mit fertigem Prompt (Name, Startaufruf mit Zähler); die
-   Leitstelle legt an und setzt das Modell (`docs/prozess/anhang.md` F).
+5. **Fortsetzung anfordern** (nur wenn Teile offen sind, nichts blockiert und n < 3): Der Lauf legt **keine** geplante Aufgabe an
+   (Nutzer 11.11.2026: Fortsetzungen legt nur die Leitstelle an). Label `spur-wartet`, in der Übergabe „Fortsetzung anlegen –
+   Leitstelle“ mit fertigem Prompt (Name `Bomb R<runde> <spur> – Fortsetzung <n+1>`, Startaufruf mit Zähler) und „Modell der
+   Fortsetzung: <modell>“; die Leitstelle legt an und setzt das Modell (`docs/prozess/anhang.md` F).
 6. **Kettenende:** Alle Teile fertig → Beschreibung vervollständigen, „Ready for review“
    (`gh api -X POST repos/kaaasi/bomb-redone/pulls/<nr>/ccr/ready_for_review`, Antwort `{"draft":false}`; scheitert es,
    Fehlermeldung in der Übergabe, die Leitstelle setzt es), `spur-wartet`, Übergabe „Spur fertig – Review“. n = 3 und Teile offen:

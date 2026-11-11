@@ -86,6 +86,8 @@ Dokumentieren, ob nur Codelesen oder auch Ausführung am nachgewiesenen Checkout
   melden (Fehlermeldung von `add_repo` bzw. `ls-remote`). Jeder Startaufruf enthält den Zugriffsabsatz aus `spur-start.md`.
 - **Modell:** nach dem Anlegen mit `update_trigger` setzen, wenn es von Opus abweicht – nur auf ausdrücklichen Wunsch des Nutzers
   (z. B. bestätigter Plan bzw. Go mit Modell) oder für Mechanisches nach `zusammenarbeit.md` §5 „Modellwahl“.
+- **Fortsetzungen legt nur die Leitstelle an** (Nutzer 11.11.2026); Startaufrufe erlauben Läufen kein `create_trigger` für Fortsetzungen.
+  Namen geplanter Aufgaben: `Bomb R<runde> <spur> – <Art>` (Nutzer 11.11.2026).
 - **`spur-wartet` durchsehen:** „Fortsetzung anlegen – Leitstelle“ heißt, die Aufgabe mit dem Prompt aus der Übergabe anlegen –
   vorher gegen den Kurzaufruf „Geplanter Lauf mit Teilen“ prüfen; abweichen dürfen nur Spur, Modell, Zähler und PR-Nummer.
   Draft-Status, den ein Lauf nicht aufheben konnte, hebt die Leitstelle selbst auf (`…/pulls/<nr>/ccr/ready_for_review`), nicht der
