@@ -95,4 +95,13 @@ public class TitleScreenOriginalTests
         Assert.Same(screen, screen.Update(TimeSpan.Zero, new ScreenInput(KeyPressed: true)));
         Assert.IsType<PlaceholderScreen>(screen.Update(TitleScreen.CycleStepDuration, ScreenInput.None));
     }
+
+    /// <summary>#47: the cycling waits Delay(60): mov ax,3Ch; push ax; call far Delay at BOMB.OVR 0x004B2.</summary>
+    [GameDataFact]
+    public void CyclingDelayIsSixtyMillisecondsInTheOverlay()
+    {
+        var overlay = File.ReadAllBytes(TestGameData.Load().Require("BOMB.OVR"));
+        Assert.Equal(new byte[] { 0xB8, 60, 0x00, 0x50, 0x9A }, overlay.AsSpan(0x004B2, 5).ToArray());
+        Assert.Equal(TimeSpan.FromMilliseconds(60), TitleScreen.CycleStepDuration);
+    }
 }
