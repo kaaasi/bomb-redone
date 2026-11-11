@@ -248,6 +248,8 @@ Integrationsfolge 2a: `titel` → `schrift`. Bilder der DOSBox-Aufnahme sind, so
 - 11.11.2026, Claude Opus 5.5 (geplanter Lauf), Base `1fc3d68`: fertig – Review, PR #43. Strichschriften LITT/EURO/TINY lesen,
   Textausgabe mit Kern-Semantik (Fundstellen im Graph-Kern), `docs/formate/schriften.md`. Kopfzeile und Menüeintrag stimmen mit
   Longplay 00009 auf etwa 1 Bildpunkt. Offen: Quelle der 8 × 8-Schrift (ROM, nicht im Original) – Entscheidung Nutzer.
+- 11.11.2026: Fixlauf – `main` gemergt (#44, #45), R43-01 (#50), R43-02 (#51), R43-03 (#52) behoben. R1-schrift-1 = D
+  (Nutzer 11.11.2026), Umsetzung in Spur `menue`.
 
 ### Status titel
 
