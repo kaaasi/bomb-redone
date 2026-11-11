@@ -47,7 +47,7 @@ Spur `titel` (Runde 1, Welle 2, Stufe 2a). Quelle: Disassembly von O1:0014 (`BOM
 
 | Punkt | Annahme | Prüfen mit |
 |---|---|---|
-| Dauer eines Kopierdurchgangs | 85 ms (64.000 × 4 Befehle bei `cycles=3000`); Aufbau gesamt 55 × 85 ms ≈ 4,7 s. Longplay: Schriftzug erscheint in etwa 4 s (LP 00000–00003) | DOSBox-Aufnahme `runde-1` |
+| Dauer eines Kopierdurchgangs | 85 ms. Herleitung: Schleife `U431:0484–048F` (`BOMB.EXE 0x05E34`) hat je Byte ohne Treffer 5 Befehle (`mov bx,cx`, `mov al,[bx]`, `cmp`, `jnz`, `loop`), 64.000 × 5 bei `cycles=3000` ≈ 107 ms, Aufbau 55 × 107 ms ≈ 5,9 s; Longplay: Schriftzug in etwa 4 s (LP 00000–00003, ≈ 73 ms je Durchgang). 85 ms liegt dazwischen (#46) | DOSBox-Aufnahme `runde-1` (Dauer messen) |
 | Warten auf den Strahlrücklauf beim Setzen der DAC in der Rotation | vernachlässigt, Schritt = 60 ms | DOSBox |
 | DAC-Werte über 63 (Rot-Tabelle bis 119) | VGA-DAC übernimmt die unteren 6 Bit (Hardware, nicht aus den Originaldateien) | DOSBox-Bild der Rotation |
 | Palette vor dem Titel | schwarz (im Original die vom Hauptprogramm gesetzte Palette) | Disassembly Hauptprogramm |
