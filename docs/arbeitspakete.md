@@ -7,7 +7,7 @@ Den Status pflegt jede Spur nur in ihrem eigenen Abschnitt. Abgeschlossene Runde
 **Koordination:** Die Leitstelle verteilt Pakete, prüft und mergt Pull Requests und pflegt Plan und Doku
 (Rollen: [prozess/zusammenarbeit.md](prozess/zusammenarbeit.md)). **Spuren starten erst nach dem Go des Nutzers.**
 
-## Aktuelle Runde: Runde 1 – Dateiformate, Reverse Engineering, erste Bildschirme (Plan 11.11.2026, **wartet auf Go**)
+## Aktuelle Runde: Runde 1 – Dateiformate, Reverse Engineering, erste Bildschirme (Plan 11.11.2026, **Go für Welle 1: 11.11.2026**)
 
 Runde 0 abgeschlossen: [archiv/runde-0.md](archiv/runde-0.md). Grundlagen: Erstbefund [originaldateien.md](originaldateien.md),
 Entscheidungen [entscheidungen.md](entscheidungen.md) (E1–E7, R1-D2 = B, R1-D3 = A, Vorlage Release 3.2).
@@ -82,7 +82,23 @@ dürfen dort bisher nicht schreiben, und eine Spur kann der Leitstelle keine Dat
 
 Empfehlung: **A**, beschränkt auf `analyse/` und auf diese Spur.
 
-### Welle 1 (parallel, nach Go)
+### Welle 1 (parallel) – Go des Nutzers am 11.11.2026, 11:58
+
+**Start (Nutzer 11.11.2026):** Eine neue Leitstellen-Sitzung (Claude Opus 5.5) legt die vier Spuren als unbeaufsichtigte
+geplante Läufe an (Start in wenigen Minuten, Selbstfortsetzung, höchstens 3 je Spur) und wartet auf die Labels. Startaufruf
+je Spur: Kurzaufruf „Geplanter Lauf mit Teilen“ aus `vorlagen/spur-start.md` mit dem Modell der Spur und diesen Besonderheiten:
+
+| Spur | Modell | Besonderheiten im Startaufruf |
+|---|---|---|
+| `formate` | Claude Sonnet 5.5 | – |
+| `konfiguration` | Claude Opus 5.5 | Beispieldatei im Referenz-Repo: `original/spielstaende/nutzer-2026-11-11.CFG` (Voreinstellungen). |
+| `re-grundlagen` | Claude Opus 5.5 | R1-D4 = A: für die Listings im Referenz-Repo einen PR vom Branch `daten/listings-re-grundlagen` öffnen (nur Ordner `analyse/`), nicht mergen; diese Schreibaktionen sind autorisiert. Sonst schreibt die Spur dort nichts. |
+| `bildschirme-inventar` | Claude Sonnet 5.5 | Videobilder mit `tools/claude/fetch-reference.sh videos` laden; keine Bilder oder Ausschnitte ins Code-Repo. |
+
+Voraussetzung nach `prozess/anhang.md` F: beide Repos in der anlegenden Sitzung mit access `push` eingebunden. Die Spuren haben
+keine Teilliste; jede ist ein Teil, Fortsetzungen nur bei Abbruch. Erstreviews (Modell je Spur unten) legt die Leitstelle nach
+„Ready for review“ an; **ChatGPT nur für das Gesamtreview am Rundenende**. Welle 2 braucht ein eigenes Go.
+
 
 Integrationsfolge: `bildschirme-inventar` → `formate` → `konfiguration` → `re-grundlagen` (keine gemeinsamen Dateien außer
 einer Zeile in `src/BombRedone.Tools/Program.cs` bei `formate` und `konfiguration`).
