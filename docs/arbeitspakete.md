@@ -186,3 +186,9 @@ einer Zeile in `src/BombRedone.Tools/Program.cs` bei `formate` und `konfiguratio
 - Teil 1 (einziger Teil): `docs/anforderungen/bildschirme.md` fertig, PR #11 (Claude Sonnet 5.5). Zuordnung aller 591 Videobilder
   geprüft; Lesefehler als „unsicher“ markiert; Liste fehlender Bildschirme für die DOSBox-Aufnahme in Abschnitt 6. Review: Claude
   Sonnet 5.5, frische Sitzung (Leitstelle).
+
+### Status konfiguration
+
+- 11.11.2026: begonnen (Claude Code, geplanter Lauf), Base `ca689e9`.
+- 11.11.2026: fertig – Review. Alle 28 Felder aus der Leseroutine `BOMB.OVR 0x6BF9` belegt, keins unbelegt; zwei Voreinstellungen weichen von `BOMB.DOC` ab (Crumble 75, Walls None), siehe `formate/konfiguration.md`. PR #10.
+- 11.11.2026: Fixlauf – `main` gemergt (#11, #12), R10-01 (#32) und R10-02 (#33) behoben; R10-03 (#34, `bombtool cfg` ohne Test) bleibt Restlücke. Voreinstellungen Crumble 75 / Walls None unverändert (Entscheidung Nutzer).
