@@ -23,8 +23,9 @@ und Nachteilen, Empfehlung); hier steht nur das Ergebnis mit der gewählten Opti
 | – | Frühe Bildvorlage | Vorschlag des Nutzers (11.11.2026): zwei Gameplay-Videos zuerst statt der DOSBox-Aufnahme. Übernommen mit Grenze: Videobilder belegen Abläufe und Aufbau, keine Pixelgenauigkeit (E3); was nur aus Videos stammt, bleibt `[APPROX]`, bis ein DOSBox-Bild es belegt. |
 | R1-D3 | Ziel für `BOMB.CFG` und `*.TWS` | **A** (11.11.2026): in Runde 1 nur lesen. Schreiben und Rundreise sind späteres Ziel. |
 | – | Maßgebliche Fassung | **Release 3.2** bleibt die Vorlage (Nutzer 11.11.2026). |
+| R1-D4 | Ablageweg der Listings | **A** (11.11.2026): Die Spur `re-grundlagen` öffnet selbst einen PR im Referenz-Repo (nur `analyse/`), merged nicht. Ausnahme von „Spuren lesen nur“, auf diese Spur beschränkt. |
 
-Offen: R1-D1 (DOSBox-Referenz) – wird erst vor der DOSBox-Aufnahme gebraucht, siehe `docs/arbeitspakete.md`.
+Offen: R1-D1 (DOSBox-Referenz, erst vor der DOSBox-Aufnahme nötig) – siehe `docs/arbeitspakete.md`.
 
 Arbeitsweise (Nutzer 11.11.2026): `main` nur über Branch und PR; Deutsch in Doku und Commits, Quelltext und Kommentare englisch;
 knappe Antworten; je Aufgabe ein Claude-Modell; ChatGPT nur für Reviews; Spuren erst nach Go; Entscheidungen gesammelt.
