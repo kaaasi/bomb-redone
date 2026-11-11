@@ -33,7 +33,7 @@ public class GameConfigOriginalTests
 
         throw new FileNotFoundException(
             $"{ExampleName} not found (BOMB_SPIELSTAENDE, spielstaende next to gamedata, ~/referenz/original/spielstaende). " +
-            "Load it with tools/claude/fetch-reference.sh original.");
+            "Load it with tools/claude/fetch-reference.sh (without arguments).");
     }
 
     [GameDataFact]
