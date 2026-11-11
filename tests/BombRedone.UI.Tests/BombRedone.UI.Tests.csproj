@@ -13,6 +13,8 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\BombRedone.UI\BombRedone.UI.csproj" />
+    <!-- bombtool (depends only on Formats and UI): command tests without a separate test project (#34) -->
+    <ProjectReference Include="..\..\src\BombRedone.Tools\BombRedone.Tools.csproj" />
   </ItemGroup>
   <ItemGroup>
     <!-- Shared attribute for tests that need the original files (real skip, mandatory run BOMB_REQUIRE_GAMEDATA=1) -->
