@@ -10,7 +10,7 @@ Den Status pflegt jede Spur nur in ihrem eigenen Abschnitt. Abgeschlossene Runde
 ## Aktuelle Runde: Runde 1 – Dateiformate, Reverse Engineering, erste Bildschirme (Plan 11.11.2026, **Go für Welle 1: 11.11.2026**)
 
 Runde 0 abgeschlossen: [archiv/runde-0.md](archiv/runde-0.md). Grundlagen: Erstbefund [originaldateien.md](originaldateien.md),
-Entscheidungen [entscheidungen.md](entscheidungen.md) (E1–E7, R1-D1 = A (Zyklen), R1-D2 = B, R1-D3 = A, R1-D4 = A, R1-D5 = C, R1-D6 = A, Vorlage Release 3.2).
+Entscheidungen [entscheidungen.md](entscheidungen.md) (E1–E7, R1-D1 = A, R1-D2 = B, R1-D3 = A, R1-D4 = A, R1-D5 = C, R1-D6 = A, Vorlage Release 3.2).
 
 **Kernaussage:** Außer zwei Titelbildern gibt es keine Grafikdateien; fast alles Sichtbare zeichnet das Programm selbst.
 
@@ -38,7 +38,7 @@ Schutzordnern (`AGENTS.md` §2.1).
 
 ### Entscheidungen der Runde
 
-**R1-D1 – DOSBox-Referenz (folgt aus E4) – Zyklen entschieden: `cycles=3000` (Nutzer 11.11.2026, Vorschlag aus `re-grundlagen`); Fassung offen.** Problem: Aufnahmen und Takt brauchen genau eine Einstellung.
+**R1-D1 – DOSBox-Referenz (folgt aus E4) – entschieden: A, DOSBox 0.74-3 mit `cycles=3000` (Nutzer 11.11.2026; Zyklen als Vorschlag aus `re-grundlagen` belegt).** Problem: Aufnahmen und Takt brauchen genau eine Einstellung.
 
 | Option | Vorteil | Nachteil |
 |---|---|---|
@@ -47,8 +47,8 @@ Schutzordnern (`AGENTS.md` §2.1).
 | C: DOSBox-X, `cycles=3000` | Debugger eingebaut, hilft beim Reverse Engineering | mehr Einstellungen, mehr Fehlerquellen |
 | D: Zyklen erst nach der Analyse festlegen (Zeitschleifen im Code suchen), Aufnahme bis dahin mit B | Wert ist belegt statt geschätzt | Titel- und Menübilder sind vom Takt unabhängig, Animationen müssten ggf. neu aufgenommen werden |
 
-Empfehlung: **D mit B** – statische Bilder jetzt mit DOSBox Staging (Version in der README), Zyklenwert als Vorschlag aus
-`re-grundlagen`. Der Wert 3000 ist eine Schätzung ohne Beleg.
+Entschieden: **A** (Nutzer 11.11.2026), DOSBox 0.74-3 mit `cycles=3000`; der Zyklenwert ist durch `re-grundlagen` belegt
+(Sättigung der Delay-Kalibrierung bei etwa 3.580). Die frühere Empfehlung D mit B (Staging) wurde nicht übernommen.
 
 **R1-D2 – Ablage von Disassembly-Listings – entschieden: B (Nutzer 11.11.2026).** Problem: Listings sind abgeleiteter Originalcode.
 
