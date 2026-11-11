@@ -13,8 +13,9 @@ sind englisch, die Doku deutsch.
 | 0xFA00 | 768 | Palette: 256 × (R, G, B), je 6 Bit (Werte 0–63) |
 | gesamt | 64.768 | |
 
-Beide Dateien haben genau diese Länge, alle 768 Palettenbytes liegen bei ≤ 63. Die Palette ist in beiden Dateien **bytegleich**
-(erste Einträge: Schwarz, 0x15-Grau, 0x2A-Grau, …, also die VGA-Standardpalette).
+Beide Dateien haben genau diese Länge, alle 768 Palettenbytes liegen bei ≤ 63. Beide Paletten beginnen gleich
+(Schwarz, 0x15-Grau, 0x2A-Grau, … wie die VGA-Standardpalette), unterscheiden sich aber in 154 von 768 Bytes; jede Datei hat
+also ihre eigene Palette.
 
 | Datei | Verwendete Indizes | Inhalt (Sicht der Leitstelle/Spur) |
 |---|---:|---|
@@ -22,10 +23,9 @@ Beide Dateien haben genau diese Länge, alle 768 Palettenbytes liegen bei ≤ 63
 | `BOMB2.RAW` | 53 | Schriftzug „TANK WARS“ und „Copyright 1990, 1991, 1992 Kenneth Morse“ auf Index 0 (Schwarz, 78 % der Pixel) |
 
 **Abgleich mit dem Longplay** (`videos/tank-wars-longplay/00002.png` und `00007.png`, 576 × 360): Motiv, Lage und Farbeindruck
-stimmen mit den dekodierten Bildern überein. Das Bild ohne Schriftzug (Sekunde 2) entspricht `BOMB1`; das Bild mit Schriftzug und
-Copyright (Sekunde 7) entspricht `BOMB1` unter `BOMB2`. Der Schriftzug in `BOMB2` ist im Video über dem Hintergrund zu sehen, also wird
-`BOMB2` vom Programm über `BOMB1` gelegt; **welche Indizes dabei als durchsichtig gelten** (vermutlich 0) ist nicht belegt – offen für die
-Spur `re-grundlagen`. Das Video ist skaliert (1,8) und komprimiert, daher kein Pixel- oder Farbbeleg.
+stimmen mit den dekodierten Bildern überein. Der Hintergrund (Sekunde 2) entspricht `BOMB1`; der Schriftzug samt Copyright (Sekunde 7) entspricht `BOMB2`.
+Im Video steht der Schriftzug über dem Hintergrund, also legt das Programm `BOMB2` irgendwie über `BOMB1`. **Wie** (durchsichtiger
+Index, vermutlich 0; Umgang mit den zwei Paletten) ist nicht belegt – offen für `re-grundlagen`. Das Video ist skaliert (1,8) und komprimiert, daher kein Pixel- oder Farbbeleg.
 
 ### Palette: 6 → 8 Bit
 
