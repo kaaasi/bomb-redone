@@ -130,7 +130,7 @@ Jede Nachricht und jede gelesene Datei kostet Tokens – bei allen Agenten:
 | Sonderfälle: Vertretung, GitHub Free, Gesamtreview, Codex, geplante Läufe der Leitstelle | `docs/prozess/anhang.md` |
 | Eingeschränkte Arbeitsumgebungen (SDK, Netz, VSTest, Freigaben) | `docs/prozess/umgebung.md` |
 | Arbeitspakete, Dateigrenzen, Abnahme, Status | `docs/arbeitspakete.md` |
-| Kurzaufrufe: Spurstart, Review-Anfrage, Leitstelle, DOSBox-Aufnahme | `docs/vorlagen/` |
+| Kurzaufrufe: Spurstart, Review-Anfrage, Leitstelle, DOSBox-Aufnahme, Videobilder | `docs/vorlagen/` |
 | Unabhängige Reviews / abgeschlossene Runden | `docs/reviews/` / `docs/archiv/` |
 | Originaldateien: Ablage, Laden, Erstbefund | `docs/originaldateien.md` |
 | Dateiformate, Analysen (ab Runde 1) | `docs/formate/`, `docs/analyse/` |

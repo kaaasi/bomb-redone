@@ -46,6 +46,11 @@ bündelt die Fragen.
   hängt also nicht nur von DOSBox ab, sondern auch von `BOMB.CFG`; die Referenz für Aufnahmen ist DOSBox-Einstellung **und**
   Konfigurationsdatei.
 
+- **Stand 11.11.2026, 11:40:** Review-Befunde aus Runde 0 behoben (#4 gemergt), #3 und bomb-referenz #2 gemergt.
+  **R1-D3 = A** (nur lesen), **Release 3.2 bleibt die Vorlage.** Die `BOMB.CFG` des Nutzers liegt unbeschädigt vor (45 Byte,
+  [bomb-referenz #3](https://github.com/kaaasi/bomb-referenz/pull/3)); welche Einstellungen gewählt waren, ist offen. Für die
+  Videobilder gibt es den Kurzaufruf [vorlagen/video-bilder.md](vorlagen/video-bilder.md).
+
 ### Offene Entscheidungen
 
 **R1-D1 – DOSBox-Referenz (folgt aus E4).** Problem: Aufnahmen und Takt brauchen genau eine Einstellung.
@@ -70,7 +75,7 @@ Empfehlung: **D mit B** – statische Bilder jetzt mit DOSBox Staging (Version i
 
 Empfehlung: **B**, Ablage durch die Leitstelle per PR aus dem, was die Spur als Datei liefert.
 
-**R1-D3 – Ziel für `BOMB.CFG` und `*.TWS`.** Problem: Umfang der Formatarbeit.
+**R1-D3 – Ziel für `BOMB.CFG` und `*.TWS` – entschieden: A (Nutzer 11.11.2026).** Problem: Umfang der Formatarbeit.
 
 | Option | Vorteil | Nachteil |
 |---|---|---|
