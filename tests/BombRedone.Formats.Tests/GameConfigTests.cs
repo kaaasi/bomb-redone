@@ -91,6 +91,51 @@ public class GameConfigTests
         Assert.Equal(WallSetting.Sticky, WithWord(11, 1).Wall);
     }
 
+    // Values with the high byte set catch a reader that only takes the low byte.
+    [Fact]
+    public void WindAndWallUseBothBytes()
+    {
+        Assert.Equal((WindSetting)0x0104, WithWord(7, 0x0104).Wind);
+        Assert.Equal((WallSetting)0x0104, WithWord(11, 0x0104).Wall);
+    }
+
+    [Fact]
+    public void BossScreenMemoryUsesBothBytes()
+    {
+        Assert.Equal(0x0140, WithWord(43, 0x0140).BossScreenMemoryKiB);
+    }
+
+    // BOMB.EXE treats these fields as Turbo Pascal Integer (cwd before Write(LongInt), BOMB.OVR 0x79AE ff.).
+    [Theory]
+    [InlineData(9, nameof(GameConfig.CrumblePercent))]
+    [InlineData(15, nameof(GameConfig.GamesToPlay))]
+    [InlineData(18, nameof(GameConfig.Background))]
+    [InlineData(28, nameof(GameConfig.PaletteSpeed))]
+    [InlineData(31, nameof(GameConfig.TurretSpeed))]
+    [InlineData(33, nameof(GameConfig.FallSpeed))]
+    [InlineData(35, nameof(GameConfig.ExplosionSpeed))]
+    [InlineData(37, nameof(GameConfig.ShotSpeed))]
+    [InlineData(39, nameof(GameConfig.LaserSpeed))]
+    public void NumberFieldIsSignedInteger(int offset, string property)
+    {
+        var config = WithWord(offset, 0x8001);
+
+        Assert.Equal(-32767, (int)typeof(GameConfig).GetProperty(property)!.GetValue(config)!);
+    }
+
+    [Fact]
+    public void WindAndWallAreSignedInteger()
+    {
+        Assert.Equal((WindSetting)(-1), WithWord(7, 0xFFFF).Wind);
+        Assert.Equal((WallSetting)(-1), WithWord(11, 0xFFFF).Wall);
+    }
+
+    [Fact]
+    public void BossScreenMemoryStaysUnsigned()
+    {
+        Assert.Equal(0xFFFF, WithWord(43, 0xFFFF).BossScreenMemoryKiB);
+    }
+
     [Fact]
     public void UserBackgroundMaskIsWordAtOffset20()
     {
@@ -124,6 +169,9 @@ public class GameConfigTests
     [InlineData(9, BackgroundKind.Random)]
     [InlineData(10, BackgroundKind.User)]
     [InlineData(11, BackgroundKind.Unknown)]
+    [InlineData(0xFFFF, BackgroundKind.Fixed)] // -1 <= 8: BOMB.OVR 0x1CAED compares signed (jg)
+    [InlineData(0x8000, BackgroundKind.Fixed)]
+    [InlineData(0x7FFF, BackgroundKind.Unknown)]
     public void BackgroundValueIsClassified(ushort value, BackgroundKind kind)
     {
         Assert.Equal(kind, WithWord(18, value).BackgroundKind);
