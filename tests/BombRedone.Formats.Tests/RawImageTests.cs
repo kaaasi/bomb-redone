@@ -24,13 +24,42 @@ public class RawImageTests
         Assert.Equal((byte)((3 * RawImage.Width + 2) * 7 % 256), image[2, 3]);
     }
 
+    [Fact]
+    public void PixelsAndGetPixelsExposeTheDecodedImageInOrder()
+    {
+        var data = Synthetic(i => (byte)(i * 7 % 256), i => (byte)(i % 64));
+        var image = RawImage.Parse(data);
+        var expected = data[..RawImage.PixelCount];
+        Assert.Equal(expected, image.Pixels.ToArray());
+        Assert.Equal(expected, image.GetPixels());
+        // The public output agrees with the indexer (row by row from the top left).
+        Assert.Equal(image[7, 2], image.Pixels[2 * RawImage.Width + 7]);
+        // GetPixels returns a copy: changing it does not change the image.
+        var copy = image.GetPixels();
+        copy[0] ^= 0xFF;
+        Assert.Equal(expected[0], image.Pixels[0]);
+    }
+
     [Theory]
     [InlineData(0)]
     [InlineData(RawImage.FileLength - 1)]
     [InlineData(RawImage.PixelCount)]
     [InlineData(RawImage.FileLength + 1)]
-    public void WrongLengthIsRejected(int length) =>
-        Assert.Throws<FormatException>(() => RawImage.Parse(new byte[length]));
+    public void WrongLengthIsRejected(int length)
+    {
+        var ex = Assert.Throws<FormatException>(() => RawImage.Parse(new byte[length]));
+        // The length check of RawImage itself, not a follow-up error of Palette.FromBytes.
+        Assert.Contains("exactly", ex.Message);
+    }
+
+    [Theory]
+    [InlineData(Palette.ByteLength - 1)]
+    [InlineData(Palette.ByteLength + 1)]
+    public void PaletteOfWrongLengthIsRejected(int length)
+    {
+        var ex = Assert.Throws<FormatException>(() => Palette.FromBytes(new byte[length]));
+        Assert.Contains(Palette.ByteLength.ToString(), ex.Message);
+    }
 
     [Theory]
     [InlineData(0)]
@@ -87,9 +116,10 @@ public class RawImageTests
     }
 
     [GameDataTheory]
-    [InlineData("BOMB1.RAW", 61, "58043d419503")]
-    [InlineData("BOMB2.RAW", 53, "b827bfbc3a68")]
-    public void OriginalTitleImagesHaveExpectedShape(string name, int usedColors, string fileHashPrefix)
+    [InlineData("BOMB1.RAW", 61, "58043d419503", "e54ecb608342", "694088f462ec")]
+    [InlineData("BOMB2.RAW", 53, "b827bfbc3a68", "fa264883ae62", "af61d7cf63b3")]
+    public void OriginalTitleImagesHaveExpectedShape(
+        string name, int usedColors, string fileHashPrefix, string pixelHashPrefix, string paletteHashPrefix)
     {
         var bytes = File.ReadAllBytes(TestGameData.Load().Require(name));
         Assert.Equal(RawImage.FileLength, bytes.Length);
@@ -98,5 +128,10 @@ public class RawImageTests
         var image = RawImage.Parse(bytes);
         Assert.Equal(usedColors, image.UsedColorCount());
         Assert.Equal(bytes, image.ToBytes());
+
+        // Checksums of the decoded output (what the export uses), independent of ToBytes.
+        Assert.StartsWith(pixelHashPrefix, Convert.ToHexString(SHA256.HashData(image.Pixels)).ToLowerInvariant());
+        Assert.StartsWith(pixelHashPrefix, Convert.ToHexString(SHA256.HashData(image.GetPixels())).ToLowerInvariant());
+        Assert.StartsWith(paletteHashPrefix, Convert.ToHexString(SHA256.HashData(image.Palette.ToBytes())).ToLowerInvariant());
     }
 }
