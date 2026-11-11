@@ -50,6 +50,25 @@ public sealed class TitleImagesTests : IDisposable
         Assert.Equal(6, second[^1]);
     }
 
+    /// <summary>
+    /// #48: a file that exists but cannot be read counts as empty (zero record, not missing), and BOMB2.RAW is still
+    /// read, as the original reads both files with I/O checks off. The lock (FileShare.None) makes the read fail.
+    /// </summary>
+    [Fact]
+    public void UnreadableFileIsAZeroRecordAndTheOtherIsStillRead()
+    {
+        var first = Path.Combine(_dir, "BOMB1.RAW");
+        File.WriteAllBytes(first, [9, 9, 9]);
+        File.WriteAllBytes(Path.Combine(_dir, "BOMB2.RAW"), [4, 5]);
+        TitleImages images;
+        using (new FileStream(first, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+            images = TitleImages.Load(new GameData(_dir));
+        Assert.NotNull(images.First);
+        Assert.Equal(TitleImages.RecordLength, images.First.Length);
+        Assert.All(images.First, b => Assert.Equal(0, b));
+        Assert.Equal([4, 5, 0], images.Second![..3]);
+    }
+
     [Fact]
     public void ShorterFilesArePaddedWithZero()
     {
