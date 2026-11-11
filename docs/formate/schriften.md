@@ -99,8 +99,8 @@ Spiel**, in DOSBox sind es die eingebauten VGA-Zeichen. `BitmapFont` hält nur d
 - **Abstand Ersatz–Referenz:** Von den 95 druckbaren ASCII-Zeichen (32–126) sind 93 gleich; nur `!` und `"` weichen ab
   (Test `BitmapFontReferenceTests`). Die Steuerzeichen 0–31 und die obere Hälfte fehlen dem Ersatz.
 - **Tests:** `[ReferenceFontFact]` wie Originaldaten – ohne Datei übersprungen, `BOMB_SKIP_GAMEDATA=1` blendet sie aus;
-  Pflicht nur mit `BOMB_REQUIRE_REFERENCE_FONT=1` (noch nicht über `BOMB_REQUIRE_GAMEDATA=1`, solange das Laden der Datei
-  nicht in `fetch-reference.sh` steht).
+  Pflicht mit `BOMB_REQUIRE_GAMEDATA=1` (Lauf mit Originaldaten; `fetch-reference.sh` lädt `schriften/` mit, #60) oder
+  allein mit `BOMB_REQUIRE_REFERENCE_FONT=1`.
 
 ## 5. Offene Punkte
 

@@ -20,7 +20,7 @@ cd bomb-redone
 - **SDK und NuGet-Pakete:** Microsoft- und NuGet-Server sind aus der Arbeitsumgebung gesperrt, GitHub nicht.
 
   ```bash
-  tools/claude/fetch-reference.sh original                    # Originaldateien nach ~/referenz/original/
+  tools/claude/fetch-reference.sh                             # Originaldateien und Referenzschrift nach ~/referenz/
   tools/claude/setup-workspace.sh ~/referenz/original/gamedata # SDK + Pakete aus dem Release "claude-werkzeuge", verlinkt gamedata/
   source ~/claude-tools/env.sh
   tools/pruefen.sh --schnell
