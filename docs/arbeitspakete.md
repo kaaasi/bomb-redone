@@ -192,3 +192,5 @@ einer Zeile in `src/BombRedone.Tools/Program.cs` bei `formate` und `konfiguratio
 - 11.11.2026, Claude Opus 5.5 (geplanter Lauf): Analyse fertig, PR #9; Befunde `docs/analyse/re-grundlagen.md`, Werkzeug
   `tools/reverse-engineering/bombre.py` (39/39 Befunde, 26/26 Bildschirme bestätigt). Listings: PR im Referenz-Repo,
   Branch `daten/listings-re-grundlagen`. Offen: Liste „Nicht entscheidbar ohne DOSBox“ (§8).
+- 11.11.2026, Claude Opus 5.5 (Fixlauf): Review-Befunde R9-P2-1, R9-P3-1..3 behoben (Byte-Vergleiche → Offset, Länge, SHA-256;
+  Schrift-Offsets erklärt; neuer Befund F8), `befunde` 40/40, `karte` 26/26. Wartet auf Delta-Prüfung der Leitstelle.

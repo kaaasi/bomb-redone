@@ -13,6 +13,7 @@ files and exits non-zero if one does not hold.
 """
 import argparse
 import collections
+import hashlib
 import os
 import re
 import shutil
@@ -319,6 +320,66 @@ def find(data, pattern):
     return [m.start() for m in re.finditer(pattern, data, re.S)]
 
 
+# Code regions checked by 'befunde', as (segment, offset, length, SHA-256). Segment None means a
+# file offset in BOMB.EXE. Only the position and a digest of the original bytes are kept here, never
+# the bytes themselves (AGENTS.md 2.1, decision R1-D2); what each region contains is described in
+# words in docs/analyse/re-grundlagen.md. Note: digests of very short regions identify the bytes
+# but do not hide them from someone who already has the files - they only keep the bytes out of
+# this repository.
+REGIONS = {
+    "A3": (0x12CE, 0x0000, 5, "25bcd97b11260f690b1f85b44081af905a657e0d63669bcb6cce1d533a6d812f"),
+    "C1a": (0x11F8, 0x02CD, 6, "436a5023c8f107f3a9fbb3cd50a9f0c25852cf8bafcac1fa3dc3f80a84e5776f"),
+    "C1b": (0x11F8, 0x02E5, 4, "1a653f6e90505e61bc1a46e5afddf1f112988b35e690cb32fd6f7b837a9ae863"),
+    "C2": (0x11F8, 0x02F4, 7, "38b59669f41a591e487a96dc127ff35aa26d0a5d0e3cd34773f7a29b7a012fc3"),
+    "C3a": (0x11F8, 0x0077, 9, "400c2bb19b1bfbc582dd5877e680388a20959ca71457fe50215bc456335aa172"),
+    "C3b": (0x11F8, 0x02B0, 4, "fb3605b43c143d938ed5ab2f14b07aac5a4f792d7ed7001c656061b780bcb269"),
+    "C4a": (0x11E6, 0x00ED, 4, "1bc33f6ccf35eed1bb10277bb8d49ca189a5c4d7c2753d3e33389d440a86fe78"),
+    "C4b": (0x11E6, 0x0109, 4, "da2f4ce2661eaa39e5310e7e252ae09a3dcad7aeac8b49fff8c01cd2236103d6"),
+    "D1": (0x12CE, 0x16C4, 56, "8aa01153e3ac638a40be6c446357604220b0c2130d7029cc735384e9c56bbee8"),
+    "D2": (0x12CE, 0x1675, 22, "e4337c9ed94c3d0a72864fcf23dd6e8fb30693d25680a1d52401c919fcbbfeb9"),
+    "D3": (0x12CE, 0x16FC, 12, "ae16e15087d57f0787fe403ddd61dca96b68903622713d2f642cf5cd3b1f5e6b"),
+    "E2": (0x12CE, 0x11F0, 15, "af40ae9a7c664017dd20b6c9f615f5979deb9b3ff3077e0e4404aaa10b8694d3"),
+    "F6": (0x0DBD, 0x03BC, 37, "a3d15c69c3f44b3d7985a23e47cbdfc228a9956cd8df3a1bb3b172434a394a9d"),
+    "G1a": (0x0CC8, 0x0000, 5, "0673340d076a3c937beba02b14085f857905b6c8e663f621e8117e1f215ae232"),
+    "G1b": (0x0CC8, 0x0F32, 6, "d7ee381a0bc646ade3a2c6c13622d4857e2551c119705d55405b1de896f0d97a"),
+    "G1c": (0x0CC8, 0x0F43, 6, "1eb1b024364a44b88c691d28e7ad1d0d781a1ff012f32f0dea0731a829fae3d1"),
+    "G3a": (0x0C79, 0x02A9, 4, "48584b91b360d2b793fc66ad75bbec7c7db7fe27f2ed711bbffa4a3c1cf4caf9"),
+    "G3b": (0x0C79, 0x0333, 4, "5354d87c23075d91ac47184a0a23604c3b8b99e3a7584946d465971e5b42d43c"),
+    "G3c": (0x0C79, 0x02C5, 5, "b154dd69369616cb465b7981ceaa028f58429f3201698203559e290b088dafa0"),
+    "G4a": (0x0C79, 0x012A, 12, "ea74395e110abe3b87d4f0d6842e340dc47dd3422c6c0855414a54a399d12a8b"),
+    "G4b": (0x0C79, 0x0154, 15, "deba7dfb8efed3b2e91ac488daa20231c1badec9e72068bf0b109d9452f2b535"),
+    "H6": (0x11F8, 0x0077, 16, "3c68cadb1b6ff7334f57506d37c1ec351b35a2727753cf249d7d05581b454211"),
+    "F1": (None, 0x07EB7, 38, "31f028c9349e3174d782d71e1cba1cb5b535bf72f1388100eeb97c061a29bbb0"),
+    "F2": (None, 0x08BE8, 7, "320259f81d0c8a23661ebd4cdccf7fe9da6cfebf8b896fa10e5e2188ce8b09a3"),
+    "F3": (None, 0x09FF4, 7, "ba6959a8e6482c2c13ef610779417773e1d492a6d596304579e8b74730b6c86f"),
+    "F4": (None, 0x0C0F9, 7, "f9ac5c75b93b0bfc020c84c6e930395146e807a8c9400796dc1ee62d84f62da3"),
+}
+
+
+def region_ok(g, key):
+    seg, ofs, n, sha = REGIONS[key]
+    data = g.exe if seg is None else g.seg_bytes(seg)
+    return len(data) >= ofs + n and hashlib.sha256(data[ofs:ofs + n]).hexdigest() == sha
+
+
+def far_call(seg, ofs):
+    """Encoding of 'call far seg:ofs' (opcode 9Ah), used to search for calls of a known routine."""
+    return b"\x9a" + struct.pack("<HH", ofs, seg)
+
+
+def mov_dx(value):
+    """Encoding of 'mov dx, imm16' (opcode BAh)."""
+    return b"\xba" + struct.pack("<H", value)
+
+
+# Embedded BGI files in segment 0431: (name, file start 'PK' + 08h 08h, region with the header).
+# The file start is the offset named in the analysis. For the fonts the checked header (1Ah 80h 00h
+# + font name) follows behind the copyright text of the file; for VGA256 the checked region is the
+# file start with the driver text.
+BGI_FILES = [("F1", "VGA256-Treiber 2.00", 0x07EB7), ("F2", "Strichschrift LITT", 0x08B90),
+             ("F3", "Strichschrift EURO", 0x09F9B), ("F4", "Strichschrift TINY", 0x0C0AE)]
+
+
 def cmd_befunde(g, args):
     """Every claim of docs/analyse/re-grundlagen.md as a check."""
     ok = True
@@ -339,7 +400,7 @@ def cmd_befunde(g, args):
           g.nrel == 1439 and g.hdr + len(g.img) == len(g.exe), "BOMB.EXE 0x0000")
     check("A2", "Turbo-Pascal-6-Laufzeit: Copyright-Text 1983,90 im System-Segment",
           b"Portions Copyright (c) 1983,90 Borland" in sysb, so(0x12CE, sysb.find(b"Portions")))
-    check("A3", "System-Init lädt DS = 14D5 (mov dx,14D5; mov ds,dx)", sysb[:5] == b"\xba\xd5\x14\x8e\xda", so(0x12CE, 0))
+    check("A3", "System-Init lädt DS = 14D5 (mov dx,14D5; mov ds,dx)", region_ok(g, "A3"), so(0x12CE, 0))
     check("A4", "28 Segmente, davon 10 Overlay-Stubs", len(g.segments) == 28 and len(g.overlays) == 10, "Relokationen")
     # B: overlays
     lastov = g.overlays[-1]
@@ -354,28 +415,27 @@ def cmd_befunde(g, args):
           b"EMMXXXX0" in ovl and b"PATH=" in ovl, so(0x125A, ovl.find(b"EMMXXXX0")))
     # C: runtime units
     check("C1", "Crt.Sound: Teiler 1234DDh/Hz, Port 43h←B6h, 42h, 61h|=3",
-          crt[0x2CD:0x2D3] == b"\xb8\xdd\x34\xba\x12\x00" and b"\xb0\xb6\xe6\x43" in crt[0x2C7:0x2F4], so(0x11F8, 0x2C7))
-    check("C2", "Crt.NoSound: Port 61h &= FCh", crt[0x2F4:0x2FB] == b"\xe4\x61\x24\xfc\xe6\x61\xcb", so(0x11F8, 0x2F4))
+          region_ok(g, "C1a") and region_ok(g, "C1b"), so(0x11F8, 0x2C7))
+    check("C2", "Crt.NoSound: Port 61h &= FCh", region_ok(g, "C2"), so(0x11F8, 0x2F4))
     check("C3", "Crt.Delay: Schleife je ms mit DelayCnt [EC44], Kalibrierung über BIOS-Takt 0040:006C / 55",
-          crt[0x2B0:0x2B4] == b"\x8b\x1e\x44\xec" and crt[0x7D:0x80] == b"\xb8\x37\x00" and crt[0x77:0x7A] == b"\xb9\xff\xff",
+          region_ok(g, "C3a") and region_ok(g, "C3b"),
           so(0x11F8, 0x64))
     check("C4", "Dos.GetIntVec/SetIntVec: INT 21h AH=35h/25h",
-          dos[0xED:0xF1] == b"\xb4\x35\xcd\x21" and dos[0x109:0x10D] == b"\xb4\x25\xcd\x21", so(0x11E6, 0xE7))
+          region_ok(g, "C4a") and region_ok(g, "C4b"), so(0x11E6, 0xE7))
     gr = g.seg_bytes(0x0E26)
     check("C5", "Graph-Einheit: BGI-Fehlertexte im Segment 0E26", b"Graphics not initialized (use InitGraph)" in gr,
           so(0x0E26, gr.find(b"Graphics not")))
     check("C6", "Printer-Einheit: Text LPT1 am Segmentanfang 0E22", g.seg_bytes(0x0E22)[:5] == b"\x04LPT1", so(0x0E22, 0))
     # D: random generator
     check("D1", "RandSeed = DS:3AD6 (LongInt); Faktor 8405h im Code, Rest als Schiebe-Additionen (08088405h)",
-          sysb[0x16C4:0x16CB] == b"\xa1\xd6\x3a\x8b\x1e\xd8\x3a" and sysb[0x16FA:0x16FC] == b"\x05\x84"
-          and sysb[0x16EC:0x16F2] == b"\x05\x01\x00\x83\xd2\x00", so(0x12CE, 0x16C4))
-    check("D2", "Random(n) = HiWord(RandSeed neu) mod n", sysb[0x1675:0x168B] ==
-          bytes.fromhex("e84c0033c08bdc368b5f040bdb740492f7f392ca0200"), so(0x12CE, 0x1675))
+          region_ok(g, "D1"), so(0x12CE, 0x16C4))
+    check("D2", "Random(n) = HiWord(RandSeed neu) mod n", region_ok(g, "D2"),
+          so(0x12CE, 0x1675))
     check("D3", "Randomize: INT 21h AH=2Ch, RandSeed := CX:DX (Uhrzeit)",
-          sysb[0x16FC:0x1708] == bytes.fromhex("b42ccd21890ed63a8916d83a"), so(0x12CE, 0x16FC))
+          region_ok(g, "D3"), so(0x12CE, 0x16FC))
     main = g.seg_bytes(0x0000)
-    check("D4", "Hauptprogramm ruft Randomize beim Start", b"\x9a\xfc\x16\xce\x12" in main,
-          so(0, main.find(b"\x9a\xfc\x16\xce\x12")))
+    check("D4", "Hauptprogramm ruft Randomize beim Start", far_call(0x12CE, 0x16FC) in main,
+          so(0, main.find(far_call(0x12CE, 0x16FC))))
     rnd = sum(1 for _, d, _, _ in g.code_blocks() for _o, s, o in far_calls(d) if (s, o) == (0x12CE, 0x1675))
     check("D5", "Random(n) wird im Spielcode vielfach aufgerufen (>100)", rnd > 100, "%d Aufrufe" % rnd)
     # E: number type
@@ -387,22 +447,18 @@ def cmd_befunde(g, args):
           "INT 34h–3Dh und kein Aufruf der 8087-Fassung von Random (System 16A8)",
           fl > 100 and emu == 0 and x87 == 0, "%d Aufrufe 11DC, %d INT 34h–3Dh, %d Aufrufe 16A8" % (fl, emu, x87))
     check("E2", "Real-Hilfen melden Laufzeitfehler 205/207/200 (CDh/CFh/C8h)",
-          sysb[0x11F0:0x11F3] == b"\xb8\xcf\x00" and sysb[0x11F6:0x11F9] == b"\xb8\xcd\x00"
-          and sysb[0x11FC:0x11FF] == b"\xb8\xc8\x00", so(0x12CE, 0x11F0))
+          region_ok(g, "E2"), so(0x12CE, 0x11F0))
     # F: graphics drivers and fonts
-    for fid, sig, what in [("F1", b"pk\x08\x08BGI Device Driver (VGA256) 2.00", "VGA256-Treiber 2.00"),
-                           ("F2", b"\x1a\x80\x00LITT", "Strichschrift LITT"),
-                           ("F3", b"\x1a\x80\x00EURO", "Strichschrift EURO"),
-                           ("F4", b"\x1a\x80\x00TINY", "Strichschrift TINY")]:
-        at = g.exe.find(sig)
-        check(fid, what + " eingebunden im Segment 0431", at > 0 and g.exe_off(0x0431) <= at < g.exe_off(0x0B02),
-              "BOMB.EXE 0x%05X" % at)
+    for fid, what, start in BGI_FILES:
+        head = REGIONS[fid][1]
+        check(fid, what + " eingebunden im Segment 0431 (Dateianfang, Kopf)",
+              g.exe[start:start + 2].upper() == b"PK" and start <= head and region_ok(g, fid)
+              and g.exe_off(0x0431) <= start < g.exe_off(0x0B02), "BOMB.EXE 0x%05X, Kopf 0x%05X" % (start, head))
     check("F5", "Hauptprogramm: Schritte REGISTER DRIVER, REGISTER FONTS, INITGRAPH, CYCLER, TITLE",
           all(k in main for k in [b"REGISTER DRIVER", b"REGISTER FONTS", b"INITGRAPH", b"CYCLER", b"TITLE"]), so(0, 0))
     udbd = g.seg_bytes(0x0DBD)
     check("F6", "UDBD-Init: InstallUserDriver('vga256'), InstallUserFont EURO LCOM SCRI SIMP TSCR TINY → DS:E910..E91A",
-          udbd[0x3BC:0x3E1] == b"\x06vga256\x04EURO\x04LCOM\x04SCRI\x04SIMP\x04TSCR\x04TINY"
-          and udbd.count(b"\x9a\x45\x18\x26\x0e") == 6, so(0x0DBD, 0x3BC))
+          region_ok(g, "F6") and udbd.count(far_call(0x0E26, 0x1845)) == 6, so(0x0DBD, 0x3BC))
     used = set()
     for _n, d, _f, _b in g.code_blocks():
         for at, s_, o in far_calls(d):
@@ -411,21 +467,29 @@ def cmd_befunde(g, args):
                 used.add(a[0] if a and not isinstance(a[0], tuple) else (a[0][1] if a else None))
     check("F7", "SetTextStyle nur mit DefaultFont (0), SmallFont (2 = LITT), EURO [E910] und TINY [E91A]",
           used == {0, 2, 0xE910, 0xE91A}, "bombre.py fonts")
+    o2code = g.overlays[1]["code"]
+    starts = proc_starts(o2code)
+    texts = {}
+    for p in (0x06BD, 0x07BA):
+        end = min(x for x in starts if x > p)
+        texts[p] = sum(1 for _a, s_, o in far_calls(o2code[p:end]) if (s_, o) == (0x0E26, 0x1F12))
+    check("F8", "Hauptmenü: Kopfzeile (O2:06BD) 4 Aufrufe OutTextXY, Knopf START (O2:07BA) 5",
+          texts == {0x06BD: 4, 0x07BA: 5}, "O2:06BD %d, O2:07BA %d" % (texts[0x06BD], texts[0x07BA]))
     # G: video, palette
     vga = g.seg_bytes(0x0CC8)
     check("G1", "UCC8: Modus 13h per INT 10h, Fenster 0..319 × 0..199, Segment A000",
-          vga[:5] == b"\xb8\x13\x00\xcd\x10" and b"\xc7\x06\xfe\xe8\x3f\x01" in vga and b"\xc7\x06\x04\xe9\x00\xa0" in vga,
+          region_ok(g, "G1a") and region_ok(g, "G1b") and region_ok(g, "G1c"),
           so(0x0CC8, 0))
-    check("G2", "UCC8: DAC-Ports 3C8h/3C9h und Strahlrücklauf 3DAh", b"\xba\xc8\x03" in vga and b"\xba\xc9\x03" in vga
-          and b"\xba\xda\x03" in vga, so(0x0CC8, vga.find(b"\xba\xda\x03")))
+    check("G2", "UCC8: DAC-Ports 3C8h/3C9h und Strahlrücklauf 3DAh", all(mov_dx(p) in vga for p in (0x3C8, 0x3C9, 0x3DA)),
+          so(0x0CC8, vga.find(mov_dx(0x3DA))))
     cyc = g.seg_bytes(0x0C79)
     check("G3", "UC79: Palettenrotation hängt an INT 0Ah (IVT 0028h, IRQ2, CRTC-Register 11h) oder INT 1Ch (IVT 0070h)",
-          b"\x26\xa3\x28\x00" in cyc and b"\x26\xa3\x70\x00" in cyc and b"\xc6\x06\xe6\xe8\x11" in cyc, so(0x0C79, 0x275))
+          region_ok(g, "G3a") and region_ok(g, "G3b") and region_ok(g, "G3c"), so(0x0C79, 0x275))
     check("G4", "UC79: Rotation alle [E8DD] Takte, Fenster im Palettenpuffer rückt je Schritt um 3 Byte",
-          cyc[0x12A:0x136] == bytes.fromhex("fe06dee8a0dee83a06dde87239") [:12] and cyc[0x154:0x163].count(b"\x03\x06\xda\xe8") == 3,
+          region_ok(g, "G4a") and region_ok(g, "G4b"),
           so(0x0C79, 0x123))
     kb = g.seg_bytes(0x0C48)
-    check("G5", "UC48: Tastatur-Handler über Dos.Get/SetIntVec(09h)", b"\xb0\x09" in kb and b"\x9a\xff\x00\xe6\x11" in kb,
+    check("G5", "UC48: Tastatur-Handler über Dos.Get/SetIntVec(09h)", b"\xb0\x09" in kb and far_call(0x11E6, 0x00FF) in kb,
           so(0x0C48, 0x19C))
     mouse = g.seg_bytes(0x0E11)
     check("G6", "UE11: Maus über INT 33h", mouse.count(b"\xcd\x33") >= 10, so(0x0E11, mouse.find(b"\xcd\x33")))
@@ -444,7 +508,7 @@ def cmd_befunde(g, args):
     hits = 0
     for _n, d, _f, _b in g.code_blocks():
         for v in (0xE8C4, 0xE8C6, 0xE8C8, 0xE8CC):
-            hits += len(find(d, re.escape(b"\xff\x36" + struct.pack("<H", v)) + b"\x9a\x9c\x02\xf8\x11"))
+            hits += len(find(d, re.escape(b"\xff\x36" + struct.pack("<H", v)) + far_call(0x11F8, 0x029C)))
     tsv = {}
     for name, var in [("TS", 0xE8C4), ("FS", 0xE8C8), ("ES", 0xE8C6), ("SS", 0xE8CA), ("LS", 0xE8CC)]:
         at = o2.find(b"\x02" + name.encode())
@@ -453,7 +517,7 @@ def cmd_befunde(g, args):
     check("H5", "Optionen TS/FS/ES/SS/LS landen in DS:E8C4/E8C8/E8C6/E8CA/E8CC; TS/FS/ES/LS gehen direkt als Millisekunden an Crt.Delay",
           all(tsv.values()) and hits >= 15, "%s, %d Aufrufe Delay([var])" % (tsv, hits))
     check("H6", "Crt.Delay-Sättigung: Kalibrierzähler 16 Bit (CX=FFFFh), DelayCnt höchstens FFFFh/55 = 1191",
-          crt[0x77:0x7A] == b"\xb9\xff\xff" and crt[0x80:0x87] == bytes.fromhex("91f7d033d2f7f1"), so(0x11F8, 0x77))
+          region_ok(g, "H6"), so(0x11F8, 0x77))
     for fid, st, claim, where in results:
         print("%-3s %s %s  [%s]" % (fid, st, claim, where))
     print("Ergebnis: %d von %d Befunden bestätigt" % (sum(r[1] == "OK  " for r in results), len(results)))

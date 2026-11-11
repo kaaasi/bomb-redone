@@ -4,7 +4,7 @@ Spur `re-grundlagen`, Runde 1 (Stand 11.11.2026, Claude Opus 5.5). Eigene Beschr
 Texttabelle liegen nur im Referenz-Repo (`analyse/re-grundlagen/`, R1-D2 = B, R1-D4 = A).
 
 **Beleg für jede Aussage:** `python3 tools/reverse-engineering/bombre.py befunde` prüft die Befunde A1–H6 gegen die
-Originaldateien in `gamedata/` (Ergebnis zum Head: **39 von 39 bestätigt**), `… karte` die Bildschirmkarte (26 von 26),
+Originaldateien in `gamedata/` (Ergebnis zum Head: **40 von 40 bestätigt**), `… karte` die Bildschirmkarte (26 von 26),
 `… segments`, `… overlays` und `… fonts` erzeugen die Tabellen unten. Die Befundnummer steht hinter jeder Aussage.
 Werkzeuge: Python 3 und `ndisasm` (Paket `nasm`, nur für `listings`).
 
@@ -87,11 +87,14 @@ Einsprünge und Aufrufer: `bombre.py overlays`; Listings im Referenz-Repo vermer
 ## 4. Grafik, Schrift, Palette
 
 - **BGI:** eingebunden in `0431` der Treiber VGA256 2.00 (`BOMB.EXE 0x07EB7`) und die Strichschriften LITT (`0x08B90`),
-  EURO (`0x09F9B`) und TINY (`0x0C0AE`) (F1–F4). `0DBD` meldet den Treiber `vga256` und die Schriften EURO, LCOM, SCRI, SIMP,
+  EURO (`0x09F9B`) und TINY (`0x0C0AE`) (F1–F4). Die Offsets sind die Dateianfänge (`PK` + 08h 08h, BGI-Kennung); `befunde`
+  prüft zusätzlich den Schriftkopf hinter dem Copyright-Text (1Ah 80h 00h + Schriftname: LITT `0x08BE8`, EURO `0x09FF4`,
+  TINY `0x0C0F9`) und meldet beide Offsets. `0DBD` meldet den Treiber `vga256` und die Schriften EURO, LCOM, SCRI, SIMP,
   TSCR, TINY an (Nummern in `DS:E910`–`E91A`) (F6); LCOM, SCRI, SIMP, TSCR sind nicht eingebunden und werden nie benutzt.
 - **Schriften im Gebrauch** (F7, `bombre.py fonts`): `SetTextStyle` (`0E26:1496`) nur mit DefaultFont 8 × 8, SmallFont
   (LITT), EURO und TINY. Kopfzeile „TANK WARS …“ des Hauptmenüs und Knopf START (`O2:06BD`, `O2:07BA`): **EURO, Größe 1**,
-  viermal versetzt gezeichnet (Schatten). Menüeinträge (`O2:1E7F`) und Wertung: SmallFont Größe 1; Überschrift „Main Menu“
+  mehrfach versetzt gezeichnet (Schatten): Kopfzeile `O2:06BD` mit 4, START `O2:07BA` mit 5 Aufrufen von `OutTextXY` (F8);
+  `[APPROX]` wozu der fünfte Aufruf bei START dient, ist nicht untersucht. Menüeinträge (`O2:1E7F`) und Wertung: SmallFont Größe 1; Überschrift „Main Menu“
   und Spielfeld-Kopfzeile: DefaultFont; Einkauf: EURO und TINY Größe 4; Wandbeschriftung (`O8:0984`): SmallFont senkrecht.
   `[APPROX]` Die Namen `SetTextStyle`, `SetTextJustify` (`0E26:1454`), `OutTextXY` (`0E26:1F12`), `SetColor`
   (`0E26:1DC2`) folgen aus den Argumentmustern, nicht aus einem Symbolbeleg.
