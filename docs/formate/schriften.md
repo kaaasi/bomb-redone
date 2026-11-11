@@ -84,12 +84,27 @@ Der BGI-Kern der Unit `Graph` (Segment `0E26`) adressiert seine Variablen relati
 
 Der Treiber VGA256 holt Zeichen 0–127 aus dem ROM-BIOS (`F000:FA6E`) und 128–255 über den Vektor INT 1Fh (`0000:007C`);
 ist der Vektor 0, nimmt er das Leerzeichen des ROMs (`BOMB.EXE 0x08769`–`0x087A2`). **Die Glyphen gehören also nicht zum
-Spiel**, in DOSBox sind es die eingebauten VGA-Zeichen. `BitmapFont` hält nur das Format (8 Byte je Zeichen, Bit 7 links);
-woher die Daten kommen, ist offen (§5).
+Spiel**, in DOSBox sind es die eingebauten VGA-Zeichen. `BitmapFont` hält nur das Format (8 Byte je Zeichen, Bit 7 links).
+
+**Quelle nach R1-schrift-1 = D** (`BitmapFontSource`):
+
+| Fall | Schrift | Herkunft |
+|---|---|---|
+| Referenz vorhanden | `dosbox-0.74-3-vga-8x8.bin`, 256 Zeichen, SHA-256 `75c79a7e…f319` | Feld `int10_font_08` aus DOSBox 0.74-3, `src/ints/int10_memory.cpp` (GPL-2+). `INT10_SetupRomMemory` schreibt die erste Hälfte nach `F000:FA6E` und setzt INT 1Fh auf die zweite – genau die Adressen, die der Treiber liest. Nur im Referenz-Repo, Ordner `schriften/` (README dort: Spiegel, Prüfsummen). |
+| Referenz fehlt | `BitmapFontSubstitute`, 128 Zeichen (128–255 leer) | „font8x8“ von Daniel Hepper, `font8x8_basic.h`, gemeinfrei (Fundstelle und Prüfsumme im Quelltext), Bitfolge auf Bit 7 links gedreht. `[APPROX]` |
+
+- **Suchreihenfolge:** `referenz/schriften/` (Schutzordner im Stamm) im aktuellen Verzeichnis, im Programmverzeichnis und
+  deren Eltern, danach `$REFERENZ/schriften/` bzw. `~/referenz/schriften/` (Ziel von `tools/claude/fetch-reference.sh`).
+  Eine Datei mit dem Namen, aber anderer Prüfsumme ist ein Fehler, kein stiller Wechsel zum Ersatz.
+- **Abstand Ersatz–Referenz:** Von den 95 druckbaren ASCII-Zeichen (32–126) sind 93 gleich; nur `!` und `"` weichen ab
+  (Test `BitmapFontReferenceTests`). Die Steuerzeichen 0–31 und die obere Hälfte fehlen dem Ersatz.
+- **Tests:** `[ReferenceFontFact]` wie Originaldaten – ohne Datei übersprungen, `BOMB_SKIP_GAMEDATA=1` blendet sie aus;
+  Pflicht nur mit `BOMB_REQUIRE_REFERENCE_FONT=1` (noch nicht über `BOMB_REQUIRE_GAMEDATA=1`, solange das Laden der Datei
+  nicht in `fetch-reference.sh` steht).
 
 ## 5. Offene Punkte
 
-- **Quelle der 8 × 8-Schrift** (Entscheidung, gebündelt über die Leitstelle): Optionen und Empfehlung im PR der Spur.
+- ~~Quelle der 8 × 8-Schrift~~: entschieden (R1-schrift-1 = D), siehe §4.
 - Kernwort 81h und der Codepfad `0x131AC` (nutzt `AX` ohne sichtbare Ladung) – nur relevant, falls das Wort zur Laufzeit
   unter 10000 fällt; prüfbar mit einem DOSBox-Bild einer waagrechten Strichschrift.
 - Linienalgorithmus des Treibers (Pixelwahl bei Bresenham-Gleichstand) und Clipping am Sichtfenster (`0x134E6`):
