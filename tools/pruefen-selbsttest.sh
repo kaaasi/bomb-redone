@@ -36,8 +36,9 @@ for i in range(n):
     if mode == "teilabsturz-konsole" and i == n - 1:
         print("Testhost crashed"); continue
     aborted = mode == "teilabsturz-trx" and i == n - 1
-    trx(out / f"p{i}.trx", "Aborted" if aborted else "Failed",
-        "Testhost crashed" if aborted else "Original data missing (folder gamedata), but BOMB_REQUIRE_GAMEDATA=1 demands a run with original data.")
+    missing = ("Original data missing: Reference font missing, but BOMB_REQUIRE_GAMEDATA=1 demands it." if mode == "nur-schrift"
+               else "Original data missing (folder \"gamedata\"), but BOMB_REQUIRE_GAMEDATA=1 demands a run with original data.")
+    trx(out / f"p{i}.trx", "Aborted" if aborted else "Failed", "Testhost crashed" if aborted else missing)
     if mode == "anderer-fehler" and i == 0:
         trx(out / f"p{i}.trx", "Failed", "Assert.Equal() Failure")
     print(line.format("Failed", 1, 6, 0, 7, i))
@@ -58,5 +59,6 @@ lauf absturz abgelehnt               # no results at all
 lauf teilabsturz-konsole abgelehnt   # one project without a result line
 lauf teilabsturz-trx abgelehnt       # one project with ResultSummary "Aborted"
 lauf anderer-fehler abgelehnt        # one failure with a different reason
+lauf nur-schrift abgelehnt           # only the reference font is missing, no failure from TestGameData.Load
 rm -rf "$TMP"
 exit $fehler

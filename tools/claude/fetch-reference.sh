@@ -48,10 +48,12 @@ for f in "${FOLDERS[@]}"; do
     missing=1
   fi
 done
-if [ -f "$TARGET/original/SHA256SUMS" ]; then
-  (cd "$TARGET/original" && sha256sum -c --quiet SHA256SUMS) && echo "original: Prüfsummen stimmen" || { echo "original: Prüfsummen weichen ab" >&2; missing=1; }
-fi
-if [ -f "$TARGET/schriften/SHA256SUMS" ]; then
-  (cd "$TARGET/schriften" && sha256sum -c --quiet SHA256SUMS) && echo "schriften: Prüfsummen stimmen" || { echo "schriften: Prüfsummen weichen ab" >&2; missing=1; }
-fi
+# Checksums: checked whenever present; for a folder named in this call a missing SHA256SUMS is an error.
+for d in original schriften; do
+  if [ -f "$TARGET/$d/SHA256SUMS" ]; then
+    (cd "$TARGET/$d" && sha256sum -c --quiet SHA256SUMS) && echo "$d: Prüfsummen stimmen" || { echo "$d: Prüfsummen weichen ab" >&2; missing=1; }
+  elif [ -d "$TARGET/$d" ] && printf '%s\n' "${FOLDERS[@]}" | grep -qx "$d"; then
+    echo "$d: SHA256SUMS fehlt, Prüfsummen nicht geprüft" >&2; missing=1
+  fi
+done
 exit "$missing"

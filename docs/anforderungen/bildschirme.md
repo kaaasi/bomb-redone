@@ -50,7 +50,7 @@ Jedes vorhandene Bild ist genau einer Zeile zugeordnet. „Übergang“ = Bildau
 | 00175 | Übergang (Aufbau, ellipsenförmig) | |
 | 00176–00211 | B4 Spielfeld, Spiel 5 | Hintergrund blaue Ringe |
 | 00212–00213 | B5 Wertung „5 Games Played out of 10“ | |
-| 00214 | B6 Einkauf des zweiten Spielers (Computer „Lob & Shoot“) | nur ein Bild, Liste leer (unsicher) |
+| 00214 | B6 Einkauf des zweiten Spielers (Computer „Lob & Shoot“) | nur ein Bild, Liste leer |
 | 00215–00236 | B4 Spielfeld, Spiel 6 | Hintergrund dunkel, ohne Muster |
 | 00237–00238 | B5 Wertung „6 Games Played out of 10“ | |
 | 00239–00244 | B6 Einkauf | |
@@ -62,31 +62,31 @@ Jedes vorhandene Bild ist genau einer Zeile zugeordnet. „Übergang“ = Bildau
 | 00288–00328 | B4 Spielfeld, Spiel 8 | Hintergrund blauer Verlauf; 00302: hellblaue Fläche über dem Berg (unsicher, Blitz oder Effekt) |
 | 00329–00330 | B5 Wertung „8 Games Played out of 10“ | |
 | 00331–00337 | B6 Einkauf (Javier) | |
-| 00338 | B6 Einkauf des Computers („Lob & Shoot“) | ein Bild |
+| 00338 | B6 Einkauf des Computers („Lob & Shoot“) | ein Bild, sechs Einträge (Incinerator bis Mark II Dirt) |
 | 00339 | Übergang (Aufbau, einfarbig gelb) | |
 | 00340–00383 | B4 Spielfeld, Spiel 9 | Hintergrund gelbes Muster |
 | 00384 | Übergang B4 → B5 | leere Wertungstafel („9 Games out o…“) |
 | 00385–00386 | B5 Wertung „9 Games Played out of 10“ | |
 | 00387–00393 | B6 Einkauf | |
 | 00394–00426 | B4 Spielfeld, Spiel 10 | Hintergrund Strahlen (blau/grün); 00394 Aufbau |
-| 00427–00430 | B5 Wertung „10 Games Played out of 10“ | mittlerer Knopf unter dem Zeiger, Beschriftung unsicher (siehe B5) |
+| 00427–00430 | B5 Wertung „10 Games Played out of 10“ | mittlerer Knopf „Exit“ (LP 00428, siehe B5) |
 | 00431 | Übergang (schwarz) | |
 | 00432–00439 | B1 Titelbild (Ende) | wie Anfang, Aufbau wie 00000–00005 |
 
 Prüfung (Skript über die Tabelle): alle Nummern 00000–00439 außer 00359 sind je genau einer Zeile zugeordnet; 00359 liegt
-in der Zeile 00340–00383, existiert aber nicht (pixelgleich zu 00358).
+in der Zeile 00340–00383, die Datei fehlt im Referenz-Repo (Lücke in der Bildfolge).
 
 ### 1.2 Kurzes Video (`TW`, 0–151)
 
-Das Video beginnt im laufenden Spiel (Spiel 8 von 10, Spielnummer aus den Tafeln, unsicher) und endet auf der Schlusswertung.
+Das Video beginnt im laufenden Spiel (Spiel 8 von 10, Spielnummer aus den Tafeln TW 00031/00094) und endet auf der Schlusswertung.
 
 | Bilder | Bildschirm / Übergang | Anmerkung |
 |---|---|---|
 | 00000–00030 | **B4 Spielfeld** | 4 Panzer (rot „ZZZ“, gelb, blau, grün); Feldbeschriftung links „WARP“; Hintergrund dunkel mit Sternpunkten; 00009–00011 Einschlag, Erde stürzt nach |
-| 00031 | **B5 Wertung** | „… Games Played out of 10“ (Zahl unsicher: 8) |
+| 00031 | **B5 Wertung** | „8 Games Played out of 10“ |
 | 00032–00037 | **B6 Einkauf** (ZZZ) | 00032 Liste noch im Aufbau |
 | 00038–00093 | B4 Spielfeld | ein Panzer wird getroffen (00059–00062), Gelände erodiert, 00066: Name in blauer Schrift (Spielerwechsel) |
-| 00094 | B5 Wertung | Zahl unsicher: 9 |
+| 00094 | B5 Wertung | „9 Games Played out of 10“ |
 | 00095–00100 | B6 Einkauf (ZZZ) | zwei Spalten, 16 Einträge (siehe Abschnitt 4) |
 | 00101 | Übergang (leer, dunkel) | |
 | 00102–00149 | B4 Spielfeld | |
@@ -113,8 +113,8 @@ Zählprobe: 31 + 1 + 6 + 56 + 1 + 6 + 1 + 48 + 1 + 1 = 152 Bilder.
 - **Zweck:** Optionen wählen, Spiel starten. Fundstellen: LP 00009–00024.
 - **Elemente:** Kopfleiste „TANK WARS 3.2“ (gelb auf grau, wörtlich LP 00010); Hintergrund magentafarbene Rechteckringe;
   Kasten „Main Menu“ (blau auf grau) mit fünf Knöpfen in grüner Schrift: „Sound Options“, „Game Options“, „Players: 2“,
-  „Games:10“, „START“; links ein einzelner schmaler Knopf ohne lesbare Beschriftung (LP 00009; unsicher: Laden, vgl. DOC
-  „LOAD MENU“). Mauszeiger vorhanden.
+  „Games:10“, „START“; links ein einzelner schmaler Knopf **„Load Game“** (abgeblendet, LP 00012/00016; Text `BOMB.OVR 0x23F3`;
+  vgl. DOC „LOAD MENU“). Mauszeiger vorhanden.
 - **Bedienung:** Mit der Maus; laut DOC auch Tastatur (hoch/runter, links/rechts) – im Video nur Maus zu sehen.
 - **Übergänge:** „Sound Options“ → B2a, „Game Options“ → B2b (Klick schließt das Popup wieder, LP 00023), „START“ → B3 (LP 00024–00025).
 
@@ -135,7 +135,7 @@ Graues Feld mit zehn Zeilen, Bezeichnung links, Wert gelb rechts (wörtlich, LP 
 | Trail Visible: | YES | „Trail Visible“ |
 | Ball Visible: | YES | „Shot Visible“ |
 | Tanks Fall: | YES | „Tanks Fall“ |
-| Computer Can Buys: (so gelesen; Zeigerüberdeckung, unsicher) | YES | „Computers Can Buy“ |
+| Computer Can Buy: (LP 00017, Zeiger überdeckt; Text `BOMB.OVR 0x1710`) | YES | „Computers Can Buy“ |
 | Background: | RND | „Background“ |
 | Cycle Delay: | 0 | „Palette Speed“ |
 | Wind Force: | Norm | „Wind Force“ |
@@ -146,8 +146,7 @@ Die Zeilen „Number of Players“ und „Games“ stehen im Hauptmenü („Play
 ### B3 Spielerauswahl
 
 - **Zweck:** je Spieler festlegen, wer steuert; Namen vergeben. Fundstellen: LP 00026–00036.
-- **Elemente:** gleiche Kopfleiste „TANK WARS 3.2“; zehn Felder in 2 × 5 („Player 1“ … „Player 10“, LP 00028, „Player 10“ nur
-  als „Player 1D“ lesbar, unsicher). Jedes Feld: Kopf „Player n“ (Spielerfarbe: 1 rot, 2 grün, weitere ohne Farbe/grau
+- **Elemente:** gleiche Kopfleiste „TANK WARS 3.2“; zehn Felder in 2 × 5 („Player 1“ … „Player 10“, LP 00028). Jedes Feld: Kopf „Player n“ (Spielerfarbe: 1 rot, 2 grün, weitere ohne Farbe/grau
   solange nicht belegt), darunter drei Zeilen **KEYBOARD / MOUSE / COMPUTER**; die gewählte Zeile ist blau
   hervorgehoben (LP 00029: Player 1 KEYBOARD, Player 2 COMPUTER); darunter ein kleines „+“. Unten großer Knopf „START“ (gelbe
   Schmuckschrift, LP 00027).
@@ -159,8 +158,8 @@ Die Zeilen „Number of Players“ und „Games“ stehen im Hauptmenü („Play
 #### B3a Popup Computerwahl (LP 00028)
 
 Orange/gelbe Liste mit acht Einträgen (wörtlich): „Random (?)“, „Mr. Stupid“, „Lobber“, „Rifleman“, „Lob & Shoot (B)“, „Windless Wit“,
-„Twanger“, „Wind Master“. DOC nennt sieben Computer (ohne „Random“); die Zusätze „(?)“ und „(B)“ sind in DOC nicht erklärt
-(unsicher: „B“ = Hotkey oder „bester“).
+„Twanger“, „Wind Master“. DOC nennt sieben Computer (ohne „Random“). „(?)“ und „(B)“ sind Tasten: „?“ (und Esc) wählt „Random“,
+B „Lob & Shoot“ (Text „Random (“ `BOMB.OVR 0x4CC3`; Tasten `O2:4C09`/`O2:4C2F`, `anforderungen/spielerauswahl.md`).
 
 #### B3b Namenseingabe (LP 00030–00033)
 
@@ -198,8 +197,8 @@ mit Cursor-Unterstrich. Länge der Namen unbekannt.
   „2 Games …“, „10 Games Played out of 10“); Tabelle mit Spaltenkopf „Player“ / „Wins“ / „Score“ und je Spieler einer Zeile „1. Javier“,
   Siege, Punkte (Beispiel „1. Javier 1 4260“, „2. Lob & Shoot 0 0“; Name in Spielerfarbe, Punkte in Spielerfarbe); darunter drei
   Knöpfe **Add**, **Continue**, **Save**. Bei vier Spielern vier Zeilen (TW 00031/00150).
-- **Letzte Wertung:** TW 00150 zeigt statt „Continue“ den Knopf **Exit** („Add / Exit / Save“). LP 00427–00430 (Mauszeiger über
-  der Mitte) lässt den mittleren Text nicht sicher lesen (unsicher: „Exit“).
+- **Letzte Wertung:** TW 00150 und LP 00428 zeigen statt „Continue“ den Knopf **Exit** („Add / Exit / Save“; Texte
+  `BOMB.OVR 0xE52D`/`0xE536`).
 - **Abweichung von DOC** („STATUS SCREENS“): dort „OK, ADD, and SAVE“ und zwei Tafeln bei Team Play; im Video heißt der erste Knopf
   „Continue“ und nur eine Tafel ist zu sehen (kein Team Play).
 - **Übergänge:** „Continue“ → Einkauf oder nächste Runde (LP 00067–00068); „Add“ und „Save“ nicht im Video angeklickt.
@@ -218,7 +217,7 @@ mit Cursor-Unterstrich. Länge der Namen unbekannt.
 - **Bedienung laut DOC „BUYING EQUIPMENT“:** `+`/`-`, Maus rechts/links, `P` = Purchase, `D` = Done; im Video nur Maus.
 - **Übergänge:** „Done“ → nächstes Spiel (LP 00072 → 00073; TW 00100 → 00101).
 - **Computer:** Der Einkauf des Computergegners wird nur als sehr kurzes Bild gezeigt (LP 00214, 00338, Name „Lob & Shoot“ in
-  Grün, Liste leer oder fast leer) – DOC „Computers Can Buy“.
+  Grün; LP 00214 Liste leer, LP 00338 sechs Einträge) – DOC „Computers Can Buy“.
 - **Fehlender Einkauf:** Nach Spiel 3 (LP 00140–00142) folgt kein Einkaufsbild (Grund unklar; DOC: nur wer genug Punkte hat).
 
 ## 3. Ablauf einer Partie als Zustandsfolge
@@ -263,11 +262,12 @@ Alle Angaben aus der Einkaufstafel TW 00100 (vollständigste Liste, links nach r
 | Xplosive Dirt | 10 FOR 4500 | TW 00100, LP 00172 | DOC „Explosive Dirt“ |
 | Inertia Damp. | 100% FOR 10000 | TW 00100 | blau beschriftet (Abwehrsystem, DOC „Defense Systems“) |
 
-Was die Anleitung nennt, die Einkaufstafel aber nicht zeigt (DOC „WEAPONS“): Lead Ball und Hand Grenade (zu Beginn vorhanden, nicht
-käuflich); Zielhilfen („Guidance Systems“, 2 Stück, Tasten H/V); zwei weitere Abwehrsysteme (Fallschutz, Beschuss abwehren). DOC
-nennt 18 Waffen, 2 Zielhilfen, 3 Abwehrsysteme; in der Tafel stehen 15 Waffen und 1 Abwehrsystem. Es fehlt entweder die Kaufmöglichkeit
-oder die Tafel war nicht vollständig (unsicher, siehe Abschnitt 6). Ob die Tafel unten weitere Zeilen hat, ist am Bildrand nicht
-sicher (TW 00100 schneidet unten ab).
+Nicht in der Tafel TW 00100: **CRI 20/D** (1 FOR 15000; `BOMB.EXE 0x1886C`, bei 12930 Dollar zu teuer) sowie Lead Ball und
+Hand Grenade (DOC „WEAPONS“: „The first three are available when the game begins“; in `BOMB.EXE` Menge 0 und Preis −1, der
+Einkauf überspringt Menge 0, `O3:020B`/`BOMB.OVR 0x08C97` – nicht käuflich, Beleg `anforderungen/wertung-einkauf.md` §1). Die
+15 Waffen der Tafel plus diese drei ergeben die 18 Waffennamen von `BOMB.EXE` (`0x16C6C` ff.) und DOC. Ebenso fehlen die
+Zielhilfen („Guidance Systems“, Tasten H/V, je 20000) und zwei Abwehrsysteme (Energy Shield 20000, Repulser 15000) – zu teuer
+(`Core/Economy/ItemCatalog`). Ob die Tafel unten weitere Zeilen hat, ist am Bildrand nicht sicher (TW 00100 schneidet unten ab).
 
 ## 5. Abgleich mit der Anleitung (`BOMB.DOC`)
 
@@ -278,7 +278,7 @@ sicher (TW 00100 schneidet unten ab).
 | Standardwerte | Crumble 50 %, Walls Random | 75 %, wechselnd | Werte stammen aus Spielerkonfiguration |
 | Wind-Stufen | fünf von None bis Gale, plus RND | „Norm“ | nur ein Wert sichtbar |
 | Spielerauswahl | K/M/C wählen, Name per Leertaste | KEYBOARD/MOUSE/COMPUTER, Namensdialog | stimmt |
-| Computergegner | sieben | acht Zeilen mit „Random (?)“ | Differenz, „(?)“ und „(B)“ unerklärt |
+| Computergegner | sieben | acht Zeilen mit „Random (?)“ | zusätzlich „Random“; „(?)“ und „(B)“ sind Tasten (B3a) |
 | Kopfzeile Spiel | Power, Angle, Direction, Men, Wind | stimmt (LP 00041) | |
 | Waffenleiste | 20 Kästchen, schwarz/weiß/rot | stimmt (TW 00005) | |
 | Wertung | Knöpfe OK, ADD, SAVE; zwei Tafeln bei Team Play | Add, Continue, Save; letzte Tafel mit Exit | Beschriftung weicht ab (Fassung?) |
@@ -292,9 +292,9 @@ sicher (TW 00100 schneidet unten ab).
 Diese Zustände kommen in den Videos nicht oder nicht lesbar vor und sollten bei der Aufnahme `runde-1` (DOSBox, 320 × 200,
 verlustfrei, `docs/vorlagen/dosbox-aufnahme.md`) enthalten sein:
 
-1. **Hauptmenü vollständig:** linker Einzelknopf (LP 00009), alle Werte der Game-Options-Zeilen (Walls sechs Werte, Background-Namen,
+1. **Hauptmenü vollständig:** Knopf „Load Game“ nicht abgeblendet (mit Spielständen) und der Ladedialog, alle Werte der Game-Options-Zeilen (Walls sechs Werte, Background-Namen,
    Wind None…Gale, Cycle Delay, Team Play).
-2. **Spielerauswahl:** alle zehn Spieler belegt, Zustand „MOUSE“ und der Hinweis „+“, Computerliste mit Hotkeys „(?)“/„(B)“, Namenseingabe leer.
+2. **Spielerauswahl:** alle zehn Spieler belegt, Zustand „MOUSE“ und der Hinweis „+“, Computerliste, Namenseingabe leer.
 3. **Team-Play-Bildschirm** und Teamnamen-Eingabe (DOC „TEAM PLAY“) sowie zweite Wertungstafel.
 4. **Speichermenü** (Cancel, New Name, Save, Save & Quit, AutoSave), **Ladedialog** (DOC „LOAD MENU“).
 5. **Wertung** komplett: „Add“ (Spiele hinzufügen), Statistik pro Spieler (Klick auf den Namen: Treffer, Tötungen), letzte Tafel (Exit).
@@ -309,9 +309,7 @@ verlustfrei, `docs/vorlagen/dosbox-aufnahme.md`) enthalten sein:
 
 ## 7. Offene Unsicherheiten (Kurzliste)
 
-- Spielnummern der Wertungen TW 00031 und 00094 (gelesen 8 und 9).
-- Beschriftung des mittleren Knopfs in LP 00427–00430 (Continue oder Exit).
-- Werte der Walls-Zeile (LP 00017–00021) und Zeile „Computer Can Buys“.
+- Werte der Walls-Zeile (LP 00017–00021).
 - Zuordnung der Explosionsfarben und der Symbole in der Waffenleiste zu Waffen.
-- Bedeutung von „(?)“ und „(B)“ in der Computerliste, Grund für den fehlenden Einkauf nach Spiel 3.
+- Grund für den fehlenden Einkauf nach Spiel 3.
 - Ob die Einkaufstafel unten weitere Zeilen hat (Bildrand).

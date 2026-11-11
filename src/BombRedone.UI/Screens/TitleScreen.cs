@@ -26,10 +26,11 @@ namespace BombRedone.UI.Screens;
 public sealed class TitleScreen : IScreen
 {
     /// <summary>
-    /// [APPROX] Duration of one overlay pass. The original reveal has no delay; each pass is a loop over 64,000 bytes with
-    /// four instructions per byte (BOMB.EXE 0x05E34), i.e. about 256,000 instructions, at DOSBox <c>cycles=3000</c> (R1-D1)
-    /// about 85 ms. To be checked against a DOSBox recording (the longplay shows the lettering appear within roughly
-    /// 4 seconds, LP 00000-00003).
+    /// [APPROX] Duration of one overlay pass. The original reveal has no delay; each pass is a loop over 64,000 bytes
+    /// (U431:0484-048F, BOMB.EXE 0x05E34) with five instructions per byte without a hit (mov bx,cx; mov al,[bx]; cmp; jnz;
+    /// loop), i.e. about 320,000 instructions, at DOSBox <c>cycles=3000</c> (R1-D1) about 107 ms (55 passes about 5.9 s).
+    /// The longplay shows the lettering appear within roughly 4 seconds (LP 00000-00003, about 73 ms per pass); 85 ms lies
+    /// between both estimates. To be measured in the DOSBox recording runde-1.
     /// </summary>
     public static readonly TimeSpan OverlayPassDuration = TimeSpan.FromMilliseconds(85);
 

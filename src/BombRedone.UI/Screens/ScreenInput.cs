@@ -58,6 +58,14 @@ public static class BiosKey
     public const ushort Left = 0x4B00;
     public const ushort Right = 0x4D00;
 
+    /// <summary>
+    /// Key word of a character typed in the window (text input with the keyboard layout and Shift applied), or 0 if it
+    /// is not passed this way: only printable ASCII 0x21..0x7E ("?", punctuation, letters, digits). Space, Enter, Esc,
+    /// Backspace and the extended keys come from the key itself with their scan code; characters above 0x7E are left
+    /// out because the window delivers Unicode and the original expects code page 437 [APPROX].
+    /// </summary>
+    public static ushort FromTypedCharacter(char c) => c is >= '\x21' and <= '\x7E' ? c : (ushort)0;
+
     /// <summary>Key word of a character key (scan code left 0; Crt.ReadKey only returns the character).</summary>
     public static ushort Char(char c) => c is > '\0' and <= '\xFF'
         ? c

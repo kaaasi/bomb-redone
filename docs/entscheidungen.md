@@ -21,7 +21,7 @@ und Nachteilen, Empfehlung); hier steht nur das Ergebnis mit der gewählten Opti
 |---|---|---|
 | R1-D2 | Ablage von Disassembly-Listings | **B** (11.11.2026): annotierte Listings im privaten Referenz-Repo (`analyse/`), im Code-Repo nur eigene Beschreibungen mit Offsets. Ablage durch Leitstelle oder Nutzer per PR. |
 | – | Frühe Bildvorlage | Vorschlag des Nutzers (11.11.2026): zwei Gameplay-Videos zuerst statt der DOSBox-Aufnahme. Übernommen mit Grenze: Videobilder belegen Abläufe und Aufbau, keine Pixelgenauigkeit (E3); was nur aus Videos stammt, bleibt `[APPROX]`, bis ein DOSBox-Bild es belegt. |
-| R1-D3 | Ziel für `BOMB.CFG` und `*.TWS` | **A** (11.11.2026): in Runde 1 nur lesen. Schreiben und Rundreise sind späteres Ziel. |
+| R1-D3 | Ziel für `BOMB.CFG` und `*.TWS` (`*.TWS`: siehe GR1-1) | **A** (11.11.2026): in Runde 1 nur lesen. Schreiben und Rundreise sind späteres Ziel. |
 | – | Maßgebliche Fassung | **Release 3.2** bleibt die Vorlage (Nutzer 11.11.2026). |
 | R1-D1 | DOSBox-Referenz (Zyklen) | **A** (11.11.2026): `cycles=3000`. Beleg aus `re-grundlagen` (`docs/analyse/re-grundlagen.md`): die Delay-Kalibrierung sättigt bei etwa 3.580 Befehlen/ms; 3000 liegt darunter. Annahme 1 Zyklus je Befehl bleibt `[APPROX]`. Fassung: **DOSBox 0.74-3** (Nutzer 11.11.2026, Option A der Vorlage in `docs/arbeitspakete.md`). |
 | R1-D5 | Voreinstellungen Crumble/Walls (`BOMBCFG.EXE` 75 / None gegen `BOMB.DOC` 50 % / Random) | **C** (11.11.2026): Werte aus `BOMBCFG.EXE` übernehmen (tatsächliches Verhalten), Abweichung von der Anleitung in `docs/formate/konfiguration.md` dokumentiert. |

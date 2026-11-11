@@ -10,7 +10,10 @@ Umsetzung: `src/BombRedone.UI/Screens/Menu*`, `Options*`. Standardschrift: `docs
 
 1. Schleife `O2:0216(i)` für i = 1..10, dann bei `DS:E8BF` ≠ 0 Sonderweg ohne Menü (nicht umgesetzt, Bedeutung offen).
 2. `U431:01D8`: DAC 17/18/19 = (21,21,21), (42,42,42), (63,63,63); `SetViewPort(0, 0, 319, 199, ClipOn)`.
-3. Hintergrund `O2:3B96(0)` (§2), Kopfzeile `O2:06BD`, **Kopie des Bildschirms** (64.000 Byte) in den Puffer `DS:E5BC`,
+3. `UCC8:0006` (`O2:3E2F`): `GetViewSettings(DS:E8FA)` – Graph `0E26:1028` kopiert per `Move` (`12CE:0A81`) 9 Byte
+   (`ViewPortType`: x1, y1, x2, y2, Clip) aus `DS:EBE2` nach `DS:E8FA` (`BOMB.EXE 0x0E326`, `0x10928`); rein lesend, ändert
+   weder Bild noch Palette (nicht `SetAllPalette`, #61). Derselbe Aufruf folgt nach der Menüschleife (`O2:3E5E`).
+   Hintergrund `O2:3B96(0)` (§2), Kopfzeile `O2:06BD`, **Kopie des Bildschirms** (64.000 Byte) in den Puffer `DS:E5BC`,
    Überschrift `O2:0909`, Menü und Schleife `O2:1E7F` (§3, §4).
 4. Danach Übergänge (`UCC8:0687`, `UCC8:0AC0`, `UCC8:09E4`) und je nach Wahl Laden (`O3[2]`) oder Spielerauswahl `O2:52DD`.
    **Nicht umgesetzt:** Übergänge; START und Load Game führen vorerst auf einen Platzhalter (Stufe 2c). Game Options: §6;
@@ -97,8 +100,11 @@ an Texten falsch ausgerichtet).
   | 9 | Team Play: | `E8BC` | YES/NO | wie 2 | (195,138)–(225,146) |
 
   „Rechts“ = Pfeil rechts oder rechte Maustaste (+ 1 bis zur Grenze), „links“ = Pfeil links oder linke Taste (− 1 bis 0).
-  Geänderte Werte: `SetColor(14)`, `SetFillStyle(SolidFill, 18)`, Bar, neuer Text. Voreinstellungen: Crumble 10, Walls 0,
-  Trail aus, Inviso aus, Tanks Fall an, Computer Can Buy an, Background 0, Wind 2, Team aus, Pspeed 0.
+  Geänderte Werte: `SetColor(14)`, `SetFillStyle(SolidFill, 18)`, Bar, neuer Text. Vorbelegung vor dem Lesen von `BOMB.CFG`
+  (`O2:6611`): Crumble 10, Walls 0, Trail aus, Inviso aus, Tanks Fall an, Computer Can Buy an, Background 0, Wind 2, Team aus,
+  Pspeed 0 – im Original nie sichtbar (`BOMB.CFG` überschreibt sie, ohne Datei endet das Programm). Ohne `BOMB.CFG` nimmt das
+  Remake die Voreinstellungen von `BOMBCFG.EXE` (`GameConfig.BombCfgDefaults`, R1-D5 = C): Crumble 75, Walls None, Trail an,
+  Background 9 (Random), sonst wie oben; PV an (#79).
 - **Tasten** (je Durchlauf ein `ReadKey`, nur bei `KeyPressed`): Leertaste ändert die markierte Zeile (Spalte „Leertaste“),
   Enter und Esc (Menge `O2:118C` = {13, 27}) verlassen; nach Zeichen 0 die erweiterte Taste aus `DS:3716`: auf/ab 0..9 ohne
   Umlauf, rechts/links ändern die markierte Zeile.
@@ -116,8 +122,8 @@ an Texten falsch ausgerichtet).
 - `[APPROX]` Der Puffer von `GetMem(3940)` ist kleiner als das Bild (135 × 111 Punkte); das Original überschreibt den Heap
   dahinter. Nachgebildet ist die vollständige Wiederherstellung. Unbekannte Werte (z. B. Walls 7 aus `BOMB.CFG`) lassen das
   Funktionsergebnis in `O2:0E35/0F81/1042` unbesetzt (Text undefiniert); hier leerer Text. Wiederholrate bei gehaltener Taste =
-  ein Schritt je `Update` (Original: Prozessortakt). Esc beendet im Fenster weiterhin das Programm (Fenstertaste aus `titel`)
-  und erreicht das Optionsbild dort nicht; Enter und ein Klick neben die Zeilen verlassen es.
+  ein Schritt je `Update` (Original: Prozessortakt). Esc erreicht das Optionsbild im Fenster (#75); Enter, Esc und ein
+  Klick neben die Zeilen verlassen es.
 - **Abgleich:** Longplay 00017 (Werte wie im Bild) nach Lage und Form: Kasten, Zeilen, Werte, Marken an Zeile 0, verdeckte
   Menümarken – stimmt. Tests: `OptionsScreenTests` (Regeln je Zeile, Tasten, Maus, Warten, Rückweg; synthetisch),
   `OptionsScreenOriginalTests` (Prüfsumme mit EURO/LITT und Ersatzschrift, Farben, Neuzeichnen).
