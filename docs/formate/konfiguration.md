@@ -57,7 +57,7 @@ Dateioffset in `BOMB.OVR`, an dem `BOMB.EXE` das Feld liest.
 Alle 28 Felder sind über die Leseroutine belegt; kein Feld ist unbelegt. Die Spalte „Befehlszeile“ belegt die Bedeutung,
 die Debug-Namen die Zuordnung Variable ↔ Bedeutung. Die Spielerzahl wird **nicht** gespeichert.
 
-**Hintergrundauswahl (Offset 18/20):** Der Rundenaufbau ruft bei 0..8 Hintergrund n, bei 9 `Random(9)`, bei 10 so lange
+**Hintergrundauswahl (Offset 18/20):** Der Rundenaufbau ruft bei n ≤ 8 (vorzeichenbehaftet, `jg`) Hintergrund n – also auch bei negativen Werten –, bei 9 `Random(9)`, bei 10 so lange
 `Random(9)`, bis `1 shl n and UserBackgroundMask ≠ 0` (`BOMB.OVR 0x1CAED`–`0x1CB33`). Welche Bilder die Nummern 1..8 sind,
 ist hier nicht untersucht.
 
@@ -68,6 +68,10 @@ ist hier nicht untersucht.
   Pascal-Stringvergleich über Länge und Inhalt, also genau die 5 Byte. `BOMBCFG.EXE` liest zusätzlich die Kennungen `2.5` und
   `3.0` (eigene Leseroutinen, `BOMBCFG.EXE 0x6A87` ff.) und schreibt sie als 3.2 neu; das ist nicht Teil dieses Lesers.
 - **Werte:** werden ohne Bereichsprüfung übernommen; der Leser übernimmt sie ebenso (Enum-Werte außerhalb 0..5 bleiben erhalten).
+- **Zahlentyp:** Die 2-Byte-Felder sind Turbo-Pascal-`Integer` (vorzeichenbehaftet): Die Debug-Ausgabe erweitert sie mit
+  `cwd` vor `Write(LongInt)` (`BOMB.OVR 0x79AE` ff., z. B. `0x7A47`), der Rundenaufbau vergleicht `BackControl` mit `jg`
+  (`0x1CAED`). Ausnahmen: `BossScreenMemoryKiB` ist vorzeichenlos (`jna` bei `0x7024`); `UserBackgroundMask` steht nicht in der
+  Debug-Ausgabe, dort werden nur die Bits 0..8 geprüft, das Vorzeichen spielt keine Rolle. Nur für Werte ≥ 32768 von Bedeutung.
 - **Zusätzliche Byte:** werden nicht gelesen; der Leser ignoriert sie ebenso.
 
 ## Abweichungen von `BOMB.DOC`
@@ -87,8 +91,6 @@ Voreinstellung das Remake übernimmt, ist offen (Entscheidung Leitstelle/Nutzer)
 - **Zu kurze Datei:** Das Original prüft die Länge nicht (`BlockRead` ohne Ergebnisvariable unter `$I-`, laut Debug-Dump
   „I/O Checking OFF“), ungelesene Felder behalten vermutlich ihre Vorbelegung. Der Leser lehnt kürzere Dateien ab.
 - **Wahrheitswerte:** gelesen als „Byte ≠ 0“; wie `BOMB.EXE` andere Werte als 0/1 auswertet, ist nicht verfolgt.
-- **Zahlen:** vorzeichenlos gelesen; ob der Pascal-Typ `Integer` oder `Word` ist, ist nicht verfolgt (nur für Werte ≥ 32768
-  von Bedeutung).
 
 ## Zweite Beispieldatei
 

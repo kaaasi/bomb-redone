@@ -34,7 +34,10 @@ public enum BackgroundKind
     /// <summary>Value 0: no background ("BKN", "BK-"). [ORIGINAL] BOMB.OVR 0x71EA.</summary>
     None,
 
-    /// <summary>Values 1..8: always background n ("BKA".."BKH" store letter - 0x40). [ORIGINAL] BOMB.OVR 0x71AD–0x71C3.</summary>
+    /// <summary>
+    /// Values 1..8: always background n ("BKA".."BKH" store letter - 0x40). [ORIGINAL] BOMB.OVR 0x71AD–0x71C3.
+    /// Negative values land here too, because the round setup compares signed ([ORIGINAL] BOMB.OVR 0x1CAED jg).
+    /// </summary>
     Fixed,
 
     /// <summary>Value 9: random background each round ("BKR", "BK+"). [ORIGINAL] BOMB.OVR 0x720F, 0x1CAFC.</summary>

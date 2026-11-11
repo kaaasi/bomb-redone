@@ -131,8 +131,9 @@ public sealed record GameConfig
     /// <summary>Classification of <see cref="Background"/>.</summary>
     public BackgroundKind BackgroundKind => Background switch
     {
+        // [ORIGINAL] BOMB.OVR 0x1CAED: every value <= 8 (signed) selects background n; 0 is "none".
         0 => BackgroundKind.None,
-        >= 1 and <= 8 => BackgroundKind.Fixed,
+        <= 8 => BackgroundKind.Fixed,
         9 => BackgroundKind.Random,
         10 => BackgroundKind.User,
         _ => BackgroundKind.Unknown,
@@ -169,14 +170,14 @@ public sealed record GameConfig
         {
             SoundEffects = Flag(data, 5),
             FlySound = Flag(data, 6),
-            Wind = (WindSetting)Word(data, 7),
-            CrumblePercent = Word(data, 9),
-            Wall = (WallSetting)Word(data, 11),
+            Wind = (WindSetting)Integer(data, 7),
+            CrumblePercent = Integer(data, 9),
+            Wall = (WallSetting)Integer(data, 11),
             InvisibleShot = Flag(data, 13),
             ShotTrail = Flag(data, 14),
-            GamesToPlay = Word(data, 15),
+            GamesToPlay = Integer(data, 15),
             TanksFall = Flag(data, 17),
-            Background = Word(data, 18),
+            Background = Integer(data, 18),
             UserBackgroundMask = Word(data, 20),
             ForceMouse = Flag(data, 22),
             MouseEnabled = Flag(data, 23),
@@ -184,13 +185,13 @@ public sealed record GameConfig
             ExtendedKeyboard = Flag(data, 25),
             PaletteRotation = Flag(data, 26),
             CrudeVideo = Flag(data, 27),
-            PaletteSpeed = Word(data, 28),
+            PaletteSpeed = Integer(data, 28),
             ComputersBuy = Flag(data, 30),
-            TurretSpeed = Word(data, 31),
-            FallSpeed = Word(data, 33),
-            ExplosionSpeed = Word(data, 35),
-            ShotSpeed = Word(data, 37),
-            LaserSpeed = Word(data, 39),
+            TurretSpeed = Integer(data, 31),
+            FallSpeed = Integer(data, 33),
+            ExplosionSpeed = Integer(data, 35),
+            ShotSpeed = Integer(data, 37),
+            LaserSpeed = Integer(data, 39),
             PaletteUsesRetrace = Flag(data, 41),
             TeamPlay = Flag(data, 42),
             BossScreenMemoryKiB = Word(data, 43),
@@ -200,7 +201,14 @@ public sealed record GameConfig
     // [APPROX] Turbo Pascal Boolean; how BOMB.EXE treats values other than 0 and 1 is not traced.
     private static bool Flag(ReadOnlySpan<byte> data, int offset) => data[offset] != 0;
 
-    // [APPROX] Read unsigned; whether the Pascal type is Integer or Word is not traced.
+    // [ORIGINAL] Turbo Pascal Integer (signed): the debug dump sign-extends these fields with cwd before
+    // Write(LongInt) (BOMB.OVR 0x79AE ff., e.g. 0x7A47 mov ax,[0xe8a8]; cwd), and the round setup compares
+    // BackControl signed (BOMB.OVR 0x1CAED cmp word [0xe8ac],8; jg).
+    private static short Integer(ReadOnlySpan<byte> data, int offset) =>
+        BinaryPrimitives.ReadInt16LittleEndian(data[offset..]);
+
+    // Unsigned word: BossScreenMemoryKiB is compared unsigned ([ORIGINAL] BOMB.OVR 0x7024 jna); for
+    // UserBackgroundMask only single bits 0..8 are tested (BOMB.OVR 0x1CB2B–0x1CB33), so the sign does not matter.
     private static ushort Word(ReadOnlySpan<byte> data, int offset) =>
         BinaryPrimitives.ReadUInt16LittleEndian(data[offset..]);
 }
