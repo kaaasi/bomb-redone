@@ -1,0 +1,2 @@
+# Paths of own files with a guarded type (see .github/scripts/originalschutz_pruefen.py), one per line.
+# Every entry needs a reason in the pull request that adds it: the file must not be taken from the original.

@@ -18,7 +18,7 @@ Leitstelle und Nutzer per PR); gemergt wird vom Nutzer.
    in 320 × 200, unskaliert) erfragen bzw. die in `docs/entscheidungen.md` festgelegte Referenz nennen; in die README der
    Aufnahme schreiben. Ohne feste Einstellungen keine Aufnahme.
 4. **Je Sitzung:** dem Nutzer nur den nächsten Schritt nennen (kurz, nummeriert), auf Dateien und Bilder warten. Jede
-   hochgeladene Datei sofort prüfen: Größe, SHA-256, bei Bildern Format und Maße (320 × 200 bzw. das ungeschnittene Fenster);
+   hochgeladene Datei in einem Ordner **außerhalb des Code-Repos** ablegen und sofort prüfen: Größe, SHA-256, bei Bildern Format und Maße (320 × 200 bzw. das ungeschnittene Fenster);
    passt etwas nicht zum Schritt, den Nutzer bitten, ihn zu wiederholen. Dateien und Bilder unverändert übernehmen.
 5. **Ablage:** Branch `daten/<aufnahme>-<sitzung>` vom aktuellen `main` des Referenz-Repos. Spielstände und Konfigurationen
    nach `original/spielstaende/` (`BOMB.CFG` umbenannt nach `<zweck>.CFG`), Bilder nach `bilder/<aufnahme>/`

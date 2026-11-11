@@ -2,24 +2,33 @@
 # The original files of Tank Wars are copyrighted. Keep them locally in
 # gamedata/ (see README); the private repository kaaasi/bomb-referenz holds them.
 gamedata
-original/
-referenz/
-# Original file names and types (case variants included), wherever they are placed
-[Bb][Oo][Mm][Bb]*.[Ee][Xx][Ee]
-[Bb][Oo][Mm][Bb]*.[Oo][Vv][Rr]
-[Bb][Oo][Mm][Bb]*.[Rr][Aa][Ww]
-[Bb][Oo][Mm][Bb]*.[Hh][Ll][Pp]
-[Bb][Oo][Mm][Bb]*.[Ii][Cc][Oo]
-[Bb][Oo][Mm][Bb]*.[Ii][Cc][Pp]
-[Bb][Oo][Mm][Bb]*.[Cc][Ff][Gg]
+# Folders for anything taken from the original (files, save games, screenshots, video frames, listings).
+# Such material may only ever be placed in these folders or outside the working tree (AGENTS.md, rule 2.1);
+# file names cannot protect it, because renamed configurations and screenshots look like any other file.
+/original/
+/referenz/
+/aufnahmen/
+/capture/
+/bilder/
+/videos/
+/analyse/
+# Exact names of the original package and the files the original writes, wherever they are placed.
+# Deliberately no wildcards after "BOMB": own files such as BombRedone.ico must stay addable.
+[Bb][Oo][Mm][Bb].[Ee][Xx][Ee]
+[Bb][Oo][Mm][Bb][Cc][Ff][Gg].[Ee][Xx][Ee]
+[Bb][Oo][Mm][Bb].[Oo][Vv][Rr]
+[Bb][Oo][Mm][Bb][12].[Rr][Aa][Ww]
+[Bb][Oo][Mm][Bb][Cc][Ff][Gg].[Hh][Ll][Pp]
+[Bb][Oo][Mm][Bb].[Ii][Cc][Oo]
+[Bb][Oo][Mm][Bb][Cc][Ff][Gg].[Ii][Cc][Oo]
+[Bb][Oo][Mm][Bb].[Ii][Cc][Pp]
+[Bb][Oo][Mm][Bb][Cc][Ff][Gg].[Ii][Cc][Pp]
+[Bb][Oo][Mm][Bb].[Cc][Ff][Gg]
 [Bb][Oo][Mm][Bb].[Dd][Oo][Cc]
 [Bb][Oo][Mm][Bb].[Tt][Xx][Tt]
 [Rr][Ee][Vv][Ii][Ss][Ii][Oo][Nn].[Hh][Ss][Tt]
+[Bb][Oo][Mm][Bb]32.[Zz][Ii][Pp]
 *.[Tt][Ww][Ss]
-[Bb][Oo][Mm][Bb]*.[Zz][Ii][Pp]
-
-# Screenshots and captures of the original (DOSBox)
-capture/
 *.zmbv
 
 # Assets exported by the tools
