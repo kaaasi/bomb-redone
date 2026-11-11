@@ -169,7 +169,7 @@ Leitstelle nach dem Merge der vorigen an (Base dann der neue `main`, im Startauf
 | 2a | `schrift` | Claude Opus 5.5 | – |
 | 2a | DOSBox-Aufnahme `runde-1` (Nutzer mit Agent, `vorlagen/dosbox-aufnahme.md`) | Claude Sonnet 5.5 | R1-D1 |
 | 2b | `menue` | Claude Opus 5.5 | `titel`, `schrift` |
-| 2c | `spielerauswahl`, `wertung-einkauf` (parallel) | Claude Opus 5.5 | `menue` |
+| 2c | `spielerauswahl`, `wertung-einkauf` (parallel) | Claude Opus 5.5 | `menue` (gemergt 11.11.2026) |
 
 Integrationsfolge 2a: `titel` → `schrift`. Bilder der DOSBox-Aufnahme sind, sobald im Referenz-Repo gemergt, Abnahmevorlage
 (E3: pixelgenau); bis dahin gelten die dekodierten Originaldateien und die Disassembly, Videobilder nur für Abläufe (`[APPROX]`).
@@ -224,9 +224,40 @@ Integrationsfolge 2a: `titel` → `schrift`. Bilder der DOSBox-Aufnahme sind, so
   `[APPROX]`. Fortsetzungen nur, wenn ein Teil nicht in einen Lauf passt.
 - **Modell:** Claude Opus 5.5. **Review:** Claude Opus 5.5 (Erstreview, frische Sitzung).
 
-#### Spätere Stufe 2c (Zuschnitt nach Merge von `menue`)
+#### Stufe 2c – parallel, Base `b94551247f1e0c6ce129dccd4ed5abc4471b667e` (`main` nach Merge von `menue`)
 
-- **`spielerauswahl`**, **`wertung-einkauf`** – weitere statische Bildschirme (Karte in `re-grundlagen` §6).
+Integrationsfolge: `spielerauswahl` → `wertung-einkauf`. Gemeinsame Dateien: je Spur höchstens eine Registrierungszeile in
+`src/BombRedone.Tools/Program.cs`; `src/BombRedone.Desktop/*` nur `spielerauswahl`. Beide Spuren ohne Teilliste (ein Teil);
+Fortsetzungen legt die Leitstelle an. Erstreview je Spur: Claude Opus 5.5, frische Sitzung.
+
+#### Spur `spielerauswahl` – Spielerauswahl und Teams
+
+- **Inhalt:** Bildschirm der Spielerauswahl nach `O2:509C` (Steuerart), `O2:42E8` (Name), `O2:481B` (Computergegner),
+  `O2:2749` (Teams) und das große START mit Glanz (`O2:52E4` ruft `O2:07BA`, `re-grundlagen` §6, `menue.md`); Übergang aus dem
+  Hauptmenü (START) und zurück; Ergebnis als Spielaufstellung im Spielkern (Namen, Steuerart, Gegnertyp, Team), ohne Fenster und
+  ohne Zufall von außen. Ziel nach START (Spielfeld) als Platzhalter.
+- **Dateien:** `src/BombRedone.Core/Setup/*`, `src/BombRedone.UI/Screens/PlayerSelect*`, `src/BombRedone.Desktop/*`,
+  `tests/BombRedone.Core.Tests/Setup/*`, `tests/BombRedone.UI.Tests/Screens/PlayerSelect*`, `docs/anforderungen/spielerauswahl.md`;
+  `src/BombRedone.UI/Screens/Menu*` nur additiv (Übergang START).
+- **Abnahme:** synthetische Tests je Eingabeschritt (Namen tippen, Steuerart und Gegner wählen, Teams, Abbruch) und für die
+  Spielaufstellung; Originaldaten-Tests: Prüfsummen der gezeichneten Zustände, Texte und Gegnernamen aus `BOMB.EXE`/`BOMB.OVR`
+  mit Fundstelle; Abgleich mit Videobildern (Abschnitt B3 in `docs/anforderungen/bildschirme.md`) nach Lage und Form (`[APPROX]`).
+- **Modell:** Claude Opus 5.5.
+
+#### Spur `wertung-einkauf` – Wertung, Endergebnis und Einkauf
+
+- **Inhalt:** Wertung einzeln und Teams (`O3:5AEF`, `O3:6696`), Endergebnis (`O3:7566`), Einkauf (`O3:0E1F`) und Statusfenster
+  (`0431:0F1B`) als Bildschirme mit vorgegebenen Daten; im Spielkern ein Modell für Waffen- und Ausrüstungsliste mit Preisen
+  (Tabelle aus `BOMB.EXE`/`BOMB.OVR` mit Fundstelle, Abgleich mit Abschnitt 4 von `bildschirme.md` und `BOMB.DOC`), Geld,
+  Punkte und Kaufen/Verkaufen nach der Disassembly. Spieler nur als Name und Kennzahl (keine Abhängigkeit von `Setup`).
+  Erreichbar über Tests und `bombtool` (kein Desktop-Übergang, die Runde fehlt noch).
+- **Dateien:** `src/BombRedone.Core/Economy/*`, `src/BombRedone.UI/Screens/Score*`, `…/Shop*`, `…/Status*`,
+  `src/BombRedone.Tools/Render*` (+ eine Zeile in `Program.cs`), `tests/BombRedone.Core.Tests/Economy/*`,
+  `tests/BombRedone.UI.Tests/Screens/Score*`, `…/Shop*`, `…/Status*`, `docs/anforderungen/wertung-einkauf.md`.
+- **Abnahme:** synthetische Tests für Preise, Kauf, Verkauf, Geldgrenzen, Punkte; Originaldaten-Tests: Waffentabelle (18 Waffen,
+  2 Lenksysteme, 3 Abwehrmittel laut `BOMB.DOC`), Prüfsummen der gezeichneten Bildschirme; Abgleich mit Videobildern (B5, B6)
+  nach Lage und Form (`[APPROX]`); offene P3 aus `bildschirme-inventar` zur Waffenliste (#19) nur bestätigen.
+- **Modell:** Claude Opus 5.5.
 
 **Rundenende:** Gesamtreview durch ChatGPT (`prozess/anhang.md` C), danach Plan Runde 2 (Spielfeld, Gelände, Schuss).
 
@@ -235,7 +266,7 @@ Integrationsfolge 2a: `titel` → `schrift`. Bilder der DOSBox-Aufnahme sind, so
 - `AGENTS.md`, `CLAUDE.md`, `docs/prozess/*`, `docs/vorlagen/*`, `docs/entscheidungen.md`, `tools/pruefen*.sh`,
   `tools/originalschutz-selbsttest.sh`, `.gitignore`, `.github/*`, `tests/**/Support/`: allein die Leitstelle.
 - `src/BombRedone.Tools/Program.cs`: je Spur eine Registrierungszeile (`formate`, `konfiguration`).
-- `src/BombRedone.Desktop/*`: in Welle 1 niemand, in Stufe 2a nur `titel`, in Stufe 2b nur `menue`.
+- `src/BombRedone.Desktop/*`: in Welle 1 niemand, in Stufe 2a nur `titel`, in Stufe 2b nur `menue`, in Stufe 2c nur `spielerauswahl`.
 - `docs/arbeitspakete.md`: jede Spur nur ihr eigener Statusabschnitt (unten anfügen: `### Status <spur>`).
 
 ### Status formate
