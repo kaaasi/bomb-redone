@@ -175,6 +175,18 @@ einer Zeile in `src/BombRedone.Tools/Program.cs` bei `formate` und `konfiguratio
 - `src/BombRedone.Desktop/*`: in Welle 1 niemand.
 - `docs/arbeitspakete.md`: jede Spur nur ihr eigener Statusabschnitt (unten anfügen: `### Status <spur>`).
 
+### Status formate
+
+- Teil 1 (einziger Teil): umgesetzt in PR #12 – `RawImage`, `Palette`, `bombtool export`, Tests, `docs/formate/dateiformate.md`.
+  `[APPROX]`: 6→8-Bit-Dehnung (`Palette.DefaultScaling`), bis ein DOSBox-Bild sie belegt. Offen für `re-grundlagen`: Überlagerung von `BOMB2` über `BOMB1` (durchsichtiger Index, zwei Paletten).
+  Fixlauf 11.11.2026: R12-B1 (#22), R12-B2 (#23), R12-B3 (#24) behoben; R12-B4 (#25) wartet auf Entscheidung.
+
+### Status bildschirme-inventar
+
+- Teil 1 (einziger Teil): `docs/anforderungen/bildschirme.md` fertig, PR #11 (Claude Sonnet 5.5). Zuordnung aller 591 Videobilder
+  geprüft; Lesefehler als „unsicher“ markiert; Liste fehlender Bildschirme für die DOSBox-Aufnahme in Abschnitt 6. Review: Claude
+  Sonnet 5.5, frische Sitzung (Leitstelle).
+
 ### Status konfiguration
 
 - 11.11.2026: begonnen (Claude Code, geplanter Lauf), Base `ca689e9`.

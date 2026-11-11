@@ -4,6 +4,7 @@ using BombRedone.Formats;
 if (args.Length == 0 || args[0] is "-h" or "--help")
 {
     Console.WriteLine("Usage: bombtool info [gamedata]");
+    Console.WriteLine("       bombtool export [gamedata] [outdir]");
     return 0;
 }
 
@@ -11,6 +12,8 @@ switch (args[0])
 {
     case "info":
         return Info(args.ElementAtOrDefault(1));
+    case "export":
+        return BombRedone.Tools.ExportCommand.Run(args.ElementAtOrDefault(1), args.ElementAtOrDefault(2));
     case "cfg": return BombRedone.Tools.ConfigCommand.Run(args[1..]);
     default:
         Console.Error.WriteLine($"Unknown command: {args[0]}");
