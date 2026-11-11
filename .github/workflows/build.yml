@@ -26,6 +26,9 @@ jobs:
       - name: Versionen festgeschrieben (global.json, Paketversionen)
         run: python3 .github/scripts/versionen_pruefen.py .
 
+      - name: Originalschutz (keine Originaldateien eingecheckt)
+        run: python3 .github/scripts/originalschutz_pruefen.py . && tools/originalschutz-selbsttest.sh
+
       - name: Selbsttest der Prüfung
         run: tools/pruefen-selbsttest.sh
 

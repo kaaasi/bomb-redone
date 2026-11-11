@@ -16,8 +16,13 @@ originalgetreu (Pixel, Regeln, Abläufe), danach Erweiterungen. Grundsatzentsche
 ## 2. Harte Regeln
 
 1. **Originaldateien, Spielstände, Bildschirmfotos und Ausschnitte daraus niemals committen** – auch nicht in Tests, Doku oder
-   PR-Texten als Bild. `.gitignore` schützt `gamedata/`, `BOMB*.EXE`, `*.RAW`, `*.TWS` usw.; alles Originale liegt nur im privaten
-   Repo `kaaasi/bomb-referenz` und wird nie in dieses Repo kopiert. Tests ohne Originaldaten arbeiten mit synthetischen Daten.
+   PR-Texten als Bild. Alles Originale liegt nur im privaten Repo `kaaasi/bomb-referenz` und wird nie in dieses Repo kopiert.
+   **Ablage im Arbeitsverzeichnis nur in den Schutzordnern** `gamedata/`, `aufnahmen/`, `capture/`, `bilder/`, `videos/`,
+   `analyse/`, `referenz/`, `original/` (alle im Stamm, per `.gitignore` gesperrt) oder außerhalb des Repos (`~/referenz`) –
+   Dateinamen schützen nicht, umbenannte Konfigurationen und Bildschirmfotos sehen aus wie eigene Dateien. Die CI prüft
+   zusätzlich die eingecheckten Dateien (`.github/scripts/originalschutz_pruefen.py`: Prüfsummen der Originale, gesperrte
+   Dateitypen wie `.png`, `.cfg`, `.tws`); eigene Dateien solcher Typen brauchen einen Eintrag in
+   `.github/originalschutz-erlaubt.txt` mit Begründung im PR. Tests ohne Originaldaten arbeiten mit synthetischen Daten.
 2. **Nie direkt auf `main` schreiben.** Jede Änderung über Branch und Pull Request – in beiden Repos.
 3. **Ein Branch – ein Agent.** Wer an einem Branch arbeitet, öffnet sofort einen Draft-PR und trägt sich als Bearbeiter ein.
    Fremde Branches nur nach dokumentierter Übergabe weiterführen.
@@ -79,7 +84,8 @@ Bildschirm rendern, mit dem Referenzbild vergleichen, Test schreiben.
   - **Alle drei Läufe** (ohne Option: mit Daten, ohne Daten `BOMB_SKIP_GAMEDATA=1`, Pflichtlauf ohne Daten, der scheitern
     **muss**) nur bei Integrations-PRs, Erstreviews und Änderungen an der Test-Infrastruktur (`tests/**/Support/`, Testprojekte,
     `tools/pruefen.sh`, `.github/`). Fixläufe und Nachprüfungen: `--schnell` (`zusammenarbeit.md` §5).
-  - Wer `tools/pruefen.sh` ändert, führt zusätzlich `tools/pruefen-selbsttest.sh` aus (Testdouble, kein SDK nötig).
+  - Wer `tools/pruefen.sh` ändert, führt zusätzlich `tools/pruefen-selbsttest.sh` aus (Testdouble, kein SDK nötig); wer
+    `.gitignore` oder den Originalschutz ändert, `tools/originalschutz-selbsttest.sh`.
   - Während der Arbeit nur betroffene Tests (`dotnet test <projekt> --filter …`), die volle Prüfung erst vor dem Push.
 - Tests mit Originaldaten **nur** mit `[GameDataFact]`/`[GameDataTheory]` und `TestGameData.Load()`
   (`tests/BombRedone.Formats.Tests/Support/GameDataFact.cs`). Nie „ohne Daten einfach `return`“.
