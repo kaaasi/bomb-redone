@@ -284,3 +284,5 @@ Integrationsfolge 2a: `titel` → `schrift`. Bilder der DOSBox-Aufnahme sind, so
 - 11.11.2026: begonnen (Claude Code, Claude Opus 5.5, geplanter Lauf), Base `3b2a7c6`.
 - 11.11.2026: Teil 1 fertig – `BitmapFontSource` (Referenzschrift DOSBox 0.74-3, sonst gemeinfreier Ersatz `BitmapFontSubstitute`),
   Referenzdatei per kaaasi/bomb-referenz#8 (nicht gemergt). PR #55 (Draft), Teile 2–3 offen.
+- 11.11.2026: Teil 2 fertig (Fortsetzung 1) – Hauptmenü `MenuScreen` nach O2:3D49/3B96/06BD/0909/1E7F mit Bedienung, Palettenrotation
+  und Desktop-Übergang vom Titel; `anforderungen/menue.md`. Teil 3 (Game Options) offen.
