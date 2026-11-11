@@ -364,3 +364,10 @@ Erstreview je Lauf: Claude Opus 5.5 (frische Sitzung); Delta-Prüfung der Leitst
 - 11.11.2026: Teil 2 fertig (Fortsetzung 1) – Teams `PlayerSelectTeamScreen` nach O2:2749 (Panzer U431:07BA, Prüfung, Abbruch)
   und Teamnamen `PlayerSelectTeamNamesScreen` nach O2:35CF/31A8/2EBD/300A, `TeamPlay` und `PlayerSetup.Team`/`GameSetup.Teams`;
   Fix Absturz bei 13-Zeichen-Namen. Übergänge als Bewegung bleiben `[APPROX]`. Spur fertig – Review.
+
+### Status tws-format
+
+- 11.11.2026: begonnen (Claude Code, Claude Opus 5.5, geplanter Lauf), Base `35d8b42`, PR #82.
+- 11.11.2026: Teil 1 (einziger Teil) fertig – `docs/formate/spielstand.md`: Kopf, 26 globale Werte, je Spieler Satz + Steuerart
+  [+ 7 Byte Intelligenz], Teamtabelle, Länge 654 + 118·n + 7·c; Beleg `tools/reverse-engineering/tws.py befunde` (29 von 29).
+  Offen: Bedeutung einzelner Satzfelder und globaler Laufwerte (unbelegt markiert), kein Originalstand (Liste für DOSBox im Dokument).
