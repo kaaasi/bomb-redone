@@ -23,6 +23,15 @@ public class StandingsTests
     }
 
     [Fact]
+    public void EqualScoreButDifferentWinsGetDifferentRanks()
+    {
+        // O3:5F12-5F62: the rank advances when the score or the wins differ.
+        var ranked = Standings.Rank([P(1, 2, 100), P(2, 1, 100)]);
+        Assert.Equal([1, 2], ranked.Select(s => s.Player.Number));
+        Assert.Equal([1, 2], ranked.Select(s => s.Rank));
+    }
+
+    [Fact]
     public void VideoExample()
     {
         // LP 00064: "1. Javier 1 4260", "2. Lob & Shoot 0 0".

@@ -78,6 +78,19 @@ public class TeamStandingsTests
     }
 
     [Fact]
+    public void EqualScoreButDifferentAverageWinsGetDifferentRanks()
+    {
+        // O3:6F72-7003: the rank advances when the score sum or the average wins differ.
+        var ranking = TeamStandings.Rank(
+        [
+            new Team(1, "A", [P(1, 2, 100)]),
+            new Team(2, "B", [P(2, 1, 100)]),
+        ]);
+        Assert.Equal([1, 2], ranking.Lines.Select(l => l.Team.Number));
+        Assert.Equal([1, 2], ranking.Lines.Select(l => l.Rank));
+    }
+
+    [Fact]
     public void DuplicateOrInvalidTeamNumbersAreRejected()
     {
         Assert.Throws<ArgumentException>(() => TeamStandings.Rank([new Team(1, "A", []), new Team(1, "B", [])]));
