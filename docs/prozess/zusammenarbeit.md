@@ -90,7 +90,7 @@ gepushte Stand; der Nachfolger schreibt zuerst einen Übernahmekommentar („üb
      | `review-ja` / `review-nein` | jedes Review am geprüften PR (das andere entfernen) | gegenseitig durch das nächste Review; `review-nein` der Fixlauf mit dem Push des neuen Heads |
      | `leitstelle-delta` | Fixlauf, der nur P2/P3 behebt, und Fixlauf ohne Befund (nur Rebase/Planpflicht) | Leitstelle nach der Delta-Prüfung |
      | `beleg-strittig` | Fixlauf, der einem belegten Befund mit eigenem Beleg widerspricht | Leitstelle nach ihrer Entscheidung |
-     | `spur-wartet` | Lauf ohne Fortsetzung (Zugriff oder Teil blockiert, Kettenende, Freigabe `create_trigger` abgelehnt, laufender Fremdlauf) | Leitstelle nach Anlegen des Laufs bzw. Entscheidung; wartet der Punkt auf den Nutzer, sobald sie ihn dem Nutzer vorgelegt und das im PR vermerkt hat |
+     | `spur-wartet` | Lauf endet und braucht die Leitstelle (Teile offen → Fortsetzung anlegen, Zugriff oder Teil blockiert, Kettenende, Freigabe `create_trigger` abgelehnt, laufender Fremdlauf) | Leitstelle nach Anlegen des Laufs bzw. Entscheidung; wartet der Punkt auf den Nutzer, sobald sie ihn dem Nutzer vorgelegt und das im PR vermerkt hat |
 
      Reviews ohne Netz (ChatGPT/Codex) setzen kein Label; dann wartet die Leitstelle auf den Review-PR (`review/*`) und setzt das
      Label beim Auswerten ([anhang.md](anhang.md) D).
