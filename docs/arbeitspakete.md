@@ -194,3 +194,9 @@ einer Zeile in `src/BombRedone.Tools/Program.cs` bei `formate` und `konfiguratio
   Branch `daten/listings-re-grundlagen`. Offen: Liste „Nicht entscheidbar ohne DOSBox“ (§8).
 - 11.11.2026, Claude Opus 5.5 (Fixlauf): Review-Befunde R9-P2-1, R9-P3-1..3 behoben (Byte-Vergleiche → Offset, Länge, SHA-256;
   Schrift-Offsets erklärt; neuer Befund F8), `befunde` 40/40, `karte` 26/26. Wartet auf Delta-Prüfung der Leitstelle.
+
+### Status konfiguration
+
+- 11.11.2026: begonnen (Claude Code, geplanter Lauf), Base `ca689e9`.
+- 11.11.2026: fertig – Review. Alle 28 Felder aus der Leseroutine `BOMB.OVR 0x6BF9` belegt, keins unbelegt; zwei Voreinstellungen weichen von `BOMB.DOC` ab (Crumble 75, Walls None), siehe `formate/konfiguration.md`. PR #10.
+- 11.11.2026: Fixlauf – `main` gemergt (#11, #12), R10-01 (#32) und R10-02 (#33) behoben; R10-03 (#34, `bombtool cfg` ohne Test) bleibt Restlücke. Voreinstellungen Crumble 75 / Walls None unverändert (Entscheidung Nutzer).
