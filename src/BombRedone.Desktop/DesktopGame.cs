@@ -46,7 +46,7 @@ public sealed class DesktopGame : Game
         IsMouseVisible = true;
         Window.AllowUserResizing = true;
         Window.Title = "Bomb Redone";
-        _screens = new ScreenHost(new TitleScreen(LoadTitleImages(), () => new PlaceholderScreen()));
+        _screens = new ScreenHost(new TitleScreen(LoadTitleImages(), CreateMenu));
     }
 
     protected override void LoadContent()
@@ -101,10 +101,43 @@ public sealed class DesktopGame : Game
         }
     }
 
+    /// <summary>
+    /// Main menu after the title. Without the original files (fonts in BOMB.EXE) a placeholder stays. Game Options open
+    /// the options screen; Sound Options, player selection and loading follow later (the menu stays or a placeholder).
+    /// </summary>
+    private static IScreen CreateMenu()
+    {
+        GameData gameData;
+        try
+        {
+            gameData = GameData.Locate();
+        }
+        catch (DirectoryNotFoundException e)
+        {
+            Console.Error.WriteLine(e.Message);
+            return new PlaceholderScreen();
+        }
+
+        var fonts = MenuFonts.Load(gameData, BitmapFontSource.Load().Font);
+        var configPath = gameData.Find("BOMB.CFG");
+        var config = configPath is null ? null : GameConfig.Load(configPath);
+        var settings = config is null ? new MenuSettings() : MenuSettings.FromConfig(config, mouseAvailable: true);
+        var options = config is null ? new OptionsSettings() : OptionsSettings.FromConfig(config);
+        var random = TurboPascalRandom.FromClock(DateTime.Now);
+        return new MenuScreen(fonts, settings, random.Next, (choice, menu) => choice switch
+        {
+            MenuChoice.GameOptions => new OptionsScreen(menu, options),
+            MenuChoice.SoundOptions => menu,
+            _ => new PlaceholderScreen(),
+        });
+    }
+
     private ScreenInput ReadInput(KeyboardState keys)
     {
-        var keyPressed = keys.GetPressedKeys().Any(k =>
-            _previousKeys.IsKeyUp(k) && !WindowKeys.Contains(k) && !ModifierKeys.Contains(k));
+        var typed = keys.GetPressedKeys()
+            .Where(k => _previousKeys.IsKeyUp(k) && !WindowKeys.Contains(k) && !ModifierKeys.Contains(k))
+            .ToList();
+        var keyPressed = typed.Count > 0;
         var bothShifts = keys.IsKeyDown(Keys.LeftShift) && keys.IsKeyDown(Keys.RightShift);
         var mouse = Mouse.GetState();
         var buttons = MouseButtons.None;
@@ -112,8 +145,33 @@ public sealed class DesktopGame : Game
             buttons |= MouseButtons.Left;
         if (IsActive && mouse.RightButton == ButtonState.Pressed)
             buttons |= MouseButtons.Right;
-        return new ScreenInput(keyPressed, bothShifts, buttons);
+        // [APPROX] Mouse driver coordinates from the window position: horizontal 0..639, vertical 0..199.
+        var view = GraphicsDevice.Viewport;
+        var rect = Presentation.Fit(view.Width, view.Height, _surface.Width, _surface.Height, _aspectCorrection);
+        var mouseX = rect.Width > 0 ? Math.Clamp((mouse.X - rect.X) * 640 / rect.Width, 0, 639) : 0;
+        var mouseY = rect.Height > 0 ? Math.Clamp((mouse.Y - rect.Y) * 200 / rect.Height, 0, 199) : 0;
+        var shift = keys.IsKeyDown(Keys.LeftShift) || keys.IsKeyDown(Keys.RightShift);
+        return new ScreenInput(keyPressed, bothShifts, buttons)
+        {
+            Keys = typed.Select(k => ToBiosKey(k, shift)).Where(k => k != 0).ToList(),
+            MouseX = mouseX,
+            MouseY = mouseY,
+        };
     }
+
+    /// <summary>BIOS key word of a key, as far as the menus use it; 0 for keys without one here.</summary>
+    private static ushort ToBiosKey(Keys key, bool shift) => key switch
+    {
+        Keys.Enter => BiosKey.Enter,
+        Keys.Space => BiosKey.Space,
+        Keys.Up => BiosKey.Up,
+        Keys.Down => BiosKey.Down,
+        Keys.Left => BiosKey.Left,
+        Keys.Right => BiosKey.Right,
+        >= Keys.A and <= Keys.Z => BiosKey.Char((char)((shift ? 'A' : 'a') + (key - Keys.A))),
+        >= Keys.D0 and <= Keys.D9 => BiosKey.Char((char)('0' + (key - Keys.D0))),
+        _ => 0,
+    };
 
     private bool Pressed(KeyboardState keys, Keys key) => keys.IsKeyDown(key) && _previousKeys.IsKeyUp(key);
 }
