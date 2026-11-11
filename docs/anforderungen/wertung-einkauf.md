@@ -105,7 +105,7 @@ ggf. Sichern und Einkauf. Zeichnet **keinen eigenen Hintergrund**, sondern über
 (`ScoreTeamScreen` bekommt Bild und DAC, z. B. `ScoreScreen.Background`/`Dac`).
 
 - **Teamsätze** zu 0x35 Byte ab `DS:4838` + 0x35 × Nummer (1..10): `+00h` Name (`string[14]`), `+0Fh` Mitgliederzahl (Word,
-  aus der Teamwahl), ab `+11h` sieben Real48-Summen, die die Routine neu füllt: Punkte (`+13h`), Spielerworte `+68h`..`+70h`
+  aus der Teamwahl), ab `+11h` sechs Real48-Summen, die die Routine neu füllt: Punkte (`+13h`), Spielerworte `+68h`..`+70h`
   aller Spieler mit Team `+66h` = Nummer (`O3:6713–69BD`); `+68h` und Siege (`+6Ah`) danach durch die Mitgliederzahl geteilt
   (`O3:69C9–6A79`). Angezeigt werden nur Punktsumme und mittlere Siege; die übrigen Summen gehören zur Statistik.
 - **Reihenfolge:** Index 1..10; 10 Durchläufe Blasensortierung nach Mitgliederzahl absteigend (`O3:6A86`), dann über die
