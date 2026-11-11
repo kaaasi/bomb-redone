@@ -21,7 +21,7 @@ ignoriert() {  # $1 = path, $2 = expected (ja|nein)
 for f in gamedata/x BOMB.EXE sub/bomb.exe BOMBCFG.EXE BOMB.OVR bomb1.raw BOMB2.RAW BOMBCFG.HLP BOMB.ICO BOMBCFG.ICO \
          BOMB.ICP BOMBCFG.ICP BOMB.CFG BOMB.DOC BOMB.TXT REVISION.HST bomb32.zip spiel/GAME1.TWS \
          aufnahmen/sitzung_01_start.png aufnahmen/zweck.CFG capture/a.png bilder/runde-1/a.png videos/v1/00001.png \
-         analyse/bomb.lst referenz/original/x original/x; do
+         analyse/bomb.lst export/BOMB1.png referenz/original/x original/x; do
   ignoriert "$f" ja
 done
 # Own files must stay addable

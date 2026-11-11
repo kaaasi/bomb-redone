@@ -12,6 +12,8 @@ gamedata
 /bilder/
 /videos/
 /analyse/
+# Images exported by bombtool are derived from the original files (decision #25, 11.11.2026); unanchored on purpose.
+export/
 # Exact names of the original package and the files the original writes, wherever they are placed.
 # Deliberately no wildcards after "BOMB": own files such as BombRedone.ico must stay addable.
 [Bb][Oo][Mm][Bb].[Ee][Xx][Ee]
@@ -30,9 +32,6 @@ gamedata
 [Bb][Oo][Mm][Bb]32.[Zz][Ii][Pp]
 *.[Tt][Ww][Ss]
 *.zmbv
-
-# Assets exported by the tools
-export/
 
 # --- .NET ---------------------------------------------------------------------
 bin/

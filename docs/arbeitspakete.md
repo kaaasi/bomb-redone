@@ -10,7 +10,7 @@ Den Status pflegt jede Spur nur in ihrem eigenen Abschnitt. Abgeschlossene Runde
 ## Aktuelle Runde: Runde 1 – Dateiformate, Reverse Engineering, erste Bildschirme (Plan 11.11.2026, **Go für Welle 1: 11.11.2026**)
 
 Runde 0 abgeschlossen: [archiv/runde-0.md](archiv/runde-0.md). Grundlagen: Erstbefund [originaldateien.md](originaldateien.md),
-Entscheidungen [entscheidungen.md](entscheidungen.md) (E1–E7, R1-D2 = B, R1-D3 = A, Vorlage Release 3.2).
+Entscheidungen [entscheidungen.md](entscheidungen.md) (E1–E7, R1-D1 = A (Zyklen), R1-D2 = B, R1-D3 = A, R1-D4 = A, R1-D5 = C, R1-D6 = A, Vorlage Release 3.2).
 
 **Kernaussage:** Außer zwei Titelbildern gibt es keine Grafikdateien; fast alles Sichtbare zeichnet das Programm selbst.
 
@@ -38,7 +38,7 @@ Schutzordnern (`AGENTS.md` §2.1).
 
 ### Entscheidungen der Runde
 
-**R1-D1 – DOSBox-Referenz (folgt aus E4).** Problem: Aufnahmen und Takt brauchen genau eine Einstellung.
+**R1-D1 – DOSBox-Referenz (folgt aus E4) – Zyklen entschieden: `cycles=3000` (Nutzer 11.11.2026, Vorschlag aus `re-grundlagen`); Fassung offen.** Problem: Aufnahmen und Takt brauchen genau eine Einstellung.
 
 | Option | Vorteil | Nachteil |
 |---|---|---|
