@@ -304,4 +304,17 @@ public class PlayerSelectTeamScreenTests
                 Assert.Same(next, result);
         }
     }
+
+    /// <summary>#74: the team screens set DAC 19 to white (O2:29D0) whatever the menu palette holds there.</summary>
+    [Fact]
+    public void TeamPaletteSetsDacNineteenToWhite()
+    {
+        var menuDac = new byte[Palette.ByteLength];
+        var dac = new byte[Palette.ByteLength];
+        PlayerSelectTeamScreen.TeamDac(menuDac, dac);
+        Assert.Equal(new byte[] { 63, 63, 63 }, dac.AsSpan(19 * 3, 3).ToArray());
+        Assert.Equal(new byte[] { 0, 0, 0 }, dac.AsSpan(18 * 3, 3).ToArray());
+        var (r, g, b) = PlayerSelectScreen.PlayerColor(1);
+        Assert.Equal(new[] { r, g, b }, dac.AsSpan(20 * 3, 3).ToArray());
+    }
 }

@@ -33,7 +33,7 @@ public class GameConfigOriginalTests
 
         throw new FileNotFoundException(
             $"{ExampleName} not found (BOMB_SPIELSTAENDE, spielstaende next to gamedata, ~/referenz/original/spielstaende). " +
-            "Load it with tools/claude/fetch-reference.sh original.");
+            "Load it with tools/claude/fetch-reference.sh (without arguments).");
     }
 
     [GameDataFact]
@@ -98,5 +98,12 @@ public class GameConfigOriginalTests
         Assert.Equal(5, config.LaserSpeed);
         Assert.Equal(63, config.BossScreenMemoryKiB);
         Assert.Equal(64000, config.BossScreenMemoryBytes);
+    }
+
+    /// <summary>The example written by BOMBCFG.EXE with its defaults equals <see cref="GameConfig.BombCfgDefaults"/>.</summary>
+    [GameDataFact]
+    public void ExampleEqualsBombCfgDefaults()
+    {
+        Assert.Equal(GameConfig.BombCfgDefaults, GameConfig.Load(ExamplePath()));
     }
 }

@@ -25,6 +25,46 @@ public sealed record GameConfig
     /// </summary>
     public static ReadOnlySpan<byte> VersionTag => [4, (byte)'3', (byte)'.', (byte)'2', 0];
 
+    /// <summary>
+    /// The defaults of BOMBCFG.EXE ("Restore Defaults"), used when no BOMB.CFG exists (decision R1-D5 = C).
+    /// </summary>
+    /// <remarks>
+    /// [ORIGINAL] BOMBCFG.EXE 0x7008 (segment 0, offset 0x52E8) sets them; the writer BOMBCFG.EXE 0x6B86 stores them as
+    /// the example file of the reference repository (original/spielstaende/nutzer-2026-11-11.CFG), which equals this
+    /// value field by field (test ExampleEqualsBombCfgDefaults). BOMB.EXE itself halts without BOMB.CFG; using these
+    /// values instead is decision R1-D5 = C.
+    /// </remarks>
+    public static GameConfig BombCfgDefaults { get; } = new()
+    {
+        SoundEffects = true,
+        FlySound = false,
+        Wind = WindSetting.Normal,
+        CrumblePercent = 75,
+        Wall = WallSetting.None,
+        InvisibleShot = false,
+        ShotTrail = true,
+        GamesToPlay = 10,
+        TanksFall = true,
+        Background = 9,
+        UserBackgroundMask = 0xFFFF,
+        ForceMouse = false,
+        MouseEnabled = true,
+        DirectVideo = true,
+        ExtendedKeyboard = true,
+        PaletteRotation = true,
+        CrudeVideo = true,
+        PaletteSpeed = 0,
+        ComputersBuy = true,
+        TurretSpeed = 8,
+        FallSpeed = 5,
+        ExplosionSpeed = 8,
+        ShotSpeed = 10,
+        LaserSpeed = 5,
+        PaletteUsesRetrace = true,
+        TeamPlay = false,
+        BossScreenMemoryKiB = 63,
+    };
+
     /// <summary>"Effsound" – sound effects on (S+/S-). Offset 5, 1 byte. [ORIGINAL] BOMB.OVR 0x6D92.</summary>
     public bool SoundEffects { get; init; }
 

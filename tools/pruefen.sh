@@ -70,11 +70,12 @@ if [ $QUICK = 0 ]; then
   rc=$?; read -r p f s <<< "$(summe "$LOG/pflicht.txt")"
   ergebnisse_da "$LOG/pflicht.txt" "Pflichtlauf ohne Daten"; vollstaendig=$?
   # Only a failure BECAUSE of missing original data is wanted: results present, at least one failure,
-  # and every failure reports the missing original data. A crash or other errors count as NOT passed.
+  # every failure reports the missing original data, and at least one failure comes from TestGameData.Load
+  # ("Original data missing (folder ...", not only the reference font). A crash or other errors count as NOT passed.
   grund=$(python3 - "$LOG/pflicht" "$PROJEKTE" <<'PY'
 import pathlib, sys, xml.etree.ElementTree as ET
 ns = {"t": "http://microsoft.com/schemas/VisualStudio/TeamTest/2010"}
-failed = other = 0
+failed = other = gamedata = 0
 files = sorted(pathlib.Path(sys.argv[1]).glob("*.trx"))
 if len(files) != int(sys.argv[2]):
     print(f"trx-dateien:{len(files)}-von-{sys.argv[2]}"); sys.exit()
@@ -93,7 +94,10 @@ for trx in files:
             msg = " ".join(m.text or "" for m in r.iterfind("t:Output/t:ErrorInfo/t:Message", ns))
             if "Original data missing" not in msg:
                 other += 1
-print("keine-ergebnisse" if failed == 0 else f"andere-fehler:{other}" if other else "ok")
+            elif "Original data missing (folder" in msg:
+                gamedata += 1
+print("keine-ergebnisse" if failed == 0 else f"andere-fehler:{other}" if other
+      else "kein-fehler-aus-TestGameData" if gamedata == 0 else "ok")
 PY
 )
   if [ $rc -ne 0 ] && [ $vollstaendig -eq 0 ] && [ "$grund" = "ok" ]; then

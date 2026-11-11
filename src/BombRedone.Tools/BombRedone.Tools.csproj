@@ -5,6 +5,9 @@
     <AssemblyName>bombtool</AssemblyName>
   </PropertyGroup>
   <ItemGroup>
+    <InternalsVisibleTo Include="BombRedone.UI.Tests" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\BombRedone.Formats\BombRedone.Formats.csproj" />
     <ProjectReference Include="..\BombRedone.UI\BombRedone.UI.csproj" />
   </ItemGroup>

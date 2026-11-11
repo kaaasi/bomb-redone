@@ -10,14 +10,16 @@ namespace BombRedone.Desktop;
 
 /// <summary>
 /// Window of the game: feeds time and input to the current screen and shows its palette frame buffer scaled by whole
-/// numbers. F11 toggles full screen, F10 toggles the 4:3 correction, Esc quits; these keys are not passed to the screens.
+/// numbers. F11 toggles full screen, F10 toggles the 4:3 correction; these keys are not passed to the screens. Esc goes
+/// to the screens like any other key (START, Random, Done, leaving dialogs); the window is closed with its close button
+/// (or Alt+F4) or when the screens end.
 /// </summary>
 public sealed class DesktopGame : Game
 {
     private const int DefaultScale = 3;
 
     /// <summary>Keys the window keeps for itself.</summary>
-    private static readonly Keys[] WindowKeys = [Keys.Escape, Keys.F10, Keys.F11];
+    private static readonly Keys[] WindowKeys = [Keys.F10, Keys.F11];
 
     /// <summary>Keys that put nothing into the BIOS keyboard buffer when pressed alone.</summary>
     private static readonly Keys[] ModifierKeys =
@@ -33,6 +35,7 @@ public sealed class DesktopGame : Game
     private SpriteBatch? _batch;
     private Texture2D? _texture;
     private KeyboardState _previousKeys;
+    private readonly List<ushort> _typed = [];
     private bool _aspectCorrection = true;
 
     public DesktopGame()
@@ -48,6 +51,13 @@ public sealed class DesktopGame : Game
         Window.AllowUserResizing = true;
         Window.Title = "Bomb Redone";
         _screens = new ScreenHost(new TitleScreen(LoadTitleImages(), CreateMenu));
+        // Printable characters come from the text input (keyboard layout and Shift applied: "?", punctuation, letters).
+        Window.TextInput += (_, e) =>
+        {
+            var word = BiosKey.FromTypedCharacter(e.Character);
+            if (word != 0)
+                _typed.Add(word);
+        };
     }
 
     protected override void LoadContent()
@@ -59,8 +69,6 @@ public sealed class DesktopGame : Game
     protected override void Update(GameTime gameTime)
     {
         var keys = Keyboard.GetState();
-        if (Pressed(keys, Keys.Escape))
-            Exit();
         if (Pressed(keys, Keys.F11))
             _graphics.ToggleFullScreen();
         if (Pressed(keys, Keys.F10))
@@ -123,8 +131,9 @@ public sealed class DesktopGame : Game
         var fonts = MenuFonts.Load(gameData, BitmapFontSource.Load().Font);
         var configPath = gameData.Find("BOMB.CFG");
         var config = configPath is null ? null : GameConfig.Load(configPath);
-        var settings = config is null ? new MenuSettings() : MenuSettings.FromConfig(config, mouseAvailable: true);
-        var options = config is null ? new OptionsSettings() : OptionsSettings.FromConfig(config);
+        // Without BOMB.CFG the defaults of BOMBCFG.EXE apply (R1-D5 = C); the original halts instead.
+        var settings = MenuSettings.ForConfig(config, mouseAvailable: true);
+        var options = OptionsSettings.ForConfig(config);
         var random = TurboPascalRandom.FromClock(DateTime.Now);
         var roster = new PlayerRoster();
         var teams = new PlayerSelectTeams(options, BgiFontLibrary.Load(gameData)[BgiFontLibrary.Tiny]);
@@ -155,18 +164,25 @@ public sealed class DesktopGame : Game
         var rect = Presentation.Fit(view.Width, view.Height, _surface.Width, _surface.Height, _aspectCorrection);
         var mouseX = rect.Width > 0 ? Math.Clamp((mouse.X - rect.X) * 640 / rect.Width, 0, 639) : 0;
         var mouseY = rect.Height > 0 ? Math.Clamp((mouse.Y - rect.Y) * 200 / rect.Height, 0, 199) : 0;
-        var shift = keys.IsKeyDown(Keys.LeftShift) || keys.IsKeyDown(Keys.RightShift);
-        return new ScreenInput(keyPressed, bothShifts, buttons)
+        // [APPROX] Keys without a character first, then the typed characters of this frame; the order between the two
+        // within one frame is not known (the BIOS buffer would hold them in typing order).
+        var words = typed.Select(ToBiosKey).Where(k => k != 0).Concat(_typed).ToList();
+        _typed.Clear();
+        return new ScreenInput(keyPressed || words.Count > 0, bothShifts, buttons)
         {
-            Keys = typed.Select(k => ToBiosKey(k, shift)).Where(k => k != 0).ToList(),
+            Keys = words,
             MouseX = mouseX,
             MouseY = mouseY,
         };
     }
 
-    /// <summary>BIOS key word of a key, as far as the menus use it; 0 for keys without one here.</summary>
-    private static ushort ToBiosKey(Keys key, bool shift) => key switch
+    /// <summary>
+    /// BIOS key word of a key without a printable character, as far as the screens use it; 0 for other keys (printable
+    /// characters arrive through <see cref="GameWindow.TextInput"/>, <see cref="BiosKey.FromTypedCharacter"/>).
+    /// </summary>
+    private static ushort ToBiosKey(Keys key) => key switch
     {
+        Keys.Escape => BiosKey.Escape,
         Keys.Enter => BiosKey.Enter,
         Keys.Space => BiosKey.Space,
         Keys.Up => BiosKey.Up,
@@ -177,8 +193,6 @@ public sealed class DesktopGame : Game
         Keys.Home => 0x4700,
         Keys.End => 0x4F00,
         Keys.Delete => 0x5300,
-        >= Keys.A and <= Keys.Z => BiosKey.Char((char)((shift ? 'A' : 'a') + (key - Keys.A))),
-        >= Keys.D0 and <= Keys.D9 => BiosKey.Char((char)('0' + (key - Keys.D0))),
         _ => 0,
     };
 

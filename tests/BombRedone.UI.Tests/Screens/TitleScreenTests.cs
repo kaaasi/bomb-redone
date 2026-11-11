@@ -249,6 +249,21 @@ public class TitleScreenTests
         Assert.Equal(TitlePhase.Cycle, screen.Phase);
     }
 
+    /// <summary>#47: one cycling step every 60 ms as a fixed value (Delay(60), BOMB.OVR 0x004B2), not via the constant.</summary>
+    [Fact]
+    public void CyclingStepsEverySixtyMilliseconds()
+    {
+        var (screen, _) = Create(Image(1), Image(0));
+        screen.Update(RevealTotal, ScreenInput.None);
+        Assert.Equal(1, screen.CycleStep);
+        screen.Update(TimeSpan.FromMilliseconds(59), ScreenInput.None);
+        Assert.Equal(1, screen.CycleStep);
+        screen.Update(TimeSpan.FromMilliseconds(1), ScreenInput.None);
+        Assert.Equal(2, screen.CycleStep);
+        screen.Update(TimeSpan.FromMilliseconds(600), ScreenInput.None);
+        Assert.Equal(12, screen.CycleStep);
+    }
+
     [Fact]
     public void CycleTableMatchesTheOriginalFormula()
     {

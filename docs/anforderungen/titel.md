@@ -13,7 +13,11 @@ Spur `titel` (Runde 1, Welle 2, Stufe 2a). Quelle: Disassembly von O1:0014 (`BOM
   Aufruf (Restzeit verfällt).
 - Eingabe (`ScreenInput`): „Taste gedrückt“ (seit dem letzten Update, nur Tasten, die das BIOS in den Tastaturpuffer legt –
   nicht Shift, Strg, Alt allein), „beide Shift gehalten“, gehaltene Maustasten (links = 1, rechts = 2 wie INT 33h).
-- Desktop: Esc beendet, F10 schaltet 4:3, F11 Vollbild; diese Tasten gehen nicht an die Bildschirme. Ohne Originaldaten wird der
+- Desktop: F10 schaltet 4:3, F11 Vollbild; diese Tasten gehen nicht an die Bildschirme. Esc geht wie jede Taste an die
+  Bildschirme (#75), beendet wird über das Fenster (Schließen, Alt+F4) oder wenn die Bildschirme enden. Druckbare Zeichen
+  (0x21..0x7E, mit Tastaturbelegung und Shift, z. B. „?“ und Satzzeichen) kommen aus der Texteingabe des Fensters, Leertaste,
+  Enter, Esc und Sondertasten aus der Taste selbst (`BiosKey.FromTypedCharacter`; `[APPROX]` Reihenfolge innerhalb eines Bildes,
+  Zeichen über 0x7E entfallen, da Codepage 437). Ohne Originaldaten wird der
   Titel übersprungen (wie ohne `BOMB2.RAW`). Nach dem Titel folgt ein schwarzer Platzhalter (Hauptmenü: Spur `menue`).
 
 ## 2. Titelfolge (`[ORIGINAL]`, Offsets in `BOMB.OVR`)
@@ -47,7 +51,7 @@ Spur `titel` (Runde 1, Welle 2, Stufe 2a). Quelle: Disassembly von O1:0014 (`BOM
 
 | Punkt | Annahme | Prüfen mit |
 |---|---|---|
-| Dauer eines Kopierdurchgangs | 85 ms (64.000 × 4 Befehle bei `cycles=3000`); Aufbau gesamt 55 × 85 ms ≈ 4,7 s. Longplay: Schriftzug erscheint in etwa 4 s (LP 00000–00003) | DOSBox-Aufnahme `runde-1` |
+| Dauer eines Kopierdurchgangs | 85 ms. Herleitung: Schleife `U431:0484–048F` (`BOMB.EXE 0x05E34`) hat je Byte ohne Treffer 5 Befehle (`mov bx,cx`, `mov al,[bx]`, `cmp`, `jnz`, `loop`), 64.000 × 5 bei `cycles=3000` ≈ 107 ms, Aufbau 55 × 107 ms ≈ 5,9 s; Longplay: Schriftzug in etwa 4 s (LP 00000–00003, ≈ 73 ms je Durchgang). 85 ms liegt dazwischen (#46) | DOSBox-Aufnahme `runde-1` (Dauer messen) |
 | Warten auf den Strahlrücklauf beim Setzen der DAC in der Rotation | vernachlässigt, Schritt = 60 ms | DOSBox |
 | DAC-Werte über 63 (Rot-Tabelle bis 119) | VGA-DAC übernimmt die unteren 6 Bit (Hardware, nicht aus den Originaldateien) | DOSBox-Bild der Rotation |
 | Palette vor dem Titel | schwarz (im Original die vom Hauptprogramm gesetzte Palette) | Disassembly Hauptprogramm |
