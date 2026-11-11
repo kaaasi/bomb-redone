@@ -28,6 +28,5 @@ und Nachteilen, Empfehlung); hier steht nur das Ergebnis mit der gewählten Opti
 | R1-D6 | Ordner für exportierte Bilder (Issue #25) | **A** (11.11.2026): `export/` gehört zu den Schutzordnern (`AGENTS.md` §2.1, `.gitignore`). |
 | R1-D4 | Ablageweg der Listings | **A** (11.11.2026): Die Spur `re-grundlagen` öffnet selbst einen PR im Referenz-Repo (nur `analyse/`), merged nicht. Ausnahme von „Spuren lesen nur“, auf diese Spur beschränkt. |
 
-
 Arbeitsweise (Nutzer 11.11.2026): `main` nur über Branch und PR; Deutsch in Doku und Commits, Quelltext und Kommentare englisch;
 knappe Antworten; je Aufgabe ein Claude-Modell; ChatGPT nur für Reviews; Spuren erst nach Go; Entscheidungen gesammelt.
