@@ -1,0 +1,69 @@
+# Provides the tools Claude needs to build and test the code in its own workspace
+# (the Microsoft and NuGet servers cannot be reached from there, GitHub can):
+#   - the official .NET SDK (Linux x64) in the version from global.json, verified against Microsoft's SHA-512
+#   - all NuGet packages the solution needs, as an offline package source
+# Storage: release "claude-werkzeuge" (prerelease). Runs manually and automatically when project files change on main.
+name: Werkzeuge für Claude
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '**/*.csproj'
+      - 'Directory.Build.props'
+      - 'global.json'
+      - '.github/workflows/werkzeuge.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: werkzeuge
+  cancel-in-progress: true
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: .NET-SDK laden und prüfen
+        id: sdk
+        run: |
+          set -euo pipefail
+          # Pinned version from global.json
+          VER=$(jq -r .sdk.version global.json)
+          CHANNEL=$(echo "$VER" | cut -d. -f1,2)
+          META=$(curl -fsSL "https://builds.dotnet.microsoft.com/dotnet/release-metadata/$CHANNEL/releases.json")
+          FILE=$(echo "$META" | jq -c --arg v "$VER" '[.releases[] | .sdks[]? // .sdk | select(.version==$v) | .files[] | select(.name=="dotnet-sdk-linux-x64.tar.gz")][0]')
+          [ "$FILE" != "null" ] || { echo "SDK $VER nicht in den Release-Metadaten gefunden" >&2; exit 1; }
+          curl -fsSL -o dotnet-sdk-linux-x64.tar.gz "$(echo "$FILE" | jq -r .url)"
+          echo "$(echo "$FILE" | jq -r .hash)  dotnet-sdk-linux-x64.tar.gz" | sha512sum -c -
+          echo "version=$VER" >> "$GITHUB_OUTPUT"
+          mkdir -p "$HOME/dotnet" && tar -xzf dotnet-sdk-linux-x64.tar.gz -C "$HOME/dotnet"
+
+      - name: NuGet-Pakete sammeln
+        run: |
+          set -euo pipefail
+          export PATH="$HOME/dotnet:$PATH" DOTNET_ROOT="$HOME/dotnet"
+          dotnet restore BombRedone.slnx --packages nuget-packages
+          # The hierarchical layout (id/version/*.nupkg) is directly usable as a package source.
+          # Version list for comparison (which SDK and which packages the release contains)
+          { echo "sdk ${{ steps.sdk.outputs.version }}"; find nuget-packages -mindepth 2 -maxdepth 2 -type d | sed 's|nuget-packages/||; s|/| |' | sort; } > versionen.txt
+          tar -czf nuget-packages.tar.gz nuget-packages
+          du -sh nuget-packages.tar.gz
+
+      - name: Release aktualisieren
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          TAG=claude-werkzeuge
+          NOTES="Werkzeuge für Claudes Arbeitsumgebung: offizielles .NET SDK ${{ steps.sdk.outputs.version }} (ungeändert, SHA-512 geprüft) und die NuGet-Pakete der Solution (Stand: ${GITHUB_SHA::7}). Wird automatisch erneuert; kann jederzeit gelöscht werden."
+          if gh release view "$TAG" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release edit "$TAG" -R "$GITHUB_REPOSITORY" --notes "$NOTES"
+          else
+            gh release create "$TAG" -R "$GITHUB_REPOSITORY" --prerelease --title "Werkzeuge für Claude" --notes "$NOTES"
+          fi
+          gh release upload "$TAG" dotnet-sdk-linux-x64.tar.gz nuget-packages.tar.gz versionen.txt -R "$GITHUB_REPOSITORY" --clobber

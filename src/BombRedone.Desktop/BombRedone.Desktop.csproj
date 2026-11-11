@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <RootNamespace>BombRedone.Desktop</RootNamespace>
+    <AssemblyName>BombRedone</AssemblyName>
+    <RollForward>Major</RollForward>
+    <TieredPGO>true</TieredPGO>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="MonoGame.Framework.DesktopGL" Version="3.8.6" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\BombRedone.UI\BombRedone.UI.csproj" />
+    <ProjectReference Include="..\BombRedone.Audio\BombRedone.Audio.csproj" />
+  </ItemGroup>
+</Project>
