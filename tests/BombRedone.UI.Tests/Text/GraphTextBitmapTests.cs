@@ -5,7 +5,7 @@ namespace BombRedone.UI.Tests.Text;
 
 public class GraphTextBitmapTests
 {
-    // Synthetic 8 x 8 font: 'A' has its top left and bottom right pixel set.
+    // Synthetic 8 x 8 font: 'A' has its top left and bottom right pixel set, 'B' only its bottom left pixel.
     private static readonly BitmapFont Font = CreateFont();
 
     private static BitmapFont CreateFont()
@@ -13,6 +13,7 @@ public class GraphTextBitmapTests
         var rows = new byte[128 * 8];
         rows[65 * 8] = 0x80;
         rows[65 * 8 + 7] = 0x01;
+        rows[66 * 8 + 7] = 0x80;
         return new BitmapFont(rows);
     }
 
@@ -94,6 +95,42 @@ public class GraphTextBitmapTests
         text.OutTextXY(surface, 10, 5, "A");
         // x: 10 - (8 / 2 - 1) = 7; top-left pixel of 'A' goes to the bottom left, bottom right pixel to the top right.
         Assert.Equal([(14, 5), (7, 12)], SetPixels(surface));
+    }
+
+    private static GraphText VerticalText()
+    {
+        var text = new GraphText(Font) { Color = 4 };
+        text.SetTextStyle(null, TextDirection.Vertical, 1);
+        text.SetTextJustify(HorizontalJustify.Left, VerticalJustify.Top);
+        return text;
+    }
+
+    [Fact]
+    public void VerticalDefaultFontRunsUpwardsFromTheFirstCharacter()
+    {
+        var surface = new Surface(40, 40);
+        // x: 10 - 8 = 2; 'A' fills the lower cell (y 13-20), 'B' the upper one (y 5-12).
+        VerticalText().OutTextXY(surface, 10, 5, "AB");
+        Assert.Equal([(9, 12), (9, 13), (2, 20)], SetPixels(surface));
+    }
+
+    [Fact]
+    public void NulEndsTheDefaultFontOutput()
+    {
+        var surface = new Surface(40, 40);
+        Text().OutTextXY(surface, 0, 0, "\0A");
+        Assert.Empty(SetPixels(surface));
+        Text().OutTextXY(surface, 0, 0, "A\0A");
+        Assert.Equal([(0, 0), (7, 7)], SetPixels(surface));
+    }
+
+    [Fact]
+    public void NulEndsTheVerticalDefaultFontOutputFromTheLastCharacter()
+    {
+        var surface = new Surface(40, 40);
+        // The driver runs from the last character backwards: 'B' in the top cell is drawn, the NUL stops before 'A'.
+        VerticalText().OutTextXY(surface, 10, 5, "A\0B");
+        Assert.Equal([(9, 12)], SetPixels(surface));
     }
 
     [Fact]
