@@ -259,7 +259,32 @@ Fortsetzungen legt die Leitstelle an. Erstreview je Spur: Claude Opus 5.5, frisc
   nach Lage und Form (`[APPROX]`); offene P3 aus `bildschirme-inventar` zur Waffenliste (#19) nur bestätigen.
 - **Modell:** Claude Opus 5.5.
 
-**Rundenende:** Gesamtreview durch ChatGPT (`prozess/anhang.md` C), danach Plan Runde 2 (Spielfeld, Gelände, Schuss).
+### Abschluss Runde 1 (nach Gesamtreview, `docs/reviews/2026-11-11-gesamtreview-runde-1*.md`)
+
+Base beider Läufe: `main` im Startaufruf. Parallel, ohne gemeinsame Dateien außer dem eigenen Statusabschnitt hier.
+Erstreview je Lauf: Claude Opus 5.5 (frische Sitzung); Delta-Prüfung der Leitstelle nur für spätere P2/P3-Fixes.
+
+#### Lauf `abschluss` – Fix #79 und gesammelte P3 (Branch `fix/abschluss-runde-1`)
+
+- **Inhalt:** #79 (GR1-P2-2): ohne `BOMB.CFG` gelten im Fenster die Voreinstellungen von `BOMBCFG.EXE` (R1-D5 = C), Test
+  `DefaultsAreTheValuesBeforeBombCfgIsRead` entsprechend; dazu die P3 #15–#21 (Lesungen in `bildschirme.md`), #34 (nur ohne neues
+  Testprojekt, sonst Restlücke), #46–#48 (Titel), #61 (`menue.md`), #68 (Prüfsummen/Pflichtlauf), #74, #75 (Fenstertasten). Nicht:
+  #39 (braucht DOSBox), #71 (Runde 2), #78 (Lauf `tws-format`).
+- **Dateien:** wie in den Issues genannt, ausdrücklich auch `docs/anforderungen/bildschirme.md`, `tools/claude/fetch-reference.sh`,
+  `tools/pruefen.sh` (dann `tools/pruefen-selbsttest.sh`) und `src/BombRedone.Desktop/*`; keine Dateien von `tws-format`.
+- **Abnahme:** je Befund roter Test bzw. belegte Doku-Korrektur, `Fixes #<nr>`; alle drei Läufe von `tools/pruefen.sh`.
+
+#### Spur `tws-format` – Format der Spielstände beschreiben (GR1-1 = C, Analyse, kein Produktcode)
+
+- **Inhalt:** Aufbau von `*.TWS` aus der Speicher- und Laderoutine (`O3:46DE`, `O3:4D97`, `re-grundlagen` §6): Felder mit
+  Offset, Größe, Typ (Real48, Pascal-String …) und Bedeutung, jede Aussage mit Fundstelle oder „unbelegt“; Bezug zu den
+  Spielersätzen (0x74 Byte, #71) und zur Waffentabelle (`Core/Economy`); Liste der Stände, die die DOSBox-Aufnahme liefern muss.
+- **Dateien:** `docs/formate/spielstand.md`, `tools/reverse-engineering/tws*` (neu, Ausgabe nur in Schutzordner),
+  eigener Statusabschnitt.
+- **Abnahme:** jede Aussage mit Offset und ausführbarem Beleg; kein Code in `src/`.
+
+**Rundenende:** Gesamtreview durch ChatGPT (`prozess/anhang.md` C) erledigt (Teil 1 und 2); nach Merge beider Läufe Plan Runde 2
+(Spielfeld, Gelände, Schuss, Leser `*.TWS`).
 
 ### Zuständigkeit für gemeinsame Dateien (Runde 1)
 
