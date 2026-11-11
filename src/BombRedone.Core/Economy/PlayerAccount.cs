@@ -38,6 +38,9 @@ public sealed class PlayerAccount
     /// <summary>Score (record +13h).</summary>
     public int Score { get; set; }
 
+    /// <summary>Games won (record +6Ah, Word). [ORIGINAL] status screen O3:5B9D reads <c>[di+4098]</c>.</summary>
+    public int Wins { get; set; }
+
     /// <summary>Money spent in the shop so far (record +17h).</summary>
     public int Spent { get; set; }
 

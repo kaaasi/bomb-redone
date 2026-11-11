@@ -7,12 +7,13 @@ namespace BombRedone.Tools;
 
 /// <summary>
 /// <c>bombtool render &lt;screen&gt; [gamedata] [out.png]</c>: draws a screen of the status/shop package with fixed sample
-/// data (the situation of the short video, frame TW 00100) and writes it as PNG. No window, no game round needed.
+/// data (status screen: Longplay frame 00064; shop: short video frame TW 00100, drawn over the status
+/// background) and writes it as PNG. No window, no game round needed.
 /// </summary>
 internal static class RenderCommand
 {
     /// <summary>Screens that can be rendered.</summary>
-    public static readonly IReadOnlyList<string> Screens = ["shop"];
+    public static readonly IReadOnlyList<string> Screens = ["shop", "score"];
 
     public static int Run(string[] args)
     {
@@ -52,16 +53,25 @@ internal static class RenderCommand
                 shop.Update(TimeSpan.Zero, ScreenInput.None);
                 shop.Draw(surface);
                 return shop.Dac.ToArray();
+            case "score":
+                var score = SampleScore();
+                score.Draw(surface);
+                return score.Dac.ToArray();
             default:
                 throw new ArgumentOutOfRangeException(nameof(screen), screen, null);
         }
 
+        ScoreScreen SampleScore() => new(fonts,
+            [
+                new ScoreLine(new PlayerAccount(1, "Javier") { Wins = 1, Score = 4260 }, (63, 0, 0)),
+                new ScoreLine(new PlayerAccount(2, "Lob & Shoot") { Score = 0 }, (0, 63, 0)),
+            ], 1, 10, buttons: true, (_, _, _) => null);
+
         ShopScreen SampleShop()
         {
             var player = SamplePlayer();
-            var dac = new byte[768];
-            MenuGraphics.DefaultColors.CopyTo(dac);
-            var screen = new ShopScreen(fonts, new Surface(), dac, new Shop(player, ItemCatalog.Original),
+            var status = SampleScore();
+            var screen = new ShopScreen(fonts, status.Background, status.Dac, new Shop(player, ItemCatalog.Original),
                 ShopControl.Keyboard, (63, 0, 0), () => null);
             // Cursor to "5 Meg Nuke" and select one bundle, as in TW 00100.
             screen.Update(TimeSpan.Zero, new ScreenInput(KeyPressed: true)

@@ -66,3 +66,26 @@ wählt ab. Nach einem Kauf mit Inhalt werden die Kacheln neu aufgebaut, der Curs
 `[APPROX]`: Das „+“ zeichnet `UCC8:017D` als Ellipse mit Radien 1/1 (nicht im Einzelnen verfolgt; hier die vier Nachbarn des
 Mittelpunkts). Die Schlussblende nach dem letzten Spieler (`O3:23E2`, `UCC8:011A`) fehlt noch. Vergleich mit TW 00100: Reihenfolge,
 Texte, Spaltenaufbau und Farben stimmen nach Lage und Form; Prüfsumme bis zu einem DOSBox-Bild vorläufig.
+
+## 5. Wertung einzeln (`Core/Economy/Standings`, `UI/Screens/ScoreScreen`)
+
+`O3:5AEF` (`BOMB.OVR 0x0E57B`). Reihenfolge (`O3:5B61–5C6D`): Blasensortierung nach Siegen absteigend, danach bei gleichen
+Siegen nach Punkten; gleiche Siege und Punkte teilen sich den Rang (`O3:5E44–5F62`). Hintergrund: `O2:3B96` mit Argument 1
+(waagerechte Linien in Farbe y mod 30 + 30, DAC 30..59 = (i, 0, i)), danach als Puffer `DS:E5BC` gesichert – darüber zeichnet
+der Einkauf.
+
+| Element | Lage, Schrift, Farbe | Fundstelle |
+|---|---|---|
+| Kasten | `(45, top)–(275, bottom)`, top = 100 − (5n + 15), bottom = 5n + 115 | `O3:5B0B`, `O3:5C96` |
+| Titelkasten | `(65, top−20)–(255, top−5)`; SmallFont 1, Farbe 6, mittig (160, top − 13): „n Game(s) Played out of m“ | `O3:5CB5–5D8F` |
+| Kopf | Farbe 17, „Player“ (50, top+5), Linie y = top + 16 (50..270), „Wins“ rechtsbündig 185, „Score“ rechtsbündig 270 | `O3:5DCC–6035` |
+| Zeilen | y = top + 10 + 10i in Farbe 19 + i: „ r.“ bei 50, Name bei 72, Siege 185, Punkte 270 | `O3:5E44–609E` |
+| Knöpfe | Add (60..110), Continue bzw. Exit nach dem letzten Spiel (135..185), Save (210..260), y bottom+5..bottom+15, Text Farbe 0 | `O3:60AF–61CF` |
+
+Bedienung (`O3:61DE–65B2`): Ziffern 1..9, 0 = 10 → Statistik der Zeile; `A` → Spiele hinzufügen; `S` → Sichern; jede andere
+Taste → weiter. Maus: Zeile (45 < x < 275) → Statistik nach dem Loslassen; Knöpfe wie oben. Ohne Knöpfe (`DS:4812` ≠ 0, nach dem
+letzten Spiel immer mit Knöpfen) geht es nach 2000 ms von selbst weiter. Statistik (`O3:2508`), Dialog „# TO ADD:“ (`O3:5717`)
+und Sichern (`O3:46DE`) sind nicht Teil der Spur: der Bildschirm meldet nur die Wahl.
+
+`[APPROX]`: Palettenrotation des Hintergrunds (`UC79:003D`) und die Abschlussblende (`O3:65D1`, `UCC8:0AC0`) fehlen. Vergleich mit
+LP 00064: Lage, Texte und Farben stimmen nach Lage und Form.
