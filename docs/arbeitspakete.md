@@ -319,3 +319,11 @@ Fortsetzungen legt die Leitstelle an. Erstreview je Spur: Claude Opus 5.5, frisc
   und Desktop-Übergang vom Titel; `anforderungen/menue.md`. Teil 3 (Game Options) offen.
 - 11.11.2026: Teil 3 fertig (Fortsetzung 2) – Game Options `OptionsScreen` nach O2:11CC/0E35/0F81/1042 mit Bedienung, Werte in
   `OptionsSettings` (aus `GameConfig`), Cycle Delay ändert die laufende Rotation; `anforderungen/menue.md` §6. Spur fertig – Review.
+
+### Status wertung-einkauf
+
+- 11.11.2026: begonnen (Claude Code, Claude Opus 5.5, geplanter Lauf), Base `9e93d94`, PR #64 (Draft).
+- 11.11.2026: Teil 1 fertig – Waffentabelle (18 + 2 + 3, `DS:087C..3700` in `BOMB.EXE`), Spielerkonto, Einkaufsregeln
+  (`Core/Economy`). Teil 2 fertig – Einkaufsbildschirm nach `O3:015B`/`O3:0E1F`, `bombtool render shop`. Teil 3 teilweise:
+  Rangfolge, Wertung einzeln (`O3:5AEF`), Endergebnis (`O3:7566`); offen Wertung Teams (`O3:6696`) und Statusfenster
+  (`0431:0F1B`). #19 bestätigt (`anforderungen/wertung-einkauf.md` §1).
