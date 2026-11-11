@@ -1,16 +1,17 @@
 #!/usr/bin/env bash
 # Loads folders of the private repository kaaasi/bomb-referenz into ~/referenz (sparse clone, only the folders named).
-#   tools/claude/fetch-reference.sh [original] [bilder] [bilder/<aufnahme> ...]
+#   tools/claude/fetch-reference.sh [original] [schriften] [bilder] [bilder/<aufnahme> ...]
 # `original` = original files (ZIP, gamedata/, SHA256SUMS) and save games from DOSBox (original/spielstaende/).
+# `schriften` = reference font of DOSBox 0.74-3 (R1-schrift-1 = D, GPL; SHA256SUMS there).
 # `bilder`   = all reference images; `bilder/<aufnahme>` = one capture series (index: bilder/README.md there).
-# Without arguments: original. Target: ~/referenz, changeable with REFERENZ=<path>.
+# Without arguments: original and schriften. Target: ~/referenz, changeable with REFERENZ=<path>.
 # An existing clone is never updated by this script: if it is outdated, the script stops with exit code 3.
 # Never copy anything from there into this repository.
 set -euo pipefail
 REPO_URL="https://github.com/kaaasi/bomb-referenz"
 TARGET="${REFERENZ:-$HOME/referenz}"
 FOLDERS=("$@")
-[ ${#FOLDERS[@]} -eq 0 ] && FOLDERS=(original)
+[ ${#FOLDERS[@]} -eq 0 ] && FOLDERS=(original schriften)
 
 if [ ! -d "$TARGET/.git" ]; then
   git clone -q --depth 1 --filter=blob:none --sparse "$REPO_URL" "$TARGET"
@@ -49,5 +50,8 @@ for f in "${FOLDERS[@]}"; do
 done
 if [ -f "$TARGET/original/SHA256SUMS" ]; then
   (cd "$TARGET/original" && sha256sum -c --quiet SHA256SUMS) && echo "original: Prüfsummen stimmen" || { echo "original: Prüfsummen weichen ab" >&2; missing=1; }
+fi
+if [ -f "$TARGET/schriften/SHA256SUMS" ]; then
+  (cd "$TARGET/schriften" && sha256sum -c --quiet SHA256SUMS) && echo "schriften: Prüfsummen stimmen" || { echo "schriften: Prüfsummen weichen ab" >&2; missing=1; }
 fi
 exit "$missing"
