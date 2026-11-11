@@ -51,6 +51,10 @@ bündelt die Fragen.
   [bomb-referenz #3](https://github.com/kaaasi/bomb-referenz/pull/3)); welche Einstellungen gewählt waren, ist offen. Für die
   Videobilder gibt es den Kurzaufruf [vorlagen/video-bilder.md](vorlagen/video-bilder.md).
 
+- **Stand 11.11.2026, 11:47:** #5 und bomb-referenz #3 gemergt. Die `BOMB.CFG` des Nutzers
+  (`original/spielstaende/nutzer-2026-11-11.CFG`) wurde mit den **Voreinstellungen** gespeichert. **Welle 1 startet erst,
+  wenn die beiden Videos verarbeitet sind** (Nutzer 11.11.2026; Ablage nach `vorlagen/video-bilder.md`); bis dahin kein Go.
+
 ### Offene Entscheidungen
 
 **R1-D1 – DOSBox-Referenz (folgt aus E4).** Problem: Aufnahmen und Takt brauchen genau eine Einstellung.
