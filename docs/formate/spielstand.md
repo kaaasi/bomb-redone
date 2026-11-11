@@ -143,7 +143,8 @@ Bezug zu #71: Die Wertung sortiert die Sätze dauerhaft um (`O3:0000`). Das Auto
   `DS:4822`, danach Wertung; ist „Save“ in der Wertung gewählt (`DS:4816`), Dialog `O3:46DE` nach der Einzel- und nach der
   Teamwertung. Dialog: **S** Sichern, **N** neuer Name, **C** Abbruch, **A** Autosave umschalten, **Q** Sichern und Programmende;
   Vorschlag `GAMEn` mit dem ersten n ohne Datei. Boss-Taste (`UC02`): Sichern unter einem Pfad + `\BOSS` (also `…\BOSS.TWS`; Herkunft des Pfads nicht untersucht), dann `Halt(0)`.
-  Ein Stand liegt damit immer **zwischen zwei Spielen**; Gelände und Panzerlage der Runde stehen nicht in der Datei.
+  Dialog und Autosave sichern damit **zwischen zwei Spielen**; die Boss-Taste sichert jederzeit, also auch mitten in einer
+  Runde (`BOMB.DOC` „Boss Key“). Gelände und Panzerlage der Runde stehen in keinem Fall in der Datei.
 - **Laden** (T6d): nur über „Load Game“ im Hauptmenü (`DS:4817`); Auswahl aus `*.TWS` im aktuellen Verzeichnis (Namen bis 10
   Zeichen), danach ohne Spielerauswahl und Teams weiter in der Spielfolge. Keine Datei: „No Save Files Found“, Taste, `Halt(0)`.
   Wie die Spielfolge nach dem Laden fortsetzt (ab `DS:47E2`), ist in `O3:7847` nicht untersucht – unbelegt.
@@ -172,4 +173,7 @@ die Einstellungen und den Spielverlauf notieren (`docs/vorlagen/dosbox-aufnahme.
 6. **Optionen abweichend** von `BOMB.CFG` (Wind Random, Wände Random, Hintergrund Auswahl, Crumble ≠ 10, Inviso, Trail aus) –
    globale Werte, `DS:47E4`/`DS:47EC` gegen die Optionen.
 7. **Boss-Taste** während einer Runde – `BOSS.TWS`: welche Rundenwerte (`DS:47EA`, `DS:47EE`, `DS:E8A2`) mitten im Spiel stehen.
+   Bedienung (`BOMB.DOC` „Boss Key“): **F10** zeigt eine Schein-DOS-Eingabe, erst **ESC** beendet und sichert als `BOSS`;
+   die **Leertaste** kehrt ohne Sichern ins Spiel zurück. Nach der Aufnahme im DOSBox-Verzeichnis nachsehen und notieren,
+   wo `BOSS.TWS` liegt (Herkunft des Pfads ist nicht untersucht).
 8. Danach je Stand **Laden** und ein Bildschirmfoto der ersten Wertung bzw. Runde – Verhalten nach dem Laden (`O3:7847`).
