@@ -38,3 +38,31 @@ ausgegebenes Geld (LongInt), `+2Ah` Lenksysteme (Word[2]), `+2Eh` Waffen (Word[1
   **−** (`-`, linke Maustaste; `O3:1B33`): nur abwählen, kein Verkauf.
 - **Purchase** (`P`, Enter; `O3:2080`): ausgegeben += Preis × Anzahl, Bestand += Menge × Anzahl (Waffen/Lenksysteme 16 Bit,
   Abwehr 32 Bit), danach neues Angebot. **Done** (`D`, Esc): kauft ebenso und schreibt erst jetzt `+17h` zurück (`O3:23C5`).
+
+## 4. Einkauf – Bildschirm (`UI/Screens/ShopScreen`)
+
+Zeichnet über dem vorher gezeigten Bild (im Original die Wertungstafel; unterhalb der Kopfzeile wird `(0, 38)–(319, 199)` aus dem
+Puffer `DS:E5BC` erneuert, `O3:11D1`). Je Spieler ein Besuch; Tastaturspieler bedienen nur mit Tasten, Mausspieler nur mit der
+Maus (Spielertyp 1/2, `O3:13A3`, `O3:14AA`).
+
+| Element | Lage, Schrift, Farbe | Fundstelle |
+|---|---|---|
+| Kopfzeile | Rahmen `(5,5)–(314,35)` (U431:02A7, Fläche 18, hell 15, dunkel 17) | `O3:0FCA` |
+| Spielername | EURO 4 mit Nutzergröße 1/2, mittig oben bei (160, 3), Farbe 19 + Spielernummer | `O3:0F98`, `O3:0FEB` |
+| Purchase / Done | Knöpfe `(10,16)–(59,24)` und `(284,16)–(310,24)`, SmallFont 4, Farbe 17, Text bei (11,14)/(285,14) | `O3:1025–10C8` |
+| Geld | TINY 4; links (11,0)/(11,21) Farbe 6, rechts bündig (309,0)/(309,21) Farbe 14 | `O3:10CD–11CC` |
+| Kacheln | ab (5, 40), 99 × 13, Zeilenabstand 18, neue Spalte (+104) unterhalb y2 = 197 → 9 je Spalte | `O3:0199–032D` |
+| Name | SmallFont 1 (Nutzergröße 8/8), mittig bei ((x1+x2)/2 − 7, y1 + 3); Farbe Waffen 4, Lenksysteme 10, Abwehr 9 | `O3:016D–0312` |
+| „+“ | bei (x2 − 40, y2 − 2), Farbe 100 + n: (63,0,0) wenn bezahlbar, sonst schwarz | `O3:0692–085E` |
+| Bestand | TINY 4 rechtsbündig bei (x2 − 13, y2), Farbe 14, nur > 0; Energy Shield Bestand/10 + „%“, Inertia Damp. + „%“, je höchstens „100%“ | `O3:0869–0A17` |
+| „Menge FOR Preis“ | TINY 4 links unten bei (x1 + 2, y2), Farbe 0; Energy Shield und Inertia Damp. „100%“ | `O3:0A22–0C8B` |
+| Auswahlkästchen | vertiefter Rahmen `(x2−9, y1+3)–(x2−3, y2−3)`; Menge TINY 4 mittig, Farbe 6 | `O3:0C96`, `O3:1DC7` |
+| Cursor | Rechteck auf dem Kästchen, Farbe 11, bei nicht bezahlbarem Eintrag 0 | `O3:121C–1382` |
+
+Tasten (`O3:13AD–14A1`): Leertaste, `+`, `=` wählen, `-` abwählen; `P`/Enter Purchase, `D`/Esc Done; Pfeile hoch/runter ±1,
+rechts/links ±9 (eine Spalte). Maus (`O3:14B4–15F6`): Treffer beim Drücken, wirksam nach dem Loslassen; rechts wählt, links
+wählt ab. Nach einem Kauf mit Inhalt werden die Kacheln neu aufgebaut, der Cursor bleibt im Bereich (`O3:2247–2280`).
+
+`[APPROX]`: Das „+“ zeichnet `UCC8:017D` als Ellipse mit Radien 1/1 (nicht im Einzelnen verfolgt; hier die vier Nachbarn des
+Mittelpunkts). Die Schlussblende nach dem letzten Spieler (`O3:23E2`, `UCC8:011A`) fehlt noch. Vergleich mit TW 00100: Reihenfolge,
+Texte, Spaltenaufbau und Farben stimmen nach Lage und Form; Prüfsumme bis zu einem DOSBox-Bild vorläufig.
