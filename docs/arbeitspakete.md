@@ -368,3 +368,6 @@ Erstreview je Lauf: Claude Opus 5.5 (frische Sitzung); Delta-Prüfung der Leitst
 ### Status abschluss
 
 - 11.11.2026: begonnen (Claude Code, Claude Opus 5.5, geplanter Lauf), Base `35d8b42`, Branch `fix/abschluss-runde-1`.
+- 11.11.2026: fertig – Review, PR #83. Alle Befunde behoben: #79 (`GameConfig.BombCfgDefaults`, Fenster ohne `BOMB.CFG`),
+  #15–#21 (`bildschirme.md`), #34 (Tests in `UI.Tests`, Verweis auf `bombtool`), #46–#48 (Titel), #61 (`UCC8:0006` =
+  `GetViewSettings`), #68, #74, #75 (Esc und Texteingabe im Fenster); R1-D3 ergänzt.
