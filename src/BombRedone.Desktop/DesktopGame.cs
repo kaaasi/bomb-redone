@@ -1,3 +1,4 @@
+using BombRedone.Core.Setup;
 using BombRedone.Formats;
 using BombRedone.UI;
 using BombRedone.UI.Screens;
@@ -103,7 +104,8 @@ public sealed class DesktopGame : Game
 
     /// <summary>
     /// Main menu after the title. Without the original files (fonts in BOMB.EXE) a placeholder stays. Game Options open
-    /// the options screen; Sound Options, player selection and loading follow later (the menu stays or a placeholder).
+    /// the options screen, START the player selection; Sound Options and loading follow later (the menu stays or a
+    /// placeholder), the game after the player selection is a placeholder.
     /// </summary>
     private static IScreen CreateMenu()
     {
@@ -124,10 +126,12 @@ public sealed class DesktopGame : Game
         var settings = config is null ? new MenuSettings() : MenuSettings.FromConfig(config, mouseAvailable: true);
         var options = config is null ? new OptionsSettings() : OptionsSettings.FromConfig(config);
         var random = TurboPascalRandom.FromClock(DateTime.Now);
+        var roster = new PlayerRoster();
         return new MenuScreen(fonts, settings, random.Next, (choice, menu) => choice switch
         {
             MenuChoice.GameOptions => new OptionsScreen(menu, options),
             MenuChoice.SoundOptions => menu,
+            MenuChoice.Start => new PlayerSelectScreen(menu, roster, random.Next, _ => new PlaceholderScreen()),
             _ => new PlaceholderScreen(),
         });
     }
@@ -168,6 +172,10 @@ public sealed class DesktopGame : Game
         Keys.Down => BiosKey.Down,
         Keys.Left => BiosKey.Left,
         Keys.Right => BiosKey.Right,
+        Keys.Back => 0x0E08,
+        Keys.Home => 0x4700,
+        Keys.End => 0x4F00,
+        Keys.Delete => 0x5300,
         >= Keys.A and <= Keys.Z => BiosKey.Char((char)((shift ? 'A' : 'a') + (key - Keys.A))),
         >= Keys.D0 and <= Keys.D9 => BiosKey.Char((char)('0' + (key - Keys.D0))),
         _ => 0,

@@ -319,3 +319,10 @@ Fortsetzungen legt die Leitstelle an. Erstreview je Spur: Claude Opus 5.5, frisc
   und Desktop-Übergang vom Titel; `anforderungen/menue.md`. Teil 3 (Game Options) offen.
 - 11.11.2026: Teil 3 fertig (Fortsetzung 2) – Game Options `OptionsScreen` nach O2:11CC/0E35/0F81/1042 mit Bedienung, Werte in
   `OptionsSettings` (aus `GameConfig`), Cycle Delay ändert die laufende Rotation; `anforderungen/menue.md` §6. Spur fertig – Review.
+
+### Status spielerauswahl
+
+- 11.11.2026: begonnen (Claude Code, Claude Opus 5.5, geplanter Lauf), Base `9e93d94`, PR #65.
+- 11.11.2026: Spielerauswahl `PlayerSelectScreen` nach O2:52DD/07BA/4F0E/509C/42E8/481B mit Bedienung, Spielaufstellung
+  `Core/Setup` (Random erst beim Start), Desktop-Übergang vom Hauptmenü; `anforderungen/spielerauswahl.md`. Offen: Teams
+  (O2:2749/35CF) und Übergänge.
