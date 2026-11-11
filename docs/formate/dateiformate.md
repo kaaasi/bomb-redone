@@ -46,5 +46,6 @@ steht aus). Die Dehnung steckt an einer Stelle (`Palette.DefaultScaling`).
 - Tests: `tests/BombRedone.Formats.Tests/RawImageTests.cs` (synthetisch: Rundreise, zu kurz/zu lang, Palettenwert 64, Grenzwert 63,
   Dehnung; mit Originaldaten: Größe, Prüfsumme der Dateien, 61 bzw. 53 Farben, Rundreise).
 
-Die Prüfsumme des *dekodierten* Bildes entspricht hier der Dateiprüfsumme, weil die Dekodierung verlustfrei ist und `ToBytes` die
-Datei zurückliefert; geprüft werden die ersten 12 Hex-Stellen von SHA-256.
+Geprüft werden die ersten 12 Hex-Stellen von SHA-256: der Datei, der dekodierten Pixel (`Pixels` und `GetPixels()`, erste 64.000
+Byte) und der Palette (`Palette.ToBytes()`, letzte 768 Byte). Die Pixel- und Palettenprüfsummen sind unabhängig von `ToBytes`
+(`BOMB1` `e54ecb608342`/`694088f462ec`, `BOMB2` `fa264883ae62`/`af61d7cf63b3`).

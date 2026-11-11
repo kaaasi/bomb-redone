@@ -15,7 +15,8 @@ public enum PaletteScaling
 
 /// <summary>
 /// A 256-entry VGA palette with 6 bits per channel, as stored in the original files.
-/// [ORIGINAL] VGA DAC registers have 6 bits per channel (AGENTS.md section 4, "Originaltreue" point 3).
+/// [ORIGINAL] All 768 palette bytes of BOMB1.RAW and BOMB2.RAW (file offset 0xFA00 onward) are at most 63, i.e. 6 bits
+/// per channel as in the VGA DAC registers (checked in docs/formate/dateiformate.md).
 /// </summary>
 public sealed class Palette
 {
@@ -30,7 +31,7 @@ public sealed class Palette
 
     /// <summary>
     /// [APPROX] Default widening of 6 to 8 bits: the original shows 6-bit DAC values on a VGA card, so any exact
-    /// 8-bit value is the choice of the emulator. DOSBox uses <see cref="PaletteScaling.FullRange"/>; not yet
+    /// 8-bit value is the choice of the emulator. Assumption: DOSBox widens like <see cref="PaletteScaling.FullRange"/>; not yet
     /// confirmed against a DOSBox screenshot of this program (reference images pending).
     /// </summary>
     public const PaletteScaling DefaultScaling = PaletteScaling.FullRange;
