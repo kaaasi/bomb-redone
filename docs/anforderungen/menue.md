@@ -10,7 +10,10 @@ Umsetzung: `src/BombRedone.UI/Screens/Menu*`, `Options*`. Standardschrift: `docs
 
 1. Schleife `O2:0216(i)` für i = 1..10, dann bei `DS:E8BF` ≠ 0 Sonderweg ohne Menü (nicht umgesetzt, Bedeutung offen).
 2. `U431:01D8`: DAC 17/18/19 = (21,21,21), (42,42,42), (63,63,63); `SetViewPort(0, 0, 319, 199, ClipOn)`.
-3. Hintergrund `O2:3B96(0)` (§2), Kopfzeile `O2:06BD`, **Kopie des Bildschirms** (64.000 Byte) in den Puffer `DS:E5BC`,
+3. `UCC8:0006` (`O2:3E2F`): `GetViewSettings(DS:E8FA)` – Graph `0E26:1028` kopiert per `Move` (`12CE:0A81`) 9 Byte
+   (`ViewPortType`: x1, y1, x2, y2, Clip) aus `DS:EBE2` nach `DS:E8FA` (`BOMB.EXE 0x0E326`, `0x10928`); rein lesend, ändert
+   weder Bild noch Palette (nicht `SetAllPalette`, #61). Derselbe Aufruf folgt nach der Menüschleife (`O2:3E5E`).
+   Hintergrund `O2:3B96(0)` (§2), Kopfzeile `O2:06BD`, **Kopie des Bildschirms** (64.000 Byte) in den Puffer `DS:E5BC`,
    Überschrift `O2:0909`, Menü und Schleife `O2:1E7F` (§3, §4).
 4. Danach Übergänge (`UCC8:0687`, `UCC8:0AC0`, `UCC8:09E4`) und je nach Wahl Laden (`O3[2]`) oder Spielerauswahl `O2:52DD`.
    **Nicht umgesetzt:** Übergänge; START und Load Game führen vorerst auf einen Platzhalter (Stufe 2c). Game Options: §6;
