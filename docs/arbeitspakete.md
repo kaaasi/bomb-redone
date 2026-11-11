@@ -278,3 +278,7 @@ Integrationsfolge 2a: `titel` → `schrift`. Bilder der DOSBox-Aufnahme sind, so
 - 11.11.2026: fertig – Review. Grundgerüst (`IScreen`, `ScreenHost`, `ScreenInput`), Titelfolge nach O1:0014 mit Fundstellen,
   Desktop zeigt den Titel; PR #44, Anforderungen `anforderungen/titel.md`. `[APPROX]`: Dauer eines Kopierdurchgangs (85 ms),
   DAC-Maske 6 Bit, Palette vor dem Titel.
+
+### Status menue
+
+- 11.11.2026: begonnen (Claude Code, Claude Opus 5.5, geplanter Lauf), Base `3b2a7c6`.
