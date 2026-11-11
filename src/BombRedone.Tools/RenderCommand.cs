@@ -13,7 +13,7 @@ namespace BombRedone.Tools;
 internal static class RenderCommand
 {
     /// <summary>Screens that can be rendered.</summary>
-    public static readonly IReadOnlyList<string> Screens = ["shop", "score"];
+    public static readonly IReadOnlyList<string> Screens = ["shop", "score", "results"];
 
     public static int Run(string[] args)
     {
@@ -21,6 +21,18 @@ internal static class RenderCommand
         {
             Console.Error.WriteLine($"Usage: bombtool render <{string.Join('|', Screens)}> [gamedata] [out.png]");
             return 2;
+        }
+
+        if (args[0] == "results")
+        {
+            // Text mode: printed, not drawn (O3:7566 writes to the DOS console).
+            foreach (var line in ScoreResults.Build(
+                [
+                    new PlayerAccount(1, "Javier") { Wins = 8, Score = 41230 },
+                    new PlayerAccount(2, "Lob & Shoot") { Wins = 2, Score = 900 },
+                ], gamesCounter: 11))
+                Console.WriteLine(line.Text);
+            return 0;
         }
 
         GameData data;

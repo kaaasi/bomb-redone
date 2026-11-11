@@ -89,3 +89,11 @@ und Sichern (`O3:46DE`) sind nicht Teil der Spur: der Bildschirm meldet nur die 
 
 `[APPROX]`: Palettenrotation des Hintergrunds (`UC79:003D`) und die Abschlussblende (`O3:65D1`, `UCC8:0AC0`) fehlen. Vergleich mit
 LP 00064: Lage, Texte und Farben stimmen nach Lage und Form.
+
+## 6. Endergebnis (`UI/Screens/ScoreResults`)
+
+`O3:7566` (`BOMB.OVR 0x0FFF2`) schreibt nach dem Grafikende im Textmodus (ClrScr, weiß auf schwarz): in Farbe 6
+„n Game(s) Played“ (n = `DS:47E2` − 1), „   And just in case you missed them:“, Leerzeile; in Farbe 15 „             Results “,
+„   Name            Score   Wins“, ein Leerzeichen und 32 × `C4h`; in Farbe 10 je Spieler „ r.“ + „ “ + Name, `GotoXY(17)`
+Punkte in 8 Stellen, `GotoXY(28)` Siege in 4 Stellen (spätere Ausgabe überschreibt lange Namen); zwei Leerzeilen. Ausgabe:
+`bombtool render results`.
