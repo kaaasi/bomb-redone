@@ -854,3 +854,58 @@ def z5(R, g, a):
                                            r"cmp word \[di\+0x405c\],byte \+0x64$", r"cmp word \[di\+0x4052\],byte \+0x5$",
                                            r"mov word \[bp-0x2\],0x8$"]),
         set_is(R, g, a, "O7", 0x0ED7, list(range(20, 30))))
+
+
+def ovl_str(R, g, a, key, ofs, text):
+    """Pascal string constant at offset ofs of block key."""
+    data = R.block_lines(g, a, key)[1]
+    got = bytes(data[ofs + 1:ofs + 1 + data[ofs]])
+    return got == text.encode("ascii"), "%s:%04X = '%s'" % (key, ofs, got.decode("latin-1"))
+
+
+@finding("I1", "Panzerinfo O9:0040(n, Steuerart): n = 0 → 10; Fenster 260 × (60 + 12 je Zeile) um (160,100), Bild gesichert; Men, Wins, Maximum Power = 10·E, Score, Cash = +13h − +17h, Bestände")
+def i1(R, g, a):
+    return R.all_of(
+        R.seq(g, a, "O9", 0x0040, 0x08D6, [
+            r"mov word \[bp\+0x8\],0xa$", r"mov word \[bp-0xa\],0x104$", r"mov word \[bp-0xc\],0x3c$",
+            r"cmp byte \[0xe8bc\],0x0$", r"add ax,0xc$", r"cmp word \[di\+0x405c\],byte \+0x0$", r"add ax,0xc$",
+            r"cmp word \[di\+0x4058\],byte \+0x0$", r"add ax,0xc$", r"cmp word \[di\+0x4082\],byte \+0x0$", r"add ax,0xc$",
+            r"mov ax,0x64$", r"sub ax,dx$", r"add ax,0x64$", r"add ax,0xa0$", r"mov ax,0xa0$", r"mov ax,0xfa00$",
+            r"call 0x12ce:0xa81$", r"mov ax,0xd$", r"call 0xe26:0x1cce$", r"call 0xe26:0x10d2$", r"call 0xe26:0x10d2$",
+            r"mov ax,\[di\+0x404f\]$", r"mov di,0x5$", r"mov ax,\[di\+0x4098\]$", r"mov ax,0xa$", r"mul word \[di\+0x404f\]$",
+            r"push word \[di\+0x4041\]$", r"mov cx,\[di\+0x4045\]$", r"sub ax,cx$", r"cmp word \[di\+0x405c\],byte \+0x0$",
+            r"mov ax,0x4$", r"cmp word \[di\+0x4058\],byte \+0x0$", r"cmp word \[di\+0x4082\],byte \+0x0$",
+            r"cmp word \[bp\+0x6\],byte \+0x1$", r"call 0x11f8:0x2fb$", r"cmp word \[bp\+0x6\],byte \+0x2$",
+            r"call 0xe11:0x77$", r"call 0xb20:0x2a$", r"call 0x12ce:0xa81$"]),
+        ovl_str(R, g, a, "O9", 0x0000, "Men:"), ovl_str(R, g, a, "O9", 0x0005, "XXX"),
+        ovl_str(R, g, a, "O9", 0x0009, "Wins:"), ovl_str(R, g, a, "O9", 0x000F, "Maximum Power:"),
+        ovl_str(R, g, a, "O9", 0x001E, "Score:"), ovl_str(R, g, a, "O9", 0x0025, "Cash:"),
+        ovl_str(R, g, a, "O9", 0x002B, "Accesories:"))
+
+
+@finding("I2", "Zielwahl O9:092E: Taste → / ← (DS:3718/3719 = 77/75) nächstes / voriges lebendes Ziel ≠ selbst, Enter/Leer fertig; Maus Klick auf Panzer; Computer 0129:01A6")
+def i2(R, g, a):
+    ds = g.seg_bytes(0x14D5)
+    return R.all_of(
+        R.seq(g, a, "O9", 0x092E, 0x0DC8, [
+            r"call 0x12ce:0xa81$", r"cmp ax,0x1$", r"cmp word \[di\+0x4056\],byte \+0x1$", r"cmp byte \[di\+0x4051\],0x0$",
+            r"cmp ax,\[bp\+0x6\]$", r"inc word \[di\+0x4056\]$", r"mov ax,0x140$", r"mov ax,0x1b$", r"mov ax,0xd$",
+            r"mov di,0x8d6$", r"mov ax,\[di\+0x4054\]$", r"mov di,0x8e7$", r"mov ax,\[di\+0x4056\]$", r"call 0x11f8:0x30d$",
+            r"cmp al,\[0x3718\]$", r"inc word \[di\+0x4056\]$", r"cmp al,\[0x3719\]$", r"dec word \[di\+0x4056\]$",
+            r"cmp ax,\[bp\+0x6\]$", r"cmp byte \[di\+0x4051\],0x0$", r"mov di,0x8f7$", r"call 0x12ce:0xe02$",
+            r"cmp ax,0x2$", r"mov di,0x917$", r"call 0xe11:0x77$", r"call 0xcc8:0xbff$", r"mov al,0x14$",
+            r"add ax,0x13$", r"cmp byte \[di\+0x4051\],0x0$", r"mov \[di\+0x4056\],cx$", r"cmp ax,0x3$",
+            r"call 0x129:0x1a6$", r"mov \[di\+0x4056\],cx$"]),
+        set_is(R, g, a, "O9", 0x08F7, [13, 32]), ovl_str(R, g, a, "O9", 0x08D6, ": Guidance Type "),
+        ovl_str(R, g, a, "O9", 0x08E7, "Current Target:"), ovl_str(R, g, a, "O9", 0x0917, "Please click on target"),
+        (list(ds[0x3718:0x371A]) == [77, 75], "DS:3718 = 77, 75"))
+
+
+@finding("W1", "Waffenleiste O8:1268: 20 Felder i = 0..19 (18 Waffen, Herb, Vick), Fenster (15i+10, 18)–(15i+25, 27), Farbe 100+i, Rahmen (0,0)–(14,10), Grenzen DS:E874+2i")
+def w1(R, g, a):
+    return R.seq(g, a, "O8", 0x1268, 0x1F1D, [
+        r"mov word \[bp-0x2\],0xa$", r"add ax,0x64$", r"call 0xe26:0x1dc2$", r"add ax,0x64$", r"call 0xe26:0x1131$",
+        r"add ax,0x64$", r"call far \[0xe8f6\]$", r"mov ax,0xf$", r"mul word \[0x4740\]$", r"add ax,\[bp-0x2\]$",
+        r"mov ax,0x12$", r"add ax,0xf$", r"mov ax,0x1b$", r"call 0xe26:0xf93$", r"mov \[di-0x178c\],ax$",
+        r"mov \[di-0x178c\],dx$", r"mov ax,0xe$", r"mov ax,0xa$", r"call 0xe26:0x10d2$",
+        r"cmp word \[0x4740\],byte \+0x13$", r"call 0xe26:0xf93$"])

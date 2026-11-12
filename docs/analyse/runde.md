@@ -6,12 +6,12 @@ nur im Referenz-Repo (`analyse/re-runde/`, R2-D5 = A). Grundlagen und Adressschr
 [../formate/spielstand.md](../formate/spielstand.md) (Satz i liegt bei `DS:402E + 74h·i`, „+0Fh“ = Feld im Satz).
 
 **Beleg für jede Aussage:** `python3 tools/reverse-engineering/runde.py befunde` prüft die Befunde (Kürzel in Klammern) gegen
-`gamedata/` als Befehlsfolgen der eigenen Disassembly (Ergebnis zum Head: **69 von 69 bestätigt**). Weitere Aufrufe: `… procs`
+`gamedata/` als Befehlsfolgen der eigenen Disassembly (Ergebnis zum Head: **72 von 72 bestätigt**). Weitere Aufrufe: `… procs`
 (Prozeduren mit Aufrufern), `… randoms` (alle 158 Aufrufe von `Random`), `… reals` (Real48-Konstanten), `… listings`
 (annotierte Listings); Ausgabe nur nach `analyse/re-runde/`. Werkzeuge: Python 3, `ndisasm` (Paket `nasm`).
 
 **Stand der Teile:** 1 (Spielfolge, Rundenbeginn, Spielfeld, Zufallsfolge) fertig; 2 (Schuss) fertig (Rest nur Bilddetails, §5.13); 3 (Zug,
-Kopfzeile, Eingaben) fertig bis auf O9, `O8:1268`, Computer (§6.4); 4 (Listings im Referenz-Repo, Liste §7) mit Stand dieses Laufs.
+Kopfzeile, Eingaben, Panzerinfo) fertig bis auf den Computer (§6.5); 4 (Listings im Referenz-Repo, Liste §7) mit Stand dieses Laufs.
 
 ## 1. Spielfolge `O3[0]` = `O3:7847` (`BOMB.OVR 0x102D3`)
 
@@ -167,7 +167,7 @@ Dezimalwert) (P10).
 5. Panzer: `Random(28)`, `Random(28)` (§3.6).
 6. Wind: `Random(5)` bei RND, `Random(S)` (+ Wiederholungen), vier `Random:Real` (§2).
 7. Startspieler: `Random(N)` (+ Wiederholungen) (§2).
-8. Zug: für Menschen kein Zufall bis zum Schuss (§6); Computer `0129` (§6.4).
+8. Zug: für Menschen kein Zufall bis zum Schuss (§6); Computer `0129` (§6.5).
 9. Schuss Lead Ball: `Random:Real` (Rückstoß, §5.1); im Flug kein Zufall; bei Volltreffer ggf. `Random:Real` im Schaden (§5.5);
    Explosionen: `Random` nur bei Ton (§5.6); nach dem Schuss `Random:Real` für den Erdrutsch bei Crumble > 0, je Fallzeile
    `Random(3)`, je Tod `Random(7)` und `Random:Real`, ab Durchgang 11 `Random(100)` (§5.8, §5.9).
@@ -380,8 +380,10 @@ bei Wind 0. **Kraft ≤ 10 · Energie** (+1Bh wird gekürzt). Dann der Zug `O7[3
 
 **Waffenleiste** `O4:0000(Satz)` (Z2): Farbe 100 + w (w = 0..17) = (63, 63, 63) bei Bestand, sonst (0, 0, 0); die gewählte Waffe
 (63, 0, 0). Farbe 118 (Herb, +2Ah) und 119 (Vick, +2Ch) ebenso; ohne Bestand wird das Lenkbit in +26h gelöscht (Herb Bit 0, Vick
-Bit 1), ist es gesetzt, ist die Farbe rot. Die Leiste selbst zeichnet `O8:1268` mit diesen Farben (Grenzen `DS:E874`, `E898`, `E89A`,
-`E89C` für die Maus, §6.3; Zeichnung `[APPROX]` nicht ausgewertet).
+Bit 1), ist es gesetzt, ist die Farbe rot. Die Leiste selbst zeichnet `O8:1268` (W1) beim Rundenbeginn: 20 Felder i = 0..19 (Waffen 0..17, Herb, Vick), je Fenster
+(15i + 10, 18)–(15i + 25, 27), Farbe 100 + i zuerst schwarz, Rahmen (0, 0)–(14, 10), dann ein kleines Bild der Waffe aus `Line`,
+`Bar`, `PutPixel`, `Circle` (`[APPROX]` die Bilder sind nicht einzeln beschrieben – das Remake kann sie aus `O8:131C`–`1EE9`
+übernehmen oder vom Referenzbild abmessen). Die linken Feldgrenzen 15i + 10 stehen in `DS:E874 + 2i` (Maus, §6.3).
 
 ### 6.2 Zug `O7:040C` (Z3)
 
@@ -416,9 +418,22 @@ Die Tastatur liest die eigene Tastenroutine `0C48` (gehaltene Tasten in `DS:452A
 - **Computer** (Steuerart 3): virtuelle Methode +4 der Intelligenz (`DS:3BE8 + 4i`, VMT +12h) liefert den Befehl (Teil 3 Rest, `0129`).
 - Außer beim Computer danach `Delay(TS)` (`DS:E8C4`).
 
-### 6.4 Offen in Teil 3
+### 6.4 Panzerinfo und Zielwahl `O9` (I1, I2)
 
-Panzerinfo `O9:0040` und Zielwahl `O9:092E`, Zeichnung der Waffenleiste `O8:1268`, Computer `0129` (Zielen, Waffenwahl, Zufall).
+**Panzerinfo** `O9:0040(n, Steuerart)` (I1; Taste 1..0 oder Klick, n = 0 → 10): Bildschirm in den Puffer `DS:E5BC` sichern, Fenster
+260 Pixel breit, 60 + 12 je weiterer Zeile hoch (Teamname bei Team Play, je Waffe mit Bestand, Herb/Vick mit Bestand, je Abwehr > 0),
+mittig um (160, 100), Rahmen Farbe 13. Inhalt: Name (Farbe n + 19), Team, „Men:“ Energie (tot: „XXX“), „Wins:“ +6Ah, „Maximum Power:“
+10 · Energie, „Score:“ +13h, „Cash:“ +13h − +17h, „Accesories:“ mit den Beständen (gewählte Waffe Farbe 4). Warten auf Taste
+(Steuerart 1) bzw. Maustaste (2), beim Computer nicht; Panzer neu, Bild zurück.
+
+**Zielwahl der Lenkung** `O9:092E(Satz, Steuerart)` (I2, nach dem Feuern bei +26h > 0): Leiste (0, 0)–(320, 27) Farbe 13, „<Name>:
+Guidance Type <+26h>“; Tastatur: „Current Target:“ und Name des Ziels (+28h); → / ← (Scancodes `DS:3718` = 77, `3719` = 75)
+nächstes / voriges Ziel, übersprungen werden der Schütze selbst und Tote, Enter oder Leertaste übernimmt. Maus: „Please click on
+target“, Klick auf einen lebenden Panzer (Farbe 20..19 + N; auch der eigene) setzt das Ziel. Computer: `0129:01A6` liefert das Ziel.
+
+### 6.5 Offen in Teil 3
+
+Computer `0129`: Zielen (Methode +4 der Intelligenz), Waffenwahl, Zielwahl `0129:01A6`, Zufall der Computer.
 
 ## 7. Nicht entscheidbar ohne DOSBox (Stand Teil 1 und 2)
 

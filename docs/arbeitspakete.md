@@ -170,5 +170,5 @@ Leitstelle nach Welle 1 aus `analyse/runde.md`; die Abnahmen hier gelten als Rah
   Teil 3 (Zug `O7:040C`, Kopfzeile `O4:44A7`, Eingaben, O9, Computer `0129`), §7 ergänzen, Listings neu erzeugen. 41 Befunde.
 - 12.11.2026, Fortsetzung 1: Teil 2 fertig (offen nur Bilddetails, `runde.md` §5.13): Explosion,
   Krater, Flächenschaden, CRI, Sonic, Dirt, Erdrutsch, Fallen, Tod, Blitz, Rundenende, Laser, MIRV, Lenkung; §7 Nr. 6–11.
-  Teil 3: Zugbeginn, Kopfzeile, Waffenleistenfarben, Zug `O7:040C`, Tasten, Maus, Schummeltaste (§6); offen O9, `O8:1268`,
-  Computer `0129`. 69 Befunde.
+  Teil 3: Zugbeginn, Kopfzeile, Waffenleiste, Zug `O7:040C`, Tasten, Maus, Schummeltaste, Panzerinfo, Zielwahl (§6); offen
+  Computer `0129`. 72 Befunde.
