@@ -62,8 +62,7 @@ Byteschiebung (88h), dann normalisieren. Exakt, AH bleibt 0.
 **Mul (`0F75`).** Ein Exponent 0 → Null. Exponentensumme und Vorzeichen in DX, Mantissen mit verstecktem Bit. Sind die unteren
 24 Bit eines Operanden 0 (AH = 0 und BX = 0), Kurzweg 16 × 40 Bit, sonst volles Produkt der Wörter mit Abschneiden der
 untersten Teilprodukte; danach ggf. eine Stelle normalisieren, Exponent − 8081h, Runden wie Add, Bit 6 des oberen
-Exponentbytes → Null (Unterlauf), Bit 0 → Fehler 205. Ergebnis: nicht immer das korrekt gerundete Produkt – die Umsetzung
-übernimmt die Wortschritte einzeln.
+Exponentbytes → Null (Unterlauf), Bit 0 → Fehler 205. Die Umsetzung übernimmt die Wortschritte einzeln.
 
 **Div (`107A`).** Dividend 0 → Null. Schriftliche Division mit 42 Quotientenbits (16 + 16 + 10, invertiert gesammelt),
 dann Normalisieren, Exponent + 8080h, Runden und Prüfung wie Mul.
@@ -75,6 +74,11 @@ Null), Überlauf auf 2³¹ → Fehler 207; danach Vorzeichen.
 **Zufall.** `RandSeed` `DS:3AD6`; `16C4` rechnet `RandSeed := RandSeed × 08088405h + 1`. `Random(n)` (`1675`): oberes Wort
 mod n, 0 für n = 0. `Random` als Real (`168B`): neuer `RandSeed` als vorzeichenlose 32-Bit-Zahl, Exponent 80h, normalisiert
 (höchstens 32 Schritte, sonst 0) – also genau `RandSeed / 2³²`.
+
+**Rundung gegenüber exakt gerundetem Ergebnis** (Fälle aus `cases --count 20000` mit Operanden und Ergebnis ≠ 0, verglichen
+mit dem exakten Wert, auf 40 Bit gerundet, halb aufwärts): Add 140 von 14.909, Sub 164 von 14.957, Mul 510 von 13.789
+abweichend (abgeschnittene Ausrichtung bzw. Teilprodukte), Div 0 von 14.187. `double` wäre also auch bei 40 Bit Mantisse nicht
+gleichwertig.
 
 ## Abgleich
 

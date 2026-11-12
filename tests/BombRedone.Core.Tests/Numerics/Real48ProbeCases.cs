@@ -134,9 +134,22 @@ internal static class Real48ProbeCases
         }
     }
 
-    /// <summary>Operations added in later parts of the track; unknown ones fail the test.</summary>
-    private static byte[] RunExtended(string op, (byte[]? A, byte[]? B, uint Integer) c) =>
-        throw new NotSupportedException(op);
+    private static byte[] RunExtended(string op, (byte[]? A, byte[]? B, uint Integer) c) => op switch
+    {
+        "mul" => (Real(c.A) * Real(c.B)).ToBytes(),
+        "div" => (Real(c.A) / Real(c.B)).ToBytes(),
+        "sqr" => Real48.Square(Real(c.A)).ToBytes(),
+        "trunc" => LittleEndian(Real(c.A).Trunc()),
+        "round" => LittleEndian(Real(c.A).Round()),
+        _ => throw new NotSupportedException(op),
+    };
+
+    private static byte[] LittleEndian(int value)
+    {
+        var bytes = new byte[4];
+        System.Buffers.Binary.BinaryPrimitives.WriteInt32LittleEndian(bytes, value);
+        return bytes;
+    }
 
     private static Real48 Real(byte[]? bytes) => Real48.FromBytes(bytes!);
 
