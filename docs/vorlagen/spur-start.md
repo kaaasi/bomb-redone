@@ -27,10 +27,9 @@ Schritt 5.
 
 **Fixlauf** (geplanter Lauf): Startaufruf wie oben mit Auftrag „Befunde `<IDs>` aus `<review-datei>` zu PR
 #`<nr>` beheben, Head vorher `<sha>`“ – ohne Befund (nur Rebase/Planpflicht): „PR #`<nr>` auf `main` rebasen, `<Anpassung laut
-Plan>`, Head vorher `<sha>`“. Am Ende (`zusammenarbeit.md` §5 Punkt 8): bei behobenem P0/P1 die Nachprüfung selbst per
-`create_trigger` anlegen (Kurzaufruf aus `review-anfrage.md`, Delta alter..neuer Head, nur diese Befunde; vorher `list_triggers`
-auf eine ausstehende Nachprüfung dieses PRs; autorisiert; das Modell lässt sich nicht wählen → im Übergabekommentar „Modell
-prüfen (Soll: …)“ nach „Modellwahl“), sonst – nur P2/P3 oder ohne Befund – Label `leitstelle-delta`. Mit dem Push des neuen
+Plan>`, Head vorher `<sha>`“. Am Ende (`zusammenarbeit.md` §5 Punkt 8): bei behobenem P0/P1 **keine** geplante Aufgabe anlegen, sondern
+`spur-wartet` und in der Übergabe „Nachprüfung anlegen – Leitstelle“ mit fertigem Kurzaufruf aus `review-anfrage.md` (Delta
+alter..neuer Head, nur diese Befunde) und Modell nach „Modellwahl“; sonst – nur P2/P3 oder ohne Befund – Label `leitstelle-delta`. Mit dem Push des neuen
 Heads `review-nein` entfernen. Widerspricht der Lauf einem Befund mit eigenem Beleg: `beleg-strittig`, beide Belege in der
 Übergabe, für diesen Punkt keine Nachprüfung.
 

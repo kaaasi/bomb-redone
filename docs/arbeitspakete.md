@@ -110,7 +110,9 @@ Integrationsfolge: `real48` → `re-runde` (keine gemeinsamen Dateien).
   Probe gegen die Originalroutinen, Ausgabe nur in Schutzordner), `docs/analyse/real48.md` (neu).
 - **Abnahme:** je Operation Sollwerte mit Beleg – bevorzugt eine Probe, die die Originalroutine aus `BOMB.EXE` ausführt (z. B.
   kleiner 8086-Emulator im Werkzeugordner) und mit dem Remake vergleicht (Zufallseingaben, Randfälle: 0, Vorzeichen,
-  Unter-/Überlauf, Rundung bei ,5); ohne Probe je Randfall `[APPROX]`. Bestehende Zufallstests bleiben grün.
+  Unter-/Überlauf, Rundung bei ,5); ohne Probe je Randfall `[APPROX]`. Vor dem Umzug ein
+  Charakterisierungstest der bisherigen Folge (`RandSeed := RandSeed × 08088405h + 1`, `Random(n)`) mit festem Startwert, der nach
+  dem Umzug unverändert grün bleibt (bisher gibt es keinen Test von `TurboPascalRandom`).
 - **Modell:** Claude Opus 5.5.
 
 #### Spur `re-runde` – Runde und Spielfolge erschließen (Analyse, kein Produktcode)
@@ -149,4 +151,13 @@ Leitstelle nach Welle 1 aus `analyse/runde.md`; die Abnahmen hier gelten als Rah
 - `src/BombRedone.Desktop/*`: Welle 1 nur `real48` (Umzug des Zufalls), Stufe 2a nur `gelaende`, Stufe 2b nur `schuss`.
 - `src/BombRedone.Tools/Program.cs`: je Spur eine Registrierungszeile (`gelaende`, `tws-leser`).
 - `tools/reverse-engineering/bombre.py`: nur `re-runde` (neue Unterbefehle).
-- `docs/arbeitspakete.md`: jede Spur nur ihr eigener Statusabschnitt (unten anfügen: `### Status <spur>`).
+- `docs/arbeitspakete.md`: jede Spur nur ihr eigener Statusabschnitt. Für Welle 1 hat die Leitstelle die Abschnitte unten
+  angelegt (vermeidet Konflikte beim Anfügen); spätere Spuren bekommen ihren Abschnitt mit dem Zuschnitt.
+
+### Status real48
+
+- noch nicht begonnen.
+
+### Status re-runde
+
+- noch nicht begonnen.

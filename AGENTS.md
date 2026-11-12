@@ -38,6 +38,9 @@ originalgetreu (Pixel, Regeln, Abläufe), danach Erweiterungen. Grundsatzentsche
 8. **Spuren starten erst nach dem Go des Nutzers.** Die Leitstelle legt Plan und Startaufrufe vor, startet aber nichts selbst.
 9. **Entscheidungen gesammelt vorlegen:** je Entscheidung das Problem, 3–5 Optionen mit Vor- und Nachteilen und eine Empfehlung;
    die Leitstelle bündelt offene Fragen, statt einzeln nachzufragen. Ergebnis mit Datum in `docs/entscheidungen.md`.
+10. **Mehrere Wege der Umsetzung:** zuerst der möglichst originalgetreue (Beleg aus Disassembly, Bild oder Anleitung). Lässt
+   sich das nicht entscheiden, nicht selbst wählen: Teil blockiert lassen (geplante Läufe: `spur-wartet`, Frage mit Optionen in der
+   Übergabe); die Leitstelle legt die Frage dem Nutzer gesammelt nach Regel 9 vor (Nutzer 12.11.2026).
 
 ## 3. Einrichtung
 
