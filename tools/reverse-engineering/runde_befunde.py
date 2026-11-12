@@ -952,3 +952,83 @@ def c3(R, g, a):
             r"mov word \[es:di\+0x7\],0xffff$", imm(0x12c), RND, r"add ax,0x14$", r"mov byte \[es:di\+0x2\],0x1$",
             r"call 0x1d0$"]),
         set_is(R, g, a, "0129", 0x0558, [1, 2, 3]))
+
+
+TEMP_AI = [r"mov ax,0x12$", r"call 0x12ce:0x566$", r"call far \[di\+0x4\]$", r"mov ax,0x12$", r"call 0x12ce:0x566$",
+           r"mov al,0xff$", r"call far \[di\+0x8\]$"]
+
+
+@finding("C4", "Lobber (2): Ziel nach Richtung (Schuss 1: Random:Real < 0,5 dreht), ab Schuss 3 nächster Einschlag; Winkel 75, Kraft Random(100)+100 / Random(200)+200, dann aus zwei Einschlägen; Waffe nach Fehlweite > 5/15/30")
+def c4(R, g, a):
+    return R.seq(g, a, "0129", 0x06F6, 0x0E7A, [
+        r"cmp byte \[es:di\+0x2\],0x0$", r"mov word \[es:di\+0x9\],0x1$", r"cmp word \[di\+0x408c\],byte \+0x1$", RREAL,
+        RCMP, r"neg ax$", r"cmp word \[di\+0x408c\],byte \+0x3$", r"cmp byte \[di\+0x4051\],0x0$", r"mov ax,\[di\+0x4a86\]$",
+        r"mov word \[es:di\+0x5\],0x4b$", imm(0x64), RND, r"add ax,0x64$", r"mov word \[es:di\+0x5\],0x4b$", imm(0xc8),
+        RND, r"add ax,0xc8$", r"call 0xe26:0x11ea$", r"call 0xe26:0x1c86$", r"mov ax,\[di\+0x4a82\]$",
+        r"call 0x12ce:0x11ce$", r"call 0x12ce:0x11c8$", r"mov ax,\[di\+0x4a82\]$", r"cmp ax,0x5$",
+        r"mov word \[es:di\+0x9\],0x2$", r"cmp ax,0xf$", r"mov word \[es:di\+0x9\],0x3$", r"cmp ax,0x1e$",
+        r"mov word \[es:di\+0x9\],0x4$", r"call 0x1d0$"])
+
+
+@finding("C5", "Rifleman (3): Wert 1000 je Gegner (÷10 wenn tiefer als y+3), −1 je Geländepixel auf der Sichtlinie; bestes Ziel; Kraft 1000, Winkel ArcTan; Waffe nach Radius bzw. Laser; Ziel tiefer: Random(70)+10 bzw. Random(280)+20 bei 45°")
+def c5(R, g, a):
+    return R.all_of(
+        R.seq(g, a, "0129", 0x0F0A, 0x1444, [
+            r"mov word \[es:di\+0x9\],0x1$", r"mov word \[es:di\+0x14\],0x3e8$", r"add ax,0x3$", r"mov cx,0xa$",
+            r"idiv cx$", r"call 0xdbd:0x8f$", r"call 0xcc8:0xbff$", r"cmp word \[bp-0xe\],byte \+0x2$",
+            r"dec word \[es:di\+0x14\]$", r"call 0xcc8:0xbb6$", r"mov word \[bp-0xe\],0x8001$", r"mov \[es:di\+0xc\],ax$",
+            r"add ax,0x4$", r"cmp word \[es:di\+0x14\],0x3de$", r"mov word \[bp-0x10\],0xf$", r"mov word \[bp-0x10\],0x1e$",
+            r"mov word \[bp-0x10\],0x3c$", r"call 0xdbd:0x8f$", r"cmp word \[di\+0x4066\],byte \+0x64$",
+            r"mov word \[es:di\+0x9\],0x5$", r"mov word \[es:di\+0x3\],0x3e8$", r"call 0x12ce:0x11ce$",
+            r"call 0x12ce:0x14d8$", r"call 0xdbd:0x11b$", r"mov \[es:di\+0x5\],ax$", r"sub ax,0x4$", imm(0x46), RND,
+            r"add ax,0xa$", r"mov di,0xeea$", r"call 0x12ce:0xe02$", imm(0x118), RND, r"add ax,0x14$",
+            r"mov word \[es:di\+0x5\],0x2d$", r"mov word \[es:di\+0x9\],0x1$", r"call 0x1d0$"]),
+        set_is(R, g, a, "0129", 0x0EEA, [1, 2, 3]))
+
+
+@finding("C6", "Lob & Shoot (4): Wand 1–3 → plant mit einem Hilfsobjekt Rifleman (0E9C), sonst Lobber (06A8); Zustand 12h Byte hin und zurück, Hilfsobjekt freigeben")
+def c6(R, g, a):
+    return R.all_of(
+        R.seq(g, a, "0129", 0x14D4, 0x15F0, [r"mov al,\[0x47ec\]$", r"mov di,0x14b4$", r"call 0x12ce:0xe02$",
+                                             r"call 0xe9c$"] + TEMP_AI + [r"call 0x6a8$"] + TEMP_AI + [r"call 0x1d0$"]),
+        set_is(R, g, a, "0129", 0x14B4, [1, 2, 3]))
+
+
+@finding("C7", "Windless Wit (5): Ziel Random(N)+1 (lebend, fremd); bis 41 Versuche Winkel Random(90), v² = 0,05·X²/(X·tan a + Y) ab Rohrspitze, Kraft = 50·|v|; ≤ 10·E; Waffe 11 oder höchste 1..4")
+def c7(R, g, a):
+    return R.all_of(
+        R.seq(g, a, "0129", 0x1660, 0x1AF0, [
+            r"push word \[0x47da\]$", RND, r"inc ax$", r"cmp byte \[di\+0x4051\],0x0$", r"cmp ax,\[es:di\+0x10\]$",
+            r"cmp ax,cx$", r"call 0xcc8:0x17d$", r"call 0xcc8:0x687$", r"inc word \[bp-0xe\]$",
+            r"mov word \[es:di\+0x7\],0x1$", r"mov word \[es:di\+0x7\],0xffff$", imm(0x5a), RND, r"call 0xb25:0x5a$",
+            r"call 0x12ce:0x11c8$", r"call 0xb25:0x0$", r"sub ax,0x1$", r"call 0xb25:0xbd$", r"call 0x12ce:0x11c8$",
+            r"call 0x12ce:0x11ce$", r"call 0x12ce:0x128f$", r"call 0xb25:0xbd$", r"call 0xdbd:0x8f$",
+            r"mov \[es:di\+0x3\],ax$", r"mov ax,0xa$", r"mul word \[di\+0x404f\]$", r"cmp word \[bp-0xe\],byte \+0x28$",
+            r"mov word \[es:di\+0x9\],0xb$", r"cmp word \[bp-0xc\],byte \+0x4$", r"call 0x1d0$"]),
+        R.real_at(g, a, "0129", 0x18B2, 8.0), R.real_at(g, a, "0129", 0x197D, 0.05), R.real_at(g, a, "0129", 0x19EA, 50.0))
+
+
+@finding("C8", "Twanger (6): wie Windless Wit, aber Winkel Random(180) (über 90: Richtung −1, 180 − a) und Wurfgleichung mit 0,05 und Wind·0,5/5000; Kraft auf ±32767 begrenzt")
+def c8(R, g, a):
+    return R.all_of(
+        R.seq(g, a, "0129", 0x1B60, 0x2190, [
+            r"push word \[0x47da\]$", RND, r"inc ax$", imm(0xb4), RND, r"call 0xb25:0x5a$", r"call 0xb25:0x0$",
+            r"mov word \[bp-0x14\],0xcd7c$", r"mov ax,\[0xe8a2\]$", r"call 0x12ce:0x11c8$", r"call 0x12ce:0x11ce$",
+            r"call 0x12ce:0x128f$", r"mov cx,0x86$", r"mov cx,0x8f$", r"mov cx,0x8f$", r"mov \[es:di\+0x3\],ax$",
+            r"cmp word \[es:di\+0x5\],byte \+0x5a$", r"mov ax,0xb4$", r"sub ax,\[es:di\+0x5\]$",
+            r"mov word \[es:di\+0x7\],0xffff$", r"cmp word \[bp-0xe\],byte \+0x28$", r"mov word \[es:di\+0x9\],0xb$",
+            r"call 0x1d0$"]),
+        R.real_at(g, a, "0129", 0x1E80, 0.5), R.real_at(g, a, "0129", 0x1E8C, 5000.0), R.real_at(g, a, "0129", 0x2033, 50.0))
+
+
+@finding("C9", "Wind Master (7): Wand 1–3 → Ziel nach Wert wie Rifleman, Kraft Random(51)+950, Winkel ArcTan über die Decke (dy + 2·(y_Ziel − 28)); sonst Hilfsobjekt Rifleman")
+def c9(R, g, a):
+    return R.all_of(
+        R.seq(g, a, "0129", 0x2200, 0x2F4B, [
+            r"mov al,\[0x47ec\]$", r"mov di,0x21e0$", r"call 0x12ce:0xe02$", r"jmp 0x2ec6$", r"mov word \[es:di\+0x9\],0x1$",
+            r"mov word \[es:di\+0x14\],0x3e8$", r"mov word \[es:di\+0x14\],0xffff$", r"sub ax,0x1c$", imm(0x33), RND,
+            r"add ax,0x3b6$", r"mov \[es:di\+0x3\],ax$", r"add ax,\[bp-0x12\]$", r"add ax,\[bp-0x12\]$",
+            r"call 0x12ce:0x11ce$", r"call 0x12ce:0x14d8$", r"call 0xdbd:0x11b$", r"mov \[es:di\+0x5\],ax$",
+            r"cmp word \[es:di\+0x14\],0x3de$", r"call 0xdbd:0x8f$", r"mov word \[es:di\+0x9\],0x5$",
+            r"call 0xe9c$"] + TEMP_AI + [r"call 0x1d0$"]),
+        set_is(R, g, a, "0129", 0x21E0, [1, 2, 3]))

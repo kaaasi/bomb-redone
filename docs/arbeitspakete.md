@@ -171,4 +171,5 @@ Leitstelle nach Welle 1 aus `analyse/runde.md`; die Abnahmen hier gelten als Rah
 - 12.11.2026, Fortsetzung 1: Teil 2 fertig (offen nur Bilddetails, `runde.md` §5.13): Explosion,
   Krater, Flächenschaden, CRI, Sonic, Dirt, Erdrutsch, Fallen, Tod, Blitz, Rundenende, Laser, MIRV, Lenkung; §7 Nr. 6–11.
   Teil 3: Zugbeginn, Kopfzeile, Waffenleiste, Zug `O7:040C`, Tasten, Maus, Schummeltaste, Panzerinfo, Zielwahl, Computer-Rahmen
-  `0129:01D0` und Mr. Stupid (§6); offen die Computer-Arten 2–7. 75 Befunde.
+  `0129:01D0`, alle sieben Computer-Arten (§6); offen nur Sichtlinien von Wind Master (§6.6). Teil 4: Listings unverändert,
+  README in bomb-referenz#10 nachgetragen. 81 Befunde.

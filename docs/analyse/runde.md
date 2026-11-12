@@ -6,12 +6,12 @@ nur im Referenz-Repo (`analyse/re-runde/`, R2-D5 = A). Grundlagen und Adressschr
 [../formate/spielstand.md](../formate/spielstand.md) (Satz i liegt bei `DS:402E + 74h·i`, „+0Fh“ = Feld im Satz).
 
 **Beleg für jede Aussage:** `python3 tools/reverse-engineering/runde.py befunde` prüft die Befunde (Kürzel in Klammern) gegen
-`gamedata/` als Befehlsfolgen der eigenen Disassembly (Ergebnis zum Head: **75 von 75 bestätigt**). Weitere Aufrufe: `… procs`
+`gamedata/` als Befehlsfolgen der eigenen Disassembly (Ergebnis zum Head: **81 von 81 bestätigt**). Weitere Aufrufe: `… procs`
 (Prozeduren mit Aufrufern), `… randoms` (alle 158 Aufrufe von `Random`), `… reals` (Real48-Konstanten), `… listings`
 (annotierte Listings); Ausgabe nur nach `analyse/re-runde/`. Werkzeuge: Python 3, `ndisasm` (Paket `nasm`).
 
 **Stand der Teile:** 1 (Spielfolge, Rundenbeginn, Spielfeld, Zufallsfolge) fertig; 2 (Schuss) fertig (Rest nur Bilddetails, §5.13); 3 (Zug,
-Kopfzeile, Eingaben, Panzerinfo, Computer-Rahmen und Mr. Stupid) fertig, offen die Arten 2–7 (§6.6); 4 (Listings im Referenz-Repo, Liste §7) mit Stand dieses Laufs.
+Kopfzeile, Eingaben, Panzerinfo, Computer) fertig (Rest §6.6); 4 (Listings im Referenz-Repo, Liste §7) mit Stand dieses Laufs.
 
 ## 1. Spielfolge `O3[0]` = `O3:7847` (`BOMB.OVR 0x102D3`)
 
@@ -451,15 +451,45 @@ Zielmethode plant nur, wenn +02h = 0, und ruft dann **`0129:01D0`**, das den Pla
 `Random(90)`; bei Wand 1–3 Richtung `Random(3)` − 1, wiederholt bis ±1, Kraft `Random(5000)` + 20 (dann auf 10 · Energie gekürzt);
 sonst Richtung +1, wenn die Spielernummer ≤ N div 2, sonst −1, Kraft `Random(300)` + 20.
 
-**Übrige Arten** (`[APPROX]`, nur Aufrufe gezählt, nicht ausgewertet): Lobber `Random:Real` (Richtung beim ersten Schuss), Schuss 1
-und 2 Winkel 75 mit Kraft `Random(100)` + 100 bzw. `Random(200)` + 200, ab Schuss 3 Kraft aus dem Schussprotokoll (§5.9) zwischen
-zwei Einschlägen gemittelt; Rifleman `Random(70)`, `Random(280)`, Winkel 45; Lob & Shoot ruft je Wand die Konstruktoren von Rifleman
-oder Lobber; Windless Wit und Twanger `Random(N)` (Ziel), `Random(90)` bzw. `Random(180)` und eine eigene Bahnrechnung (Konstanten 8,
-0,05, 50; Twanger mit Wind / 5000); Wind Master `Random(51)` und Rifleman.
+**Lobber** (C4): Ziel +0Ch zuerst der eigene Spieler, Richtung ±1 (beim ersten Schuss der Runde, +5Eh = 1, dreht
+`Random:Real` < 0,5 sie um); in den Schüssen 1 und 2 ist das Ziel der nächste lebende Spieler eines anderen Teams in dieser Richtung
+(zyklisch), ab Schuss 3 der lebende Gegner, der dem letzten Einschlag (Schussprotokoll §5.9) am nächsten liegt; Richtung zum Ziel
+(liegt es auf der anderen Seite, beginnt die Zählung wieder bei Schuss 1). Schuss 1: Winkel 75, Kraft `Random(100)` + 100; Schuss 2:
+Winkel 75, Kraft `Random(200)` + 200; ab Schuss 3 aus je zwei Einschlägen i < j des Protokolls: Kraft = P_i + Trunc((x_Ziel − x_i) ·
+(P_j − P_i) / (x_j − x_i)) (Nenner 0 → 1; `[APPROX]` Begrenzung über `12CE:0AB8`), negativ → −2 · Kraft; Waffe 1, bei Fehlweite
+|x_Ziel − x_i| > 5 / 15 / 30 Waffe 2 / 3 / 4, ohne Bestand abwärts 4 → 3 → 2 → 1 → 11 → 0. Dabei zeichnet er einen Kreis um das Ziel
+und Kreuze an den Einschlägen und stellt das Bild danach aus dem Puffer `DS:E5BC` wieder her (nur kurz sichtbar).
+
+**Rifleman** (C5): Wert je Spieler 1000, ÷ 10, wenn er tiefer als y + 3 steht, 0 für Tote, sich selbst und das eigene Team; dann
+die Sichtlinie in Trunc(Abstand) Schritten: je Pixel Farbe 2 Wert − 1 (die Linie wird in Farbe i + 19 gezeichnet und später aus dem
+Puffer gelöscht). Ziel = höchster Wert. dx = x_Ziel − x, dy = y − y_Ziel + 4 (0 → 1); Kraft 1000, Winkel = Trunc(|ArcTan(dy / dx)|) in
+Grad, Richtung −1, wenn das Ziel eine kleinere Nummer hat, sonst +1. Wert > 990 (freie Sicht): Waffe die höchste aus 2..4 mit
+Bestand, deren Radius 15 / 30 / 60 größer als der Abstand ist; sonst bei Laserbestand +38h > 100 Laser. Liegt das Ziel mehr als 4
+Pixel tiefer: Winkel `Random(70)` + 10, und ohne Wand 1–3 Kraft `Random(280)` + 20, Winkel 45, Waffe 1.
+
+**Lob & Shoot** (C6): plant bei Wand 1–3 mit einem Hilfsobjekt **Rifleman**, sonst **Lobber**: neues Objekt anlegen (Init verbraucht
+dabei `Random(4)`!), die ersten 12h Byte des eigenen Objekts hinein kopieren, dessen Zielmethode rufen, zurück kopieren, freigeben.
+
+**Windless Wit** (C7): Ziel `Random(N)` + 1, wiederholt bis lebend, nicht er selbst, anderes Team; Zielkreuz um das Ziel (zweimal
+gezeichnet und gelöscht). Bis 41 Versuche: Richtung zum Ziel, Winkel `Random(90)`, ab der Rohrspitze (8 Pixel) X und Y bis zum
+Ziel, v² = 0,05 · X² / (X · tan a + Y) (Tabelle `0B25:00BD`), Kraft = Trunc(50 · Sqrt(v² + (v · tan a)²)); verworfen, wenn die Bahn
+nicht passt oder Kraft > 10 · Energie. Waffe 11 oder die höchste aus 1..4 mit Bestand. **Wind und Gelände bleiben unberücksichtigt.**
+
+**Twanger** (C8): wie Windless Wit, aber Winkel `Random(180)` (über 90: Richtung −1 und 180 − a) und die Wurfgleichung mit halber
+Schwerkraft 0,05 und halbem Wind Wind · 0,5 / 5000 (also **mit Wind**), Kraft auf ±32767 begrenzt.
+
+**Wind Master** (C9): bei Wand 1–3 Wert je Spieler wie Rifleman (Sichtlinien `[APPROX]` mit Spiegelung nicht im Einzelnen
+ausgewertet), Kraft `Random(51)` + 950, Winkel = Trunc(|ArcTan(dx / (dy + 2 · (y_Ziel − 28)))|) – der Schuss geht über die Decke;
+Waffe wie Rifleman. Ohne Wand 1–3 plant er mit einem Hilfsobjekt Rifleman (wie C6).
+
+**Zufall der Computer:** jede Planung verbraucht `Random`-Aufrufe (Mr. Stupid ab 2, Lobber 0–2, Rifleman 0–2, Windless Wit und
+Twanger je Versuch einen bzw. zwei plus die Zielwahl, Lob & Shoot und Wind Master zusätzlich das `Random(4)` im Init des
+Hilfsobjekts). Für das Suchwerkzeug (R2-D3) reichen Partien mit Menschen; mit Computern muss die Planung bitgleich nachgebaut werden.
 
 ### 6.6 Offen in Teil 3
 
-Planung der Arten 2–7 im Einzelnen (`0129:06F6`–`2F4D`); Einkauf der Computer (`O3:0E1F` mit +0Eh).
+Sichtlinien von Wind Master mit Spiegelung (`0129:2300`–`2D00`), Begrenzung `12CE:0AB8` beim Lobber; Einkauf der Computer
+(`O3:0E1F` mit +0Eh, nicht Teil dieser Spur).
 
 ## 7. Nicht entscheidbar ohne DOSBox (Stand Teil 1 und 2)
 
