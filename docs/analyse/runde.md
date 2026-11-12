@@ -6,12 +6,12 @@ nur im Referenz-Repo (`analyse/re-runde/`, R2-D5 = A). Grundlagen und Adressschr
 [../formate/spielstand.md](../formate/spielstand.md) (Satz i liegt bei `DS:402E + 74h·i`, „+0Fh“ = Feld im Satz).
 
 **Beleg für jede Aussage:** `python3 tools/reverse-engineering/runde.py befunde` prüft die Befunde (Kürzel in Klammern) gegen
-`gamedata/` als Befehlsfolgen der eigenen Disassembly (Ergebnis zum Head: **72 von 72 bestätigt**). Weitere Aufrufe: `… procs`
+`gamedata/` als Befehlsfolgen der eigenen Disassembly (Ergebnis zum Head: **75 von 75 bestätigt**). Weitere Aufrufe: `… procs`
 (Prozeduren mit Aufrufern), `… randoms` (alle 158 Aufrufe von `Random`), `… reals` (Real48-Konstanten), `… listings`
 (annotierte Listings); Ausgabe nur nach `analyse/re-runde/`. Werkzeuge: Python 3, `ndisasm` (Paket `nasm`).
 
 **Stand der Teile:** 1 (Spielfolge, Rundenbeginn, Spielfeld, Zufallsfolge) fertig; 2 (Schuss) fertig (Rest nur Bilddetails, §5.13); 3 (Zug,
-Kopfzeile, Eingaben, Panzerinfo) fertig bis auf den Computer (§6.5); 4 (Listings im Referenz-Repo, Liste §7) mit Stand dieses Laufs.
+Kopfzeile, Eingaben, Panzerinfo, Computer-Rahmen und Mr. Stupid) fertig, offen die Arten 2–7 (§6.6); 4 (Listings im Referenz-Repo, Liste §7) mit Stand dieses Laufs.
 
 ## 1. Spielfolge `O3[0]` = `O3:7847` (`BOMB.OVR 0x102D3`)
 
@@ -167,7 +167,7 @@ Dezimalwert) (P10).
 5. Panzer: `Random(28)`, `Random(28)` (§3.6).
 6. Wind: `Random(5)` bei RND, `Random(S)` (+ Wiederholungen), vier `Random:Real` (§2).
 7. Startspieler: `Random(N)` (+ Wiederholungen) (§2).
-8. Zug: für Menschen kein Zufall bis zum Schuss (§6); Computer `0129` (§6.5).
+8. Zug: für Menschen kein Zufall bis zum Schuss (§6); Computer `0129` (§6.5: je Plan einige `Random`).
 9. Schuss Lead Ball: `Random:Real` (Rückstoß, §5.1); im Flug kein Zufall; bei Volltreffer ggf. `Random:Real` im Schaden (§5.5);
    Explosionen: `Random` nur bei Ton (§5.6); nach dem Schuss `Random:Real` für den Erdrutsch bei Crumble > 0, je Fallzeile
    `Random(3)`, je Tod `Random(7)` und `Random:Real`, ab Durchgang 11 `Random(100)` (§5.8, §5.9).
@@ -415,7 +415,7 @@ Die Tastatur liest die eigene Tastenroutine `0C48` (gehaltene Tasten in `DS:452A
   `E898..E89A` Herb (9), `E89A..E89C` Vick (10); Winkelfeld (56..70, 0..7) links 1, rechts 2; Kraftfeld (56..86, 10..17) links 3, rechts
   4; (8..54, 10..17) links − 100, rechts + 100; Richtungsfeld (296..302, 0..7) 6; beide Tasten 5. `0DBD:022A`/`0256` liefern x/y
   (`[APPROX]` nach Verwendung).
-- **Computer** (Steuerart 3): virtuelle Methode +4 der Intelligenz (`DS:3BE8 + 4i`, VMT +12h) liefert den Befehl (Teil 3 Rest, `0129`).
+- **Computer** (Steuerart 3): virtuelle Methode +4 der Intelligenz (`DS:3BE8 + 4i`, VMT +12h) liefert den Befehl (§6.5).
 - Außer beim Computer danach `Delay(TS)` (`DS:E8C4`).
 
 ### 6.4 Panzerinfo und Zielwahl `O9` (I1, I2)
@@ -431,9 +431,35 @@ Guidance Type <+26h>“; Tastatur: „Current Target:“ und Name des Ziels (+28
 nächstes / voriges Ziel, übersprungen werden der Schütze selbst und Tote, Enter oder Leertaste übernimmt. Maus: „Please click on
 target“, Klick auf einen lebenden Panzer (Farbe 20..19 + N; auch der eigene) setzt das Ziel. Computer: `0129:01A6` liefert das Ziel.
 
-### 6.5 Offen in Teil 3
+### 6.5 Computer `0129` (C1–C3)
 
-Computer `0129`: Zielen (Methode +4 der Intelligenz), Waffenwahl, Zielwahl `0129:01A6`, Zufall der Computer.
+Objekt der Intelligenz (`spielstand.md`, Intelligenz): Init `0129:0000` (C1) setzt Plan +02h = 0, Soll-Kraft +03h, Soll-Winkel +05h,
+Soll-Richtung +07h, Soll-Waffe +09h = 0, +0Bh = 0, **Ziel +0Ch = −1**, `DS:47AE` und `DS:47B4` = −1,0 und +0Eh = `Random(4)` + 1 bis in
+der Menge der Art; `0129:018D` gibt +0Eh an den Einkauf (`O3:0E1F`), `0129:01A6` das Ziel +0Ch an die Zielwahl (§6.4).
+
+Je Art gibt es Konstruktor und Zielmethode (VMT +4, §6.3): 1 Mr. Stupid `050A`/`0578`, 2 Lobber `06A8`/`06F6`, 3 Rifleman
+`0E9C`/`0F0A`, 4 Lob & Shoot `1466`/`14D4`, 5 Windless Wit `1612`/`1660`, 6 Twanger `1B12`/`1B60`, 7 Wind Master `2192`/`2200`. Jede
+Zielmethode plant nur, wenn +02h = 0, und ruft dann **`0129:01D0`**, das den Plan in **einen Befehl je Aufruf** umsetzt (C2):
+
+1. Soll-Waffe ohne Bestand (< 1): +09h − 1, unter 0 → 12, bis eine mit Bestand. Soll-Kraft ≤ 10 · Energie, beim Laser ≤ +38h, ≥ 0.
+2. Befehl = 5 (Feuer); Winkel < Soll → Befehl 1 bei r = 1, 2 bei r = −1; Winkel > Soll → umgekehrt; Kraft > Soll → 3, < Soll → 4;
+   Richtung ≠ Soll → 6; Waffe ≠ Soll → 8 (das Letzte gilt: Waffe vor Richtung vor Kraft vor Winkel).
+3. Bei Befehl 3 und Abstand > 99: Kraft − 90, dann bei Abstand > 9: − 9 (mit dem − 1 des Befehls also Schritte 100 / 10 / 1); Befehl 4
+   ebenso nach oben. Bei Befehl 5 wird der Plan gelöscht (+02h = 0).
+
+**Mr. Stupid** (C3): Soll-Waffe 11 (Hand Grenade), überschrieben von jeder Waffe 1..4 mit Bestand (die höchste gewinnt); Winkel
+`Random(90)`; bei Wand 1–3 Richtung `Random(3)` − 1, wiederholt bis ±1, Kraft `Random(5000)` + 20 (dann auf 10 · Energie gekürzt);
+sonst Richtung +1, wenn die Spielernummer ≤ N div 2, sonst −1, Kraft `Random(300)` + 20.
+
+**Übrige Arten** (`[APPROX]`, nur Aufrufe gezählt, nicht ausgewertet): Lobber `Random:Real` (Richtung beim ersten Schuss), Schuss 1
+und 2 Winkel 75 mit Kraft `Random(100)` + 100 bzw. `Random(200)` + 200, ab Schuss 3 Kraft aus dem Schussprotokoll (§5.9) zwischen
+zwei Einschlägen gemittelt; Rifleman `Random(70)`, `Random(280)`, Winkel 45; Lob & Shoot ruft je Wand die Konstruktoren von Rifleman
+oder Lobber; Windless Wit und Twanger `Random(N)` (Ziel), `Random(90)` bzw. `Random(180)` und eine eigene Bahnrechnung (Konstanten 8,
+0,05, 50; Twanger mit Wind / 5000); Wind Master `Random(51)` und Rifleman.
+
+### 6.6 Offen in Teil 3
+
+Planung der Arten 2–7 im Einzelnen (`0129:06F6`–`2F4D`); Einkauf der Computer (`O3:0E1F` mit +0Eh).
 
 ## 7. Nicht entscheidbar ohne DOSBox (Stand Teil 1 und 2)
 

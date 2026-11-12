@@ -909,3 +909,46 @@ def w1(R, g, a):
         r"mov ax,0x12$", r"add ax,0xf$", r"mov ax,0x1b$", r"call 0xe26:0xf93$", r"mov \[di-0x178c\],ax$",
         r"mov \[di-0x178c\],dx$", r"mov ax,0xe$", r"mov ax,0xa$", r"call 0xe26:0x10d2$",
         r"cmp word \[0x4740\],byte \+0x13$", r"call 0xe26:0xf93$"])
+
+
+# ---- 6.6 Computer players (unit 0129) ----------------------------------------------------------------------------
+
+@finding("C1", "Intelligenz 0129: Init leert Plan +02h, Kraft +03h, Winkel +05h, Richtung +07h, Waffe +09h, Ziel +0Ch = −1; 018D liefert +0Eh (Einkauf), 01A6 das Ziel +0Ch")
+def c1(R, g, a):
+    return R.all_of(
+        R.seq(g, a, "0129", 0x0000, 0x00B7, [
+            r"mov byte \[es:di\+0x2\],0x0$", r"mov \[es:di\+0x3\],ax$", r"mov \[es:di\+0x9\],ax$", r"mov \[es:di\+0x5\],ax$",
+            r"mov \[es:di\+0x7\],ax$", r"mov byte \[es:di\+0xb\],0x0$", r"mov word \[es:di\+0xc\],0xffff$", imm(0x4), RND,
+            r"inc ax$", r"mov \[es:di\+0xe\],ax$", r"call 0x12ce:0xe02$"]),
+        R.seq(g, a, "0129", 0x018D, 0x01A4, [r"mov ax,\[es:di\+0xe\]$", r"retf 0x4$"]),
+        R.seq(g, a, "0129", 0x01A6, 0x01BD, [r"mov ax,\[es:di\+0xc\]$", r"retf 0x4$"]))
+
+
+@finding("C2", "Befehl aus dem Plan 0129:01D0: Waffe ohne Bestand → +09h − 1 (unter 0: 12); Kraft ≤ 10·E (Laser ≤ +38h), ≥ 0; Vorrang Waffe 8 > Richtung 6 > Kraft 3/4 (Schritt 90/9) > Winkel 1/2 > Feuer 5")
+def c2(R, g, a):
+    return R.seq(g, a, "0129", 0x01D0, 0x04E8, [
+        r"mov ax,\[es:di\+0x9\]$", r"cmp word \[di\+0x405c\],byte \+0x1$", r"dec word \[es:di\+0x9\]$",
+        r"mov word \[es:di\+0x9\],0xc$", r"mov ax,0xa$", r"mul word \[di\+0x404f\]$", r"cmp ax,\[es:di\+0x3\]$",
+        r"cmp word \[es:di\+0x9\],byte \+0x5$", r"mov ax,\[di\+0x4066\]$", r"cmp word \[es:di\+0x3\],byte \+0x0$",
+        r"mov word \[bp-0x4\],0x5$", r"mov ax,\[di\+0x404b\]$", r"cmp ax,\[es:di\+0x5\]$", r"mov ax,\[di\+0x404d\]$",
+        r"dec ax$", r"call 0x12ce:0x11ce$", r"sub ax,cx$", r"mov \[bp-0x4\],ax$", r"cmp ax,\[es:di\+0x5\]$",
+        r"add ax,0x2$", r"mov ax,\[di\+0x4049\]$", r"cmp ax,\[es:di\+0x3\]$", r"mov word \[bp-0x4\],0x3$",
+        r"mov word \[bp-0x4\],0x4$", r"cmp ax,\[es:di\+0x7\]$", r"mov word \[bp-0x4\],0x6$", r"cmp ax,\[es:di\+0x9\]$",
+        r"mov word \[bp-0x4\],0x8$", r"cmp ax,0x63$", r"sub ax,0x5a$", r"cmp ax,0x9$", r"sub ax,0x9$", r"cmp ax,0x63$",
+        r"add ax,0x5a$", r"cmp ax,0x9$", r"add ax,0x9$", r"cmp word \[bp-0x4\],byte \+0x5$",
+        r"mov byte \[es:di\+0x2\],0x0$"])
+
+
+@finding("C3", "Mr. Stupid (Art 1, 0129:0578): Waffe höchste aus 1..4 mit Bestand, sonst 11; Winkel Random(90); Wand 1–3: Richtung Random(3)−1 bis ±1, Kraft Random(5000)+20; sonst Richtung nach Spielerhälfte, Kraft Random(300)+20")
+def c3(R, g, a):
+    return R.all_of(
+        R.seq(g, a, "0129", 0x050A, 0x0556, [r"call 0x0$", r"call 0x1bf$", r"mov word \[es:di\],0x1$"]),
+        R.seq(g, a, "0129", 0x0578, 0x0686, [
+            r"cmp byte \[es:di\+0x2\],0x0$", r"mov word \[es:di\+0x9\],0xb$", r"cmp word \[di\+0x405c\],byte \+0x0$",
+            r"mov \[es:di\+0x9\],ax$", r"cmp word \[bp-0x8\],byte \+0x4$", imm(0x5a), RND, r"mov \[es:di\+0x5\],ax$",
+            r"mov al,\[0x47ec\]$", r"mov di,0x558$", r"call 0x12ce:0xe02$", imm(0x3), RND, r"sub ax,0x1$",
+            r"mov \[es:di\+0x7\],ax$", r"cmp ax,0x1$", imm(0x1388), RND, r"add ax,0x14$", r"mov \[es:di\+0x3\],ax$",
+            r"mov ax,\[0x47da\]$", r"idiv cx$", r"cmp ax,\[es:di\+0x10\]$", r"mov word \[es:di\+0x7\],0x1$",
+            r"mov word \[es:di\+0x7\],0xffff$", imm(0x12c), RND, r"add ax,0x14$", r"mov byte \[es:di\+0x2\],0x1$",
+            r"call 0x1d0$"]),
+        set_is(R, g, a, "0129", 0x0558, [1, 2, 3]))
