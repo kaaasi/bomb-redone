@@ -12,7 +12,8 @@ Usage:
   real48.py [--gamedata DIR] hashes [--count N]        SHA-256 per operation over N generated cases
   real48.py [--gamedata DIR] [--out DIR] cases [--count N]   write the cases as TSV to analyse/real48/
   real48.py [--gamedata DIR] eval OP A [B]             run one operation (operands as 12 hex digits,
-                                                       memory byte order; Float/Random take a hex LongInt)
+                                                       memory byte order; float/random/random_n take hex
+                                                       integers: LongInt, RandSeed, RandSeed and n)
 
 The case generator (splitmix64, fixed seed per operation) is mirrored in
 tests/BombRedone.Core.Tests/Numerics/Real48ProbeCases.cs; both sides hash the results
@@ -40,6 +41,7 @@ ENTRIES = {
     "trunc": 0x11E0,
     "round": 0x11E8,
     "random": 0x168B,
+    "random_n": 0x1675,
 }
 RUNERROR = 0x00E2
 
@@ -47,11 +49,11 @@ RUNERROR = 0x00E2
 # script ('befunde --print'); the bytes themselves are never stored here.
 REGIONS = {
     "real48": (0x0EAE, 0x1202),
-    "random": (0x1675, 0x16FC),
+    "random": (0x1675, 0x170A),
 }
 REGION_HASHES = {
     "real48": "b38e4a079563fece462ac02174d165263ba69db3ca799ff68876a68f84cc0dbc",
-    "random": "1e91ad5f0b6c6329d660e47ad474d93fbeb50377bd1605e8da6b6824bdb155f2",
+    "random": "afe015890f68f4a8a28d397eb4e164d0d6d6cb2d0d2b18a4d19f0ce535658904",
 }
 
 
@@ -462,6 +464,11 @@ def run(rt, op, a, b=None):
     if op in ("trunc", "round"):
         cpu, err = rt.call(e, real_regs(a, ("ax", "bx", "dx")))
         return (b"" if err else struct.pack("<HH", cpu.r["ax"], cpu.r["dx"])), err
+    if op == "random_n":
+        rt.mem[(rt.ds << 4) + RANDSEED:(rt.ds << 4) + RANDSEED + 4] = struct.pack("<I", a)
+        cpu, err = rt.call(e, {}, stack_words=(b,))
+        seed = struct.unpack("<I", bytes(rt.mem[(rt.ds << 4) + RANDSEED:(rt.ds << 4) + RANDSEED + 4]))[0]
+        return struct.pack("<HI", cpu.r["ax"], seed), err
     if op == "random":
         rt.mem[(rt.ds << 4) + RANDSEED:(rt.ds << 4) + RANDSEED + 4] = struct.pack("<I", a)
         cpu, err = rt.call(e, {})
@@ -488,7 +495,7 @@ class SplitMix64:
 
 
 SEEDS = {"add": 1, "sub": 2, "sqr": 3, "mul": 4, "div": 5, "cmp": 6, "float": 7, "trunc": 8, "round": 9,
-         "random": 10}
+         "random": 10, "random_n": 11}
 
 SPECIAL_EXP = [0, 1, 2, 0x7F, 0x80, 0x81, 0x82, 0x9E, 0x9F, 0xA0, 0xA1, 0xFE, 0xFF]
 
@@ -530,6 +537,10 @@ def gen_case(op, g):
         return (v,)
     if op == "random":
         return ((g.next() >> 16) & 0xFFFFFFFF,)
+    if op == "random_n":
+        r = g.next()
+        n = (r >> 48) & 0xFFFF if r & 1 else (r >> 48) & 0x3FF  # small ranges are the common case
+        return ((r >> 8) & 0xFFFFFFFF, n)
     a = gen_real(g)
     if op in ("sqr", "trunc", "round"):
         return (a,)
@@ -590,7 +601,7 @@ def cmd_cases(rt, args):
 
 def cmd_eval(rt, args):
     def parse(s):
-        return int(s, 16) if args.op in ("float", "random") else bytes.fromhex(s)
+        return int(s, 16) if args.op in ("float", "random", "random_n") else bytes.fromhex(s)
     ops = [parse(x) for x in args.args]
     res, err = run(rt, args.op, *ops)
     print("error %d result %s" % (err, res.hex().upper()))

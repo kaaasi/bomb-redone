@@ -17,7 +17,7 @@ internal static class Real48ProbeCases
     private static readonly Dictionary<string, ulong> Seeds = new()
     {
         ["add"] = 1, ["sub"] = 2, ["sqr"] = 3, ["mul"] = 4, ["div"] = 5, ["cmp"] = 6,
-        ["float"] = 7, ["trunc"] = 8, ["round"] = 9, ["random"] = 10,
+        ["float"] = 7, ["trunc"] = 8, ["round"] = 9, ["random"] = 10, ["random_n"] = 11,
     };
 
     internal sealed class SplitMix64(ulong seed)
@@ -80,9 +80,19 @@ internal static class Real48ProbeCases
         return bytes;
     }
 
-    /// <summary>Generated operands: one or two 6-byte reals, or a 32-bit integer for float/random.</summary>
+    /// <summary>
+    /// Generated operands: one or two 6-byte reals, or a 32-bit integer for float/random (RandSeed);
+    /// random_n puts the range n into B as two bytes.
+    /// </summary>
     public static (byte[]? A, byte[]? B, uint Integer) GenerateCase(string op, SplitMix64 g)
     {
+        if (op == "random_n")
+        {
+            ulong r = g.Next();
+            ushort n = (ushort)((r & 1) != 0 ? (r >> 48) & 0xFFFF : (r >> 48) & 0x3FF);
+            return (null, BitConverter.GetBytes(n), (uint)((r >> 8) & 0xFFFFFFFF));
+        }
+
         if (op == "float")
         {
             ulong r = g.Next();
@@ -141,8 +151,31 @@ internal static class Real48ProbeCases
         "sqr" => Real48.Square(Real(c.A)).ToBytes(),
         "trunc" => LittleEndian(Real(c.A).Trunc()),
         "round" => LittleEndian(Real(c.A).Round()),
+        "random" => RandomReal(c.Integer),
+        "random_n" => RandomN(c.Integer, BitConverter.ToUInt16(c.B!)),
         _ => throw new NotSupportedException(op),
     };
+
+    /// <summary>Like the probe: the real, then the new RandSeed.</summary>
+    private static byte[] RandomReal(uint seed)
+    {
+        var random = new TurboPascalRandom(seed);
+        var bytes = new byte[10];
+        random.NextReal().WriteBytes(bytes);
+        System.Buffers.Binary.BinaryPrimitives.WriteUInt32LittleEndian(bytes.AsSpan(6), random.Seed);
+        return bytes;
+    }
+
+    /// <summary>Like the probe: the result word, then the new RandSeed.</summary>
+    private static byte[] RandomN(uint seed, ushort n)
+    {
+        var random = new TurboPascalRandom(seed);
+        int value = random.Next(n);
+        var bytes = new byte[6];
+        System.Buffers.Binary.BinaryPrimitives.WriteUInt16LittleEndian(bytes, (ushort)value);
+        System.Buffers.Binary.BinaryPrimitives.WriteUInt32LittleEndian(bytes.AsSpan(2), random.Seed);
+        return bytes;
+    }
 
     private static byte[] LittleEndian(int value)
     {

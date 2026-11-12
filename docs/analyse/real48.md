@@ -8,7 +8,7 @@ Grundlage: [re-grundlagen.md](re-grundlagen.md) §3 (E1, E2, D1–D5), Entscheid
 `tools/reverse-engineering/real48.py` lädt das Ladebild von `BOMB.EXE` in einen kleinen 8086-Emulator (nur die Befehle dieser
 Routinen) und ruft die Einsprünge unten wie das Spiel auf (Register, `CALL FAR`, Ende bei `RETF` oder beim Sprung nach
 `12CE:00E2` = RunError mit Code in AX). Keine Bytes der Originale im Skript; `befunde` prüft die Bereiche
-`12CE:0EAE–1201` (Real48) und `12CE:1675–16FB` (Zufall) über SHA-256.
+`12CE:0EAE–1201` (Real48) und `12CE:1675–1709` (Zufall mit `Randomize`) über SHA-256.
 
 | Aufruf | Ergebnis |
 |---|---|
@@ -39,6 +39,7 @@ Operand CX:SI:DI.
 | `11DC` | 0x1555C | `111B` | LongInt DX:AX → Real | 84/164 |
 | `11E0` | 0x15560 | `115A` (CH=0) | Trunc → LongInt DX:AX, Fehler 207 | 36/90 |
 | `11E8` | 0x15568 | `115A` (CH=1) | Round, Fehler 207 | 0/0 |
+| `1675` | 0x159F5 | `16C4` | Random(n), n als Wort auf dem Stapel | 15/126 |
 | `168B` | 0x15A0B | `16C4` | Random als Real | 1/18 |
 
 Aufrufe: Muster `CALL FAR 12CE:xxxx` in beiden Dateien. Round und Sqr kommen im Spiel praktisch nicht vor (Sqr nur zweimal im
@@ -73,7 +74,13 @@ Null), Überlauf auf 2³¹ → Fehler 207; danach Vorzeichen.
 
 **Zufall.** `RandSeed` `DS:3AD6`; `16C4` rechnet `RandSeed := RandSeed × 08088405h + 1`. `Random(n)` (`1675`): oberes Wort
 mod n, 0 für n = 0. `Random` als Real (`168B`): neuer `RandSeed` als vorzeichenlose 32-Bit-Zahl, Exponent 80h, normalisiert
-(höchstens 32 Schritte, sonst 0) – also genau `RandSeed / 2³²`.
+(höchstens 32 Schritte, sonst 0) – also genau `RandSeed / 2³²`. `Randomize` (`16FC`, `BOMB.EXE 0x15A7C`): INT 21h AH=2Ch,
+dann **CX (Stunde, Minute) ins untere Wort** `DS:3AD6` und DX (Sekunde, Hundertstel) ins obere `DS:3AD8` – die bisherige
+Desktop-Fassung hatte die Wörter vertauscht (`[APPROX]`, jetzt behoben). Für R2-D3: bei fest gesetzter Uhrzeit ist das untere
+Wort bekannt, offen bleiben nur Sekunde und Hundertstel (6.000 Werte).
+
+`TurboPascalRandom` liegt jetzt in `Core/Numerics` (vorher `Desktop`); die Folge von `Random(n)` ist durch einen
+Charakterisierungstest vor dem Umzug festgehalten und durch die Probe (`random_n`, 20.000 Fälle) belegt.
 
 **Rundung gegenüber exakt gerundetem Ergebnis** (Fälle aus `cases --count 20000` mit Operanden und Ergebnis ≠ 0, verglichen
 mit dem exakten Wert, auf 40 Bit gerundet, halb aufwärts): Add 140 von 14.909, Sub 164 von 14.957, Mul 510 von 13.789
