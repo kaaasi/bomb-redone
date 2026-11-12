@@ -771,3 +771,86 @@ def m2(R, g, a):
         R.seq(g, a, "O4", 0x3387, 0x3426, [r"cmp byte \[bp-0xdb\],0x0$", r"jmp 0x1ef6$",
                                            r"cmp word \[bp-0x108\],byte \+0x1$", r"jnz 0x3414$", r"call 0xb13:0x20$",
                                            r"call 0x11f8:0x2f4$"]))
+
+
+# ---- 6. Turn, header line, inputs (part 3) -----------------------------------------------------------------------
+
+KEY = 0x452A  # DS:452A + scan code = key held (extended keys + 100h); own keyboard handler 0C48
+
+
+def key(sc):
+    return r"cmp byte \[0x%x\],0x0$" % (KEY + sc)
+
+
+@finding("Z1", "Zugbeginn: +5Eh und +70h + 1, leere Waffe → nächste mit Bestand (17 → 0), O4:0000, Kopfzeile Name (160,0), „Wind: “ |w| Pfeil (160,10), Kraft ≤ 10·Energie")
+def z1(R, g, a):
+    return R.all_of(
+        R.seq(g, a, "O4", 0x4797, 0x4965, [
+            r"call 0x431:0x7ba$", r"inc word \[di\+0x408c\]$", r"inc word \[di\+0x409e\]$", r"cmp word \[di\+0x405c\],byte \+0x0$",
+            r"inc word \[di\+0x4052\]$", r"cmp word \[di\+0x4052\],byte \+0x11$", r"call 0x0$", r"mov ax,0x6d$",
+            r"mov ax,0xd3$", r"call 0xe26:0x1cce$", r"add ax,0x13$", r"mov ax,0xa0$", r"add di,0x402f$", r"call 0xe26:0x1f12$",
+            r"mov ax,0x9$", r"cmp word \[0xe8a2\],byte \+0x0$", r"mov word \[0x4740\],0xffff$", r"mov di,0x443e$",
+            r"mov al,\[di\+0x65\]$", r"call 0xe26:0x1f12$", r"mov ax,0xa$", r"mul word \[di\+0x404f\]$",
+            r"mov \[di\+0x4049\],cx$", r"call 0xb16:0x2f$"]),
+        (bytes(R.block_lines(g, a, "O4")[1][0x443F:0x4445]) == b"Wind: ", "O4:443E = 'Wind: '"))
+
+
+@finding("Z2", "Waffenleiste O4:0000: Farbe 100+w weiß bei Bestand, sonst schwarz, gewählte rot; 118 Herb, 119 Vick ebenso, ohne Bestand Lenkbit aus")
+def z2(R, g, a):
+    return R.seq(g, a, "O4", 0x0000, 0x0177, [
+        r"cmp word \[di\+0x405c\],byte \+0x0$", r"add ax,0x64$", r"mov ax,0x3f$", r"call far \[0xe8f6\]$", r"add ax,0x64$",
+        r"call far \[0xe8f6\]$", r"mov ax,\[di\+0x4052\]$", r"add ax,0x64$", r"mov ax,0x3f$", r"call far \[0xe8f6\]$",
+        r"cmp word \[0x4740\],byte \+0x11$", r"cmp word \[di\+0x4058\],byte \+0x0$", r"mov ax,0x76$", r"and ax,0x2$",
+        r"cmp word \[di\+0x405a\],byte \+0x0$", r"mov ax,0x77$", r"and ax,0x1$", r"and ax,0x1$", r"mov ax,0x76$",
+        r"and ax,0x2$", r"mov ax,0x77$", r"retf 0x2$"])
+
+
+@finding("Z3", "Zug O7:040C: Felder Winkel (56,0), Kraft (56,10), Richtung (296,0), Energie (248,10); Befehle 1/2 Winkel ±r mit Spiegeln über 90 und 0, 3/4 Kraft ∓1 in 0..10·E, 5 Feuer, 6 Richtung, 7/8 Waffe, 9/10 Herb/Vick")
+def z3(R, g, a):
+    return R.seq(g, a, "O7", 0x040C, 0x0ED5, [
+        r"call 0xb0c:0x25$", r"call 0x364$", r"mov ax,0x38$", r"mov ax,0x46$", r"mov ax,\[di\+0x404b\]$", r"mov ax,0x56$",
+        r"mov ax,\[di\+0x4049\]$", r"mov ax,0x128$", r"mov ax,0x12e$", r"mov di,\[di\+0x404d\]$", r"mov ax,0xf8$",
+        r"mov ax,0x10e$", r"mov ax,\[di\+0x404f\]$", r"push word \[di-0x1a5a\]$", r"call 0xef7$",
+        r"cmp word \[bp-0x2\],byte \+0x7$", r"dec word \[di\+0x4052\]$", r"cmp word \[bp-0x2\],byte \+0x8$",
+        r"inc word \[di\+0x4052\]$", r"cmp word \[bp-0x2\],byte \+0x9$", r"cmp word \[di\+0x4058\],byte \+0x0$",
+        r"cmp word \[bp-0x2\],byte \+0xa$", r"cmp word \[di\+0x405a\],byte \+0x0$", r"cmp word \[bp-0x2\],byte \+0x2$",
+        r"sub ax,cx$", r"cmp word \[bp-0x2\],byte \+0x1$", r"add ax,cx$", r"cmp word \[di\+0x404b\],byte \+0x5a$",
+        r"neg ax$", r"mov ax,0xb4$", r"sub ax,dx$", r"cmp word \[di\+0x404b\],byte \+0x0$", r"neg ax$", r"sub ax,dx$",
+        r"cmp word \[bp-0x2\],byte \+0x4$", r"inc ax$", r"cmp word \[bp-0x2\],byte \+0x3$", r"dec ax$", r"mov ax,0xa$",
+        r"mul word \[di\+0x404f\]$", r"cmp word \[di\+0x4049\],byte \+0x0$", r"cmp word \[di\+0x4052\],byte \+0x5$",
+        r"mov cx,\[di\+0x4066\]$", r"cmp word \[bp-0x2\],byte \+0x6$", r"neg ax$", r"cmp word \[bp-0x2\],byte \+0x5$",
+        r"mov byte \[0x4751\],0x1$", r"cmp word \[di\+0x4054\],byte \+0x0$", r"call 0xb1d:0x20$"])
+
+
+@finding("Z4", "Tasten (Steuerart 1): ←/→ 1/2, ↓/↑ 3/4, BildAuf/Ab ±100, Leer/Enter 5, I 6, Tab 8 (+Umschalt 7), H 9, V 10, 1..0 Panzerinfo; Alt = Wiederholung")
+def z4(R, g, a):
+    return R.seq(g, a, "O7", 0x0F68, 0x1336, [
+        r"cmp word \[bp\+0x8\],byte \+0x1$", key(0x53), key(0x52), key(0x2E), key(0x11), r"mov word \[di\+0x405c\],0x3e7$",
+        key(0x22), r"mov word \[di\+0x4058\],0xa$", key(0x20), r"mov word \[di\+0x4080\],0x3e8$", key(0x39),
+        key(0x17), r"mov word \[bp-0x8\],0x6$", key(0x23), r"mov word \[bp-0x8\],0x9$", key(0x2F),
+        r"mov word \[bp-0x8\],0xa$", key(0x0F), key(0x2A), key(0x36), r"mov word \[bp-0x8\],0x7$", key(0x0F),
+        r"mov word \[bp-0x8\],0x8$", key(0x39), key(0x1C), key(0x11C), r"mov word \[bp-0x8\],0x5$", key(0x0B),
+        r"call 0xb1d:0x25$", key(0x02), key(0x0A), r"call 0xb1d:0x25$", key(0x4B), key(0x14B), r"mov word \[bp-0x8\],0x1$",
+        key(0x38), key(0x4D), r"mov word \[bp-0x8\],0x2$", key(0x50), r"mov word \[bp-0x8\],0x3$", key(0x48),
+        r"mov word \[bp-0x8\],0x4$", key(0x49), r"add ax,0x63$", key(0x51), r"sub ax,0x63$"])
+
+
+@finding("Z5", "Maus (2): Panzer → Info, Leiste y 18..27 Waffe ←/→, Herb, Vick; Felder Winkel, Kraft (±1, ±100), Richtung; beide Tasten Feuer; Computer (3): Methode +4 der Intelligenz; sonst Delay(TS)")
+def z5(R, g, a):
+    return R.all_of(
+        R.seq(g, a, "O7", 0x1336, 0x15C8, [
+            r"cmp word \[bp\+0x8\],byte \+0x2$", r"call 0xe11:0x77$", r"call 0xe11:0x77$", r"call 0xcc8:0xbff$",
+            r"mov di,0xed7$", r"call 0x12ce:0xe02$", r"call 0xb1d:0x25$", r"cmp word \[bp-0x6\],byte \+0x12$",
+            r"cmp word \[bp-0x6\],byte \+0x1b$", r"cmp ax,\[0xe874\]$", r"cmp ax,\[0xe898\]$", r"mov word \[bp-0x8\],0x7$",
+            r"mov word \[bp-0x8\],0x8$", r"cmp ax,\[0xe89a\]$", r"mov word \[bp-0x8\],0x9$", r"cmp ax,\[0xe89c\]$",
+            r"mov word \[bp-0x8\],0xa$", r"cmp word \[bp-0x4\],byte \+0x38$", r"cmp word \[bp-0x4\],byte \+0x46$",
+            r"mov word \[bp-0x8\],0x1$", r"mov word \[bp-0x8\],0x2$", r"cmp word \[bp-0x4\],byte \+0x56$",
+            r"mov word \[bp-0x8\],0x3$", r"mov word \[bp-0x8\],0x4$", r"cmp word \[bp-0x4\],byte \+0x8$",
+            r"cmp word \[bp-0x4\],byte \+0x36$", r"sub ax,0x63$", r"add ax,0x63$", r"cmp word \[bp-0x4\],0x128$",
+            r"cmp word \[bp-0x4\],0x12e$", r"mov word \[bp-0x8\],0x6$", r"mov word \[bp-0x8\],0x5$",
+            r"cmp word \[bp\+0x8\],byte \+0x3$", r"les di,\[di\+0x3be8\]$", r"call far \[di\+0x4\]$",
+            r"push word \[0xe8c4\]$", r"call 0x11f8:0x29c$"]),
+        R.seq(g, a, "O7", 0x0EF7, 0x0F68, [r"cmp word \[di\+0x405c\],byte \+0x0$", r"mov word \[bp-0x2\],0x8$",
+                                           r"cmp word \[di\+0x405c\],byte \+0x64$", r"cmp word \[di\+0x4052\],byte \+0x5$",
+                                           r"mov word \[bp-0x2\],0x8$"]),
+        set_is(R, g, a, "O7", 0x0ED7, list(range(20, 30))))

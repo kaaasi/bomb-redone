@@ -6,12 +6,12 @@ nur im Referenz-Repo (`analyse/re-runde/`, R2-D5 = A). Grundlagen und Adressschr
 [../formate/spielstand.md](../formate/spielstand.md) (Satz i liegt bei `DS:402E + 74h·i`, „+0Fh“ = Feld im Satz).
 
 **Beleg für jede Aussage:** `python3 tools/reverse-engineering/runde.py befunde` prüft die Befunde (Kürzel in Klammern) gegen
-`gamedata/` als Befehlsfolgen der eigenen Disassembly (Ergebnis zum Head: **64 von 64 bestätigt**). Weitere Aufrufe: `… procs`
+`gamedata/` als Befehlsfolgen der eigenen Disassembly (Ergebnis zum Head: **69 von 69 bestätigt**). Weitere Aufrufe: `… procs`
 (Prozeduren mit Aufrufern), `… randoms` (alle 158 Aufrufe von `Random`), `… reals` (Real48-Konstanten), `… listings`
 (annotierte Listings); Ausgabe nur nach `analyse/re-runde/`. Werkzeuge: Python 3, `ndisasm` (Paket `nasm`).
 
 **Stand der Teile:** 1 (Spielfolge, Rundenbeginn, Spielfeld, Zufallsfolge) fertig; 2 (Schuss) fertig (Rest nur Bilddetails, §5.13); 3 (Zug,
-Kopfzeile, Eingaben O4/O7/O9) offen; 4 (Listings im Referenz-Repo, Liste §7) mit Stand dieses Laufs.
+Kopfzeile, Eingaben) fertig bis auf O9, `O8:1268`, Computer (§6.4); 4 (Listings im Referenz-Repo, Liste §7) mit Stand dieses Laufs.
 
 ## 1. Spielfolge `O3[0]` = `O3:7847` (`BOMB.OVR 0x102D3`)
 
@@ -167,7 +167,7 @@ Dezimalwert) (P10).
 5. Panzer: `Random(28)`, `Random(28)` (§3.6).
 6. Wind: `Random(5)` bei RND, `Random(S)` (+ Wiederholungen), vier `Random:Real` (§2).
 7. Startspieler: `Random(N)` (+ Wiederholungen) (§2).
-8. Zug: für Menschen kein Zufall bis zum Schuss; Computer `0129` (Teil 3).
+8. Zug: für Menschen kein Zufall bis zum Schuss (§6); Computer `0129` (§6.4).
 9. Schuss Lead Ball: `Random:Real` (Rückstoß, §5.1); im Flug kein Zufall; bei Volltreffer ggf. `Random:Real` im Schaden (§5.5);
    Explosionen: `Random` nur bei Ton (§5.6); nach dem Schuss `Random:Real` für den Erdrutsch bei Crumble > 0, je Fallzeile
    `Random(3)`, je Tod `Random(7)` und `Random:Real`, ab Durchgang 11 `Random(100)` (§5.8, §5.9).
@@ -362,13 +362,63 @@ Vorzeichen zu den Teilen nicht ausgewertet). Einschläge über `O6:00E0` (als Wa
 
 **Gelände** (G2, Sonderregel aus §5.4): M = 3 · Energie + 643 des Schützen (beim Abschuss). Trifft der Schuss Gelände, endet er bei
 Kraft < M sofort, bei Kraft > M nur im letzten Teilschritt eines Ticks (`DS:4740` = SS), **bei Kraft = M gar nicht** – der Schuss
-fliegt dann durch das Gelände (`[ORIGINAL]` so im Code; ob M die Höchstkraft ist, klärt Teil 3).
+fliegt dann durch das Gelände (`[ORIGINAL]` so im Code; die Höchstkraft ist 10 · Energie, §6.1, M liegt darunter – bei Energie 100 genau Kraft 943).
 
 ### 5.13 Offen in Teil 2
 
 Bilder `O5` im Einzelnen (`[APPROX]`, nur für die Darstellung nötig); Zuordnung der Vorzeichen bei MIRV-Muster 3 und 4.
 
-## 6. Zug, Kopfzeile, Eingaben (Teil 3, offen)
+## 6. Zug, Kopfzeile, Eingaben (Teil 3)
+
+### 6.1 Zugbeginn und Kopfzeile (Z1, Z2)
+
+In `O4:44A7` je Zug (Z1): Panzer neu (`0431:07BA`), +5Eh + 1 (Index im Schussprotokoll, §5.9) und +70h + 1 (Zahl der Züge); hat die
+gewählte Waffe keinen Bestand (+2Eh + 2w = 0), nächste Waffe w + 1 (nach 17 wieder 0) bis eine mit Bestand. Dann `O4:0000` (Farben der
+Waffenleiste), Kopfzeile: `Bar` (109, 0)–(211, 7) Farbe 0, Name des Spielers Farbe i + 19 zentriert bei (160, 0); Farbe 9 „Wind: “ +
+|Wind| + Leerzeichen + Pfeil zentriert bei (160, 10), Pfeil = Zeichen `DS:0064` (27, ←) bei Wind < 0, sonst `DS:0066` (26, →) – auch
+bei Wind 0. **Kraft ≤ 10 · Energie** (+1Bh wird gekürzt). Dann der Zug `O7[3]` = `O7:040C`.
+
+**Waffenleiste** `O4:0000(Satz)` (Z2): Farbe 100 + w (w = 0..17) = (63, 63, 63) bei Bestand, sonst (0, 0, 0); die gewählte Waffe
+(63, 0, 0). Farbe 118 (Herb, +2Ah) und 119 (Vick, +2Ch) ebenso; ohne Bestand wird das Lenkbit in +26h gelöscht (Herb Bit 0, Vick
+Bit 1), ist es gesetzt, ist die Farbe rot. Die Leiste selbst zeichnet `O8:1268` mit diesen Farben (Grenzen `DS:E874`, `E898`, `E89A`,
+`E89C` für die Maus, §6.3; Zeichnung `[APPROX]` nicht ausgewertet).
+
+### 6.2 Zug `O7:040C` (Z3)
+
+`O4:0000`, Rahmen (`O7:0364`), Farbe 14: Felder `Bar` + Text für **Winkel** +1Dh bei (56, 0)–(70, 7), **Kraft** +1Bh bei
+(56, 10)–(86, 17), **Richtung** (Pfeil wie §6.1 aus +1Fh) bei (296, 0)–(302, 7), **Energie** +21h bei (248, 10)–(270, 17); Farbe 15.
+Dann Befehle von `O7:0EF7(Satz, Steuerart DS:E5A6 + 2i)`, bis Befehl 5:
+
+| Befehl | Wirkung |
+|---|---|
+| 1 / 2 | Winkel a := a + r bzw. a − r; a > 90 → r := −r, a := 180 − a; a < 0 → r := −r, a := \|a\| (das Rohr dreht stetig über die Senkrechte); Rohr mit dem Hintergrund löschen und neu, Richtung neu, Ton bei Ton an |
+| 3 / 4 | Kraft − 1 bzw. + 1, begrenzt auf 0..10 · Energie; beim Laser (Waffe 5) zusätzlich ≤ +38h |
+| 5 | Feuer: Ende des Zugs; warten, bis beide Maustasten los sind; bei Lenkung (+26h > 0) Ziel wählen `O9:092E` |
+| 6 | Richtung r := −r (Rohr spiegeln) |
+| 7 / 8 | vorige / nächste Waffe mit Bestand (zyklisch 0..17) |
+| 9 / 10 | Herb / Vick an oder aus (nur mit Bestand +2Ah / +2Ch) |
+
+`O7:0EF7` gibt ohne Eingabe 0 zurück; hat die Waffe keinen Bestand, sofort 8, ebenso beim **Laser mit Bestand ≤ 100** (Z5).
+
+### 6.3 Eingaben `O7:0EF7` (Z4, Z5)
+
+Die Tastatur liest die eigene Tastenroutine `0C48` (gehaltene Tasten in `DS:452A` + Scancode, erweiterte + 100h).
+
+- **Tastatur** (Steuerart 1, Z4): ← / → Befehl 1 / 2, ↓ / ↑ 3 / 4, BildAuf / BildAb Kraft + 99 bzw. − 99 und Befehl 4 / 3 (also ± 100),
+  Leertaste, Enter, Enter am Ziffernblock 5, I 6, Tab 8, Umschalt + Tab 7, H 9, V 10, Ziffern 1..9, 0 → Panzerinfo `O9:0040(n, 1)`
+  (n = 1..9, 0). Ohne Alt wartet jede Taste aufs Loslassen (ein Schritt), **mit Alt wiederholt** sie.
+- **Schummeltaste** (Z4): Einfg + Entf gleichzeitig öffnet eine Schleife bis Einfg + Entf oder Leertaste: C → `0431:0594(2, 2, …)`,
+  W → alle 18 Waffen Bestand 999, G → Herb und Vick 10, D → Schild, Inertia, Repulser je 1000.
+- **Maus** (Steuerart 2, Z5): Klick auf einen Panzer (Farbe 20..29) → Panzerinfo; Leiste y = 18..27: x in `E874..E898` links 7, rechts 8,
+  `E898..E89A` Herb (9), `E89A..E89C` Vick (10); Winkelfeld (56..70, 0..7) links 1, rechts 2; Kraftfeld (56..86, 10..17) links 3, rechts
+  4; (8..54, 10..17) links − 100, rechts + 100; Richtungsfeld (296..302, 0..7) 6; beide Tasten 5. `0DBD:022A`/`0256` liefern x/y
+  (`[APPROX]` nach Verwendung).
+- **Computer** (Steuerart 3): virtuelle Methode +4 der Intelligenz (`DS:3BE8 + 4i`, VMT +12h) liefert den Befehl (Teil 3 Rest, `0129`).
+- Außer beim Computer danach `Delay(TS)` (`DS:E8C4`).
+
+### 6.4 Offen in Teil 3
+
+Panzerinfo `O9:0040` und Zielwahl `O9:092E`, Zeichnung der Waffenleiste `O8:1268`, Computer `0129` (Zielen, Waffenwahl, Zufall).
 
 ## 7. Nicht entscheidbar ohne DOSBox (Stand Teil 1 und 2)
 
