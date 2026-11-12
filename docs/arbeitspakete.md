@@ -160,4 +160,6 @@ Leitstelle nach Welle 1 aus `analyse/runde.md`; die Abnahmen hier gelten als Rah
 
 ### Status re-runde
 
-- noch nicht begonnen.
+- 12.11.2026, Claude Opus 5.5, Draft-PR `paket/re-runde`, Base `5a3e384`. Teile (vom Lauf festgelegt, der Spurabschnitt hat
+  keine Teilliste): 1. O8 Spielfeldaufbau, Hintergründe, `Random`-Folge bis zum ersten Schuss; 2. O5–O7 Schuss; 3. O4 Runde,
+  O9 Panzerinfo, O3[0] Spielfolge mit #71; 4. Listings (Referenz-Repo, R2-D5 = A), Liste „nicht entscheidbar ohne DOSBox“.
