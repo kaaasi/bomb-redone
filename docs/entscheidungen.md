@@ -30,5 +30,17 @@ und Nachteilen, Empfehlung); hier steht nur das Ergebnis mit der gewählten Opti
 | GR1-1 | Lesen von `*.TWS` (R1-D3 = A, im Gesamtreview Runde 1 als fehlend gemeldet, #78) | **C** (11.11.2026): in Runde 1 nur die Formatbeschreibung aus der Disassembly (Speichern `O3:46DE`, Laden `O3:4D97`; Analyse und Doku, kein Code); der Leser folgt in Runde 2 nach der DOSBox-Aufnahme mit Beispielständen. R1-D3 gilt für `BOMB.CFG` unverändert. |
 | R1-D4 | Ablageweg der Listings | **A** (11.11.2026): Die Spur `re-grundlagen` öffnet selbst einen PR im Referenz-Repo (nur `analyse/`), merged nicht. Ausnahme von „Spuren lesen nur“, auf diese Spur beschränkt. |
 
+
+## Runde 2 (12.11.2026)
+
+| Nr. | Frage | Entscheidung |
+|---|---|---|
+| R2-D1 | Umfang der Runde | **A:** Spielfeld (Aufbau, Hintergründe, Gelände, Panzer, Kopfzeile, Waffenleiste) und Schuss der Standardwaffe mit Wind, Wänden, Krater, Erdrutsch; noch keine Zugfolge. Spielbare Runde und Waffen in Runde 3. |
+| R2-D2 | Zahlentyp der Physik | **A:** eigener Typ `Real48`, bitgenau nach der TP-6-Laufzeit (Spur `real48`). |
+| R2-D3 | Startwert des Zufalls für den Abgleich mit DOSBox | **C mit A:** Uhrzeit vor dem Start fest setzen (falls DOSBox 0.74-3 das erlaubt), Startwert aus dem Bild zurückrechnen; Rückfall **D** (Lage, Form, Statistik, `[APPROX]`). |
+| R2-D4 | Satzreihenfolge nach der Wertung (#71) | **A:** in `re-runde` beschreiben, Umsetzung mit der Spielfolge in Runde 3. |
+| R2-D5 | Listings der Spur `re-runde` | **A:** wie R1-D4 – die Spur öffnet selbst einen PR im Referenz-Repo (`daten/listings-re-runde`, nur `analyse/`), merged nicht. |
+| R2-D6 | Zeitpunkt des Lesers `*.TWS` (#78) | **B:** Stufe 2a, Voraussetzung: Spielstände aus DOSBox-Sitzung 3 im Referenz-Repo gemergt. |
+
 Arbeitsweise (Nutzer 11.11.2026): `main` nur über Branch und PR; Deutsch in Doku und Commits, Quelltext und Kommentare englisch;
 knappe Antworten; je Aufgabe ein Claude-Modell; ChatGPT nur für Reviews; Spuren erst nach Go; Entscheidungen gesammelt.

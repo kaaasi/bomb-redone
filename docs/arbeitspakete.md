@@ -7,7 +7,7 @@ Den Status pflegt jede Spur nur in ihrem eigenen Abschnitt. Abgeschlossene Runde
 **Koordination:** Die Leitstelle verteilt Pakete, prüft und mergt Pull Requests und pflegt Plan und Doku
 (Rollen: [prozess/zusammenarbeit.md](prozess/zusammenarbeit.md)). **Spuren starten erst nach dem Go des Nutzers.**
 
-## Aktuelle Runde: Runde 2 – Spielfeld, Gelände, Schuss, Leser `*.TWS` (Plan 12.11.2026, **wartet auf Entscheidungen und Go**)
+## Aktuelle Runde: Runde 2 – Spielfeld, Gelände, Schuss, Leser `*.TWS` (Plan 12.11.2026, Entscheidungen 12.11.2026, **wartet auf Go**)
 
 Runde 1 abgeschlossen: [archiv/runde-1.md](archiv/runde-1.md). Grundlagen: [analyse/re-grundlagen.md](analyse/re-grundlagen.md)
 (Overlays O3–O9, Real48, Zufall), [formate/spielstand.md](formate/spielstand.md), [anforderungen/bildschirme.md](anforderungen/bildschirme.md)
@@ -17,9 +17,9 @@ Regeln wie Runde 1: Base aktueller `main` (tatsächlichen SHA in den Draft-PR), 
 `[ORIGINAL]`/`[APPROX]`, höchstens drei Fortsetzungen je Spur, Originalmaterial nur in Schutzordnern (`AGENTS.md` §2.1).
 Erstreview je Spur: Claude Opus 5.5, frische Sitzung; Gesamtreview am Rundenende: ChatGPT (`prozess/anhang.md` C).
 
-### Entscheidungen der Runde (offen, Vorlage Leitstelle 12.11.2026)
+### Entscheidungen der Runde (Vorlage Leitstelle, entschieden vom Nutzer 12.11.2026: alle wie empfohlen)
 
-**R2-D1 – Umfang der Runde.** Problem: „Spielfeld, Gelände, Schuss“ reicht von einem Standbild bis zur spielbaren Runde.
+**R2-D1 – Umfang der Runde – entschieden: A (Nutzer 12.11.2026).** Problem: „Spielfeld, Gelände, Schuss“ reicht von einem Standbild bis zur spielbaren Runde.
 
 | Option | Vorteil | Nachteil |
 |---|---|---|
@@ -30,7 +30,7 @@ Erstreview je Spur: Claude Opus 5.5, frische Sitzung; Gesamtreview am Rundenende
 
 Empfehlung: **A**; B und die Waffen in Runde 3.
 
-**R2-D2 – Zahlentyp der Physik.** Problem: Das Original rechnet mit Real48 in Software (`re-grundlagen` §3); `double` weicht in
+**R2-D2 – Zahlentyp der Physik – entschieden: A (Nutzer 12.11.2026).** Problem: Das Original rechnet mit Real48 in Software (`re-grundlagen` §3); `double` weicht in
 Rundung und Wertebereich ab, Flugbahnen laufen dann auseinander.
 
 | Option | Vorteil | Nachteil |
@@ -42,7 +42,7 @@ Rundung und Wertebereich ab, Flugbahnen laufen dann auseinander.
 
 Empfehlung: **A**, eigene Spur `real48` in Welle 1.
 
-**R2-D3 – Startwert des Zufalls für den Abgleich mit DOSBox.** Problem: `Randomize` setzt `RandSeed` aus der DOS-Uhrzeit;
+**R2-D3 – Startwert des Zufalls für den Abgleich mit DOSBox – entschieden: C mit A, Rückfall D (Nutzer 12.11.2026).** Problem: `Randomize` setzt `RandSeed` aus der DOS-Uhrzeit;
 ohne bekannten Startwert lässt sich ein Gelände nicht bitgleich mit einem DOSBox-Bild vergleichen.
 
 | Option | Vorteil | Nachteil |
@@ -54,7 +54,7 @@ ohne bekannten Startwert lässt sich ein Gelände nicht bitgleich mit einem DOSB
 
 Empfehlung: **C mit A**, Rückfall **D**; die Spur `gelaende` liefert das Suchwerkzeug.
 
-**R2-D4 – Satzreihenfolge nach der Wertung (#71).** Problem: `O3:0000` sortiert die Spielersätze dauerhaft um; das betrifft
+**R2-D4 – Satzreihenfolge nach der Wertung (#71) – entschieden: A (Nutzer 12.11.2026).** Problem: `O3:0000` sortiert die Spielersätze dauerhaft um; das betrifft
 Einkauf, Zugfolge und `*.TWS`.
 
 | Option | Vorteil | Nachteil |
@@ -65,7 +65,7 @@ Einkauf, Zugfolge und `*.TWS`.
 
 Empfehlung: **A**.
 
-**R2-D5 – Listings der Spur `re-runde`.** Problem: R1-D4 erlaubte nur `re-grundlagen` den Schreibweg ins Referenz-Repo.
+**R2-D5 – Listings der Spur `re-runde` – entschieden: A (Nutzer 12.11.2026).** Problem: R1-D4 erlaubte nur `re-grundlagen` den Schreibweg ins Referenz-Repo.
 
 | Option | Vorteil | Nachteil |
 |---|---|---|
@@ -75,7 +75,7 @@ Empfehlung: **A**.
 
 Empfehlung: **A**.
 
-**R2-D6 – Zeitpunkt des Lesers `*.TWS` (#78).** Problem: Es gibt noch keinen Originalstand (Sitzung 3 offen); GR1-1 sieht den
+**R2-D6 – Zeitpunkt des Lesers `*.TWS` (#78) – entschieden: B (Nutzer 12.11.2026).** Problem: Es gibt noch keinen Originalstand (Sitzung 3 offen); GR1-1 sieht den
 Leser „nach der DOSBox-Aufnahme mit Beispielständen“ vor.
 
 | Option | Vorteil | Nachteil |
@@ -122,7 +122,7 @@ Integrationsfolge: `real48` → `re-runde` (keine gemeinsamen Dateien).
   Panzerinfo. Je Baustein: Prozedur, Ablauf, Konstanten (Real48-Muster), **Reihenfolge der `Random`-Aufrufe** ab `Randomize`
   bis zum ersten Schuss (für R2-D3). #39: §8 Nr. 2 in `re-grundlagen.md` anpassen, sobald Sitzung 2 ein Ergebnis hat.
 - **Dateien:** `docs/analyse/runde.md` (neu), `tools/reverse-engineering/runde*` (neu) und Erweiterungen von `bombre.py` (nur neue
-  Unterbefehle), `docs/analyse/re-grundlagen.md` (nur §8 und Verweise). Listings nach R2-D5.
+  Unterbefehle), `docs/analyse/re-grundlagen.md` (nur §8 und Verweise). Listings nach R2-D5 = A: PR im Referenz-Repo vom Branch `daten/listings-re-runde` (nur `analyse/`), nicht mergen.
 - **Abnahme:** jede Aussage mit Offset und ausführbarem Beleg (`befunde` zählt alle grün); Liste „nicht entscheidbar ohne DOSBox“
   mit den nötigen Bildern für Sitzung 3.
 - **Modell:** Claude Opus 5.5.
