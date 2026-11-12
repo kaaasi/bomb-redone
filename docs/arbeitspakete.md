@@ -163,3 +163,6 @@ Leitstelle nach Welle 1 aus `analyse/runde.md`; die Abnahmen hier gelten als Rah
 - 12.11.2026, Claude Opus 5.5, Draft-PR `paket/re-runde`, Base `5a3e384`. Teile (vom Lauf festgelegt, der Spurabschnitt hat
   keine Teilliste): 1. O8 Spielfeldaufbau, Hintergründe, `Random`-Folge bis zum ersten Schuss; 2. O5–O7 Schuss; 3. O4 Runde,
   O9 Panzerinfo, O3[0] Spielfolge mit #71; 4. Listings (Referenz-Repo, R2-D5 = A), Liste „nicht entscheidbar ohne DOSBox“.
+- 12.11.2026, Lauf 1: Teil 1 fertig (Spielfolge und #71 aus Teil 3 vorgezogen), Teil 2 bis auf `runde.md` §5.6 (Krater,
+  Erdrutsch, Fallen, Todesexplosionen, Laser, MIRV), Teil 4 Stand Lauf 1 (bomb-referenz#10, nicht gemergt). Offen: Rest Teil 2,
+  Teil 3 (Zug `O7:040C`, Kopfzeile `O4:44A7`, Eingaben, O9, Computer `0129`), §7 ergänzen, Listings neu erzeugen. 41 Befunde.
