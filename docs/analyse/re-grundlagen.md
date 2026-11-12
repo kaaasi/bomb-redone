@@ -161,7 +161,8 @@ Computernamen). Die Tabelle liegt im Referenz-Repo, nicht hier.
 4. ~~Welche Prozedur welchen Hintergrund zeichnet~~ – beantwortet: `O8:0000(n)` ([runde.md](runde.md) §3.3); offen bleiben die
    Verläufe der Palette 30..59 (dort §7).
 5. Bildgenaue Schrift: Rasterung der Strichschriften EURO/LITT/TINY durch den BGI-Kern bei Größe 1 und 4 (Referenzbild nötig).
-6. Ob `0B25` (Namenssätze der Graph-Prozeduren) zur Laufzeit gebraucht wird.
+6. ~~Ob `0B25` (Namenssätze der Graph-Prozeduren) zur Laufzeit gebraucht wird~~ – beantwortet: ja, `0B25:0000`/`005A` sind
+   Sin/Cos-Tabellen für ganze Grad, benutzt von Repulser und Computern ([runde.md](runde.md) §5.2, §6.5).
 
 ## 9. Listings (Referenz-Repo)
 

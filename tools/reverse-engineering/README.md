@@ -34,4 +34,5 @@ Schreibt nur nach `analyse/re-runde/` (Ablage im Referenz-Repo per PR, R2-D5 = A
 | `… listings` | annotierte Listings: Ziele, Real48-Werte, DS-Variablen, Prozeduranfänge (`ndisasm -s` je Prozedur) |
 | `… all` | alles nacheinander |
 
-Die Befunde vergleichen reguläre Ausdrücke über die eigene Disassembly (aus Ziel und Operand gebaut), keine Bytes der Originale.
+Die Befunde vergleichen reguläre Ausdrücke über die eigene Disassembly (aus Ziel und Operand gebaut), keine Bytes der Originale;
+wie bei `bombre.py` stehen nur kurze Bildschirmtexte (z. B. „Wind: “, „Maximum Power:“) als Klartext im Skript.
