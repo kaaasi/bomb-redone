@@ -166,5 +166,6 @@ Leitstelle nach Welle 1 aus `analyse/runde.md`; die Abnahmen hier gelten als Rah
 - 12.11.2026, Lauf 1: Teil 1 fertig (Spielfolge und #71 aus Teil 3 vorgezogen), Teil 2 bis auf `runde.md` §5.6 (Krater,
   Erdrutsch, Fallen, Todesexplosionen, Laser, MIRV), Teil 4 Stand Lauf 1 (bomb-referenz#10, nicht gemergt). Offen: Rest Teil 2,
   Teil 3 (Zug `O7:040C`, Kopfzeile `O4:44A7`, Eingaben, O9, Computer `0129`), §7 ergänzen, Listings neu erzeugen. 41 Befunde.
-- 12.11.2026, Fortsetzung 1: Teil 2 bis auf MIRV-Auslöser/Detonationsarten und Lenkung `O4:0A37` (`runde.md` §5.12): Explosion,
-  Krater, Flächenschaden, CRI, Sonic, Dirt, Erdrutsch, Fallen, Tod, Blitz, Rundenende, Laser, MIRV-Muster; §7 Nr. 6–10. 61 Befunde.
+- 12.11.2026, Fortsetzung 1: Teil 2 fertig (offen nur Bilddetails, `runde.md` §5.13): Explosion,
+  Krater, Flächenschaden, CRI, Sonic, Dirt, Erdrutsch, Fallen, Tod, Blitz, Rundenende, Laser, MIRV, Lenkung; §7 Nr. 6–11.
+  64 Befunde.

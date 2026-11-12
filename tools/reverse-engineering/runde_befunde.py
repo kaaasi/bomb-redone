@@ -729,3 +729,45 @@ def m1(R, g, a):
             r"call 0xb13:0x20$", r"call 0x431:0x7ba$"]),
         R.real_at(g, a, "O4", 0x3048, 6.0), R.real_at(g, a, "O4", 0x3072, 3.0), R.real_at(g, a, "O4", 0x30FE, 1.75),
         R.real_at(g, a, "O4", 0x3153, 1.75))
+
+
+# ---- 5.12 Guidance and the terrain rule of the flight (O4:01B7) --------------------------------------------------
+
+@finding("G1", "Lenkung zu Ziel +28h: Vick {2,3} bei |dx| ≤ 2: vx = 0, y ± 0,5; Herb {1,3} bei 0 < dy ≤ 4: vy = 0, vx · −1,01 / · 1,01 / 0,1; Farbe 19 rot")
+def g1(R, g, a):
+    return R.all_of(
+        R.seq(g, a, "O4", 0x0A37, 0x0C03, [
+            r"cmp word \[di\+0x4054\],byte \+0x0$", r"mov ax,\[di\+0x4056\]$", r"mov ax,\[di\+0x403d\]$",
+            r"sub ax,\[bp-0x18\]$", r"mov ax,\[di\+0x403f\]$", r"sub ax,\[bp-0x1a\]$", r"mov di,0x197$",
+            r"call 0x12ce:0xe02$", r"cmp ax,0x2$", r"mov word \[0x47a2\],0x0$", r"cmp word \[bp-0x1e\],byte \+0x0$",
+            r"call 0x12ce:0x11b6$", r"call 0x12ce:0x11bc$", r"mov di,0x177$", r"call 0x12ce:0xe02$",
+            r"cmp word \[bp-0x1e\],byte \+0x4$", r"cmp word \[bp-0x1e\],byte \+0x0$", r"mov word \[0x47a8\],0x0$",
+            r"call 0x12ce:0x11c8$", RCMP, r"jnc 0xb9b$", r"call 0x12ce:0x11c8$", RCMP, r"jz 0xbd9$",
+            r"call 0x12ce:0x11c8$", r"mov word \[0x47a2\],0xcd7d$", r"mov ax,0x13$", r"mov ax,0x3f$",
+            r"call far \[0xe8f6\]$"]),
+        R.real_at(g, a, "O4", 0x0ACF, 0.5), R.real_at(g, a, "O4", 0x0B80, -1.01), R.real_at(g, a, "O4", 0x0BBE, 1.01),
+        set_is(R, g, a, "O4", 0x0197, [2, 3]), set_is(R, g, a, "O4", 0x0177, [1, 3]))
+
+
+@finding("G2", "Gelände im Flug: M = 3·Energie + 643; Kraft < M → Ende; Kraft > M → Ende nur im letzten Teilschritt; Kraft = M → kein Ende")
+def g2(R, g, a):
+    return R.all_of(
+        R.seq(g, a, "O4", 0x01D3, 0x01EB, [r"mov ax,\[di\+0x404f\]$", r"shl ax,1$", r"add ax,si$", r"add ax,0x283$",
+                                           r"mov \[bp-0x2\],ax$"]),
+        R.seq(g, a, "O4", 0x0D7E, 0x0DC3, [r"cmp word \[bp-0x6\],byte \+0x2$", r"mov ax,\[di\+0x4049\]$",
+                                           r"cmp ax,\[bp-0x2\]$", r"jl 0xda4$", r"mov ax,\[0x4740\]$",
+                                           r"cmp ax,\[0x4744\]$", r"mov byte \[0x4751\],0x1$", r"cmp ax,\[bp-0x2\]$",
+                                           r"jnz 0xdbf$", r"mov byte \[0x4751\],0x0$"]))
+
+
+@finding("M2", "MIRV: Mutter teilt im Scheitel (vy > 0); Detonation 0 Impact je Teil beim Einschlag, 1 Simultanious alle am Ende, 2 None keine")
+def m2(R, g, a):
+    return R.all_of(
+        R.seq(g, a, "O4", 0x2BD2, 0x2C69, [r"cmp byte \[bp-0xdb\],0x0$", r"jnz 0x2c07$", r"mov ax,\[bp\+di-0xda\]$",
+                                           RCMP, r"jna 0x2c07$", r"mov byte \[bp\+di-0xf6\],0x1$"]),
+        R.seq(g, a, "O4", 0x2E3A, 0x2EE6, [r"cmp word \[bp-0x108\],byte \+0x0$", r"cmp byte \[bp-0xdb\],0x0$",
+                                           r"cmp byte \[bp\+di-0xf6\],0x0$", r"mov byte \[bp\+di-0xf0\],0x1$",
+                                           r"call 0xb13:0x20$"]),
+        R.seq(g, a, "O4", 0x3387, 0x3426, [r"cmp byte \[bp-0xdb\],0x0$", r"jmp 0x1ef6$",
+                                           r"cmp word \[bp-0x108\],byte \+0x1$", r"jnz 0x3414$", r"call 0xb13:0x20$",
+                                           r"call 0x11f8:0x2f4$"]))

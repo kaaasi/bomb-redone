@@ -6,11 +6,11 @@ nur im Referenz-Repo (`analyse/re-runde/`, R2-D5 = A). Grundlagen und Adressschr
 [../formate/spielstand.md](../formate/spielstand.md) (Satz i liegt bei `DS:402E + 74h·i`, „+0Fh“ = Feld im Satz).
 
 **Beleg für jede Aussage:** `python3 tools/reverse-engineering/runde.py befunde` prüft die Befunde (Kürzel in Klammern) gegen
-`gamedata/` als Befehlsfolgen der eigenen Disassembly (Ergebnis zum Head: **61 von 61 bestätigt**). Weitere Aufrufe: `… procs`
+`gamedata/` als Befehlsfolgen der eigenen Disassembly (Ergebnis zum Head: **64 von 64 bestätigt**). Weitere Aufrufe: `… procs`
 (Prozeduren mit Aufrufern), `… randoms` (alle 158 Aufrufe von `Random`), `… reals` (Real48-Konstanten), `… listings`
 (annotierte Listings); Ausgabe nur nach `analyse/re-runde/`. Werkzeuge: Python 3, `ndisasm` (Paket `nasm`).
 
-**Stand der Teile:** 1 (Spielfolge, Rundenbeginn, Spielfeld, Zufallsfolge) fertig; 2 (Schuss) bis auf MIRV-Auslöser und Lenkung (§5.12) fertig; 3 (Zug,
+**Stand der Teile:** 1 (Spielfolge, Rundenbeginn, Spielfeld, Zufallsfolge) fertig; 2 (Schuss) fertig (Rest nur Bilddetails, §5.13); 3 (Zug,
 Kopfzeile, Eingaben O4/O7/O9) offen; 4 (Listings im Referenz-Repo, Liste §7) mit Stand dieses Laufs.
 
 ## 1. Spielfolge `O3[0]` = `O3:7847` (`BOMB.OVR 0x102D3`)
@@ -180,7 +180,7 @@ Stände sind zu viele – dann zuerst Panzer-x und Geländehöhe am Rand als Fil
 
 ## 5. Schuss der ballistischen Waffen `O4:01B7` (`BOMB.OVR 0x10EBC`)
 
-Teil 2 bis auf MIRV-Auslöser und Lenkung (§5.12) fertig. Waffe = Satz +24h (Index in `ItemCatalog.WeaponTable`),
+Teil 2 fertig (offene Bilddetails §5.13). Waffe = Satz +24h (Index in `ItemCatalog.WeaponTable`),
 Lenkung +26h (0 keine, 1 Herb, 2 Vick, 3 beide), Ziel der Lenkung +28h.
 
 ### 5.1 Auswahl und Abschuss (Q1, Q2)
@@ -221,7 +221,7 @@ Danach: **Repulser** (Q5) – hat ein lebender Panzer Repulser (+5Ah > 0), wirkt
 (der Schütze erst, wenn der Schuss sein ±40-Feld einmal verlassen hat): d² = dx² + dy² ≤ 1600 → f = −600 / (d² · SS), Winkel
 w = Trunc(ArcTan(dy/dx) in Grad) (+180 bei dx < 0; dx = 0: 90 bzw. 270), vx += Cos(w)·f, vy −= Sin(w)·f (Tabellenwerte); als
 Effekt eine Linie Panzer–Schuss Farbe 14, die gleich wieder aus dem Puffer `DS:E5BC` gelöscht wird. Lenkung (+26h > 0) greift
-hier ebenfalls ein (`O4:0A37`, nicht ausgewertet `[APPROX]`, §5.12). Ton: `Sound(600 − 2·iy)` bei Fluggeräusch und Ton an. Zeichnen:
+hier ebenfalls ein (`O4:0A37`, §5.12). Ton: `Sound(600 − 2·iy)` bei Fluggeräusch und Ton an. Zeichnen:
 alten Punkt aus dem Hintergrundpuffer herstellen (`0431:040F`), bei Spur einen Punkt Farbe 100 − Spieler (`0431:056D`; die Farben
 90..99 setzt `O4:0541` auf 32 div Farbteiler +60h, +62h, +64h), neuen Punkt `0431:03C3`; Marken auf dem Rahmen (x bei y = 29 und 191, y bei
 x = 9 und 311, Farbe 13), auch wenn der Schuss außerhalb des Bilds fliegt (Q15).
@@ -235,7 +235,7 @@ x = 9 und 311, Farbe 13), auch wenn der Schuss außerhalb des Bilds fliegt (Q15)
 | 0 (keine) | ix > 310, vx > 1, Wind > 0, ohne Lenkung → y := 300; ix < 10, **vx < 1**, Wind < 0, ohne Lenkung → y := 300 (`[ORIGINAL]` die linke Bedingung ist schwächer als die rechte) | Q7 |
 
 Treffertest nur für 11 < ix < 309 und 33 < iy < 187 (Q9): Pixel (ix + dx, iy + dy) mit |dx| + |dy| ≤ 1 vom Bildschirm; Farbe 2 →
-Gelände (`DS:47DE` = 2; Ende, außer eine Sonderregel mit Kraft und Tickzähler, `O4:0D8A`, `[APPROX]` nicht ausgewertet);
+Gelände (`DS:47DE` = 2; Ende, außer bei hoher Kraft, §5.12);
 Farbe 20..29 → Panzer (`DS:47DE` = Farbe, Ende), bei Waffe 12..16 kein Ende, sondern vy := −vy · 1,2 und Lenkung aus.
 
 Ende (Q8): mehr als 1000 Ticks; bei Wand 0 oder 4: iy < −5000 (**ohne** Einschlag) oder iy ≥ 190; |vx| > 30 oder |vy| > 30.
@@ -345,15 +345,28 @@ E ≤ 0. Danach `0431:0594` und `NoSound` (`[APPROX]` Löschen des Strahls nicht
 ### 5.11 MIRV `O4:13D4` (M1)
 
 Vor dem Abschuss ein Dialog „MIRV Setup“ (Maus `0E11`, Tasten) mit dem Muster (Random, Horizontal, Vertical, + 4 Way, X 4 Way →
-0..4) und „Detonations“ (Impact, Simultanious, None) – Bedienung mit Teil 3. Die Mutter fliegt wie §5.3; bei der Teilung entstehen
+0..4) und „Detonations“ (Impact, Simultanious, None) – Bedienung mit Teil 3. Die Mutter fliegt wie §5.3 und **teilt sich im Scheitel** (vy > 0, M2) in
 fünf Teile mit Lage und Geschwindigkeit der Mutter, verändert je Muster (M1): 0 `vx, vy += Random:Real · 6 − 3` (je Teil zwei
 `Random:Real`), 1 vx += (i − 3) · 1,75, 2 vy += (i − 3) · 1,75, 3 und 4 je Teil ±1,75 in x und y (`[APPROX]` Zuordnung der
-Vorzeichen zu den Teilen nicht ausgewertet). Einschläge über `O6:00E0` (als Waffe 7: Radius 15, §5.5).
+Vorzeichen zu den Teilen nicht ausgewertet). Einschläge über `O6:00E0` (als Waffe 7: Radius 15, §5.5): Detonation 0 (Impact) je Teil bei seinem Einschlag,
+1 (Simultanious) alle zusammen am Ende, 2 (None) keine Explosion (M2).
 
-### 5.12 Offen in Teil 2
+### 5.12 Lenkung und Gelände im Flug (G1, G2)
 
-Auslöser der MIRV-Teilung und die Detonationsarten, Lenkung `O4:0A37`, Sonderregel Gelände/Kraft `O4:0D8A`, Bilder `O5` im
-Einzelnen.
+**Lenkung** im Teilschritt (G1), Ziel = Satz +28h, dx = x_Ziel − ix, dy = y_Ziel − iy:
+
+- **Vick** (+26h ∈ {2, 3}): bei |dx| ≤ 2 wird vx = 0 und y um 0,5 zum Ziel hin verschoben (Lage, nicht Geschwindigkeit).
+- **Herb** (+26h ∈ {1, 3}): bei 0 < dy ≤ 4 (Ziel bis 4 Pixel tiefer) wird vy = 0; zeigt vx vom Ziel weg (dx · vx < 0), vx :=
+  vx · (−1,01), sonst vx · 1,01, bei vx = 0 vx := 0,1.
+- Greift eine Lenkung, wird Farbe 19 (Schuss) rot (63, 0, 0).
+
+**Gelände** (G2, Sonderregel aus §5.4): M = 3 · Energie + 643 des Schützen (beim Abschuss). Trifft der Schuss Gelände, endet er bei
+Kraft < M sofort, bei Kraft > M nur im letzten Teilschritt eines Ticks (`DS:4740` = SS), **bei Kraft = M gar nicht** – der Schuss
+fliegt dann durch das Gelände (`[ORIGINAL]` so im Code; ob M die Höchstkraft ist, klärt Teil 3).
+
+### 5.13 Offen in Teil 2
+
+Bilder `O5` im Einzelnen (`[APPROX]`, nur für die Darstellung nötig); Zuordnung der Vorzeichen bei MIRV-Muster 3 und 4.
 
 ## 6. Zug, Kopfzeile, Eingaben (Teil 3, offen)
 
@@ -373,4 +386,5 @@ Einzelnen.
    Reihenfolge und Abgleiten; Energie vorher und nachher (`Random(3) + 1` je Zeile).
 8. Todesexplosionen O5 und Blitz (§5.9): Video je Todesart; Blitz erst ab Durchgang 11 (lange Runde ohne Treffer).
 9. Laser (§5.10): ein Schuss durch Gelände und einer gegen einen Panzer mit und ohne Schild; Bild des Strahls und der Funken.
-10. MIRV (§5.11): je Muster ein Schuss mit Spur an; Zeitpunkt der Teilung (Scheitel oder Taste) im Video.
+10. MIRV (§5.11): je Muster ein Schuss mit Spur an (Vorzeichen bei Muster 3 und 4).
+11. Gelände bei voller Kraft (§5.12): Schuss mit höchster Kraft in einen Hügel; fliegt er hindurch?
