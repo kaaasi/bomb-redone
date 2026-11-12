@@ -1,0 +1,265 @@
+"""Findings of docs/analyse/runde.md, checked by 'runde.py befunde'.
+
+Each finding is a function (R, g, args) -> (ok, location); R is the runde module. Checks match instruction sequences
+of our own disassembly (regular expressions over ndisasm text built from targets and operands) - no bytes of the
+originals are stored here.
+"""
+FINDINGS = []
+
+
+def finding(fid, claim):
+    def deco(fn):
+        FINDINGS.append((fid, claim, fn))
+        return fn
+    return deco
+
+
+RND = r"call 0x12ce:0x1675$"
+RREAL = r"call 0x12ce:0x168b$"
+RCMP = r"call 0x12ce:0x11d8$"
+MOVE = r"call 0x12ce:0xa81$"
+
+
+def imm(n):
+    return r"mov ax,0x%x$" % n
+
+
+# ---- 1. Game sequence (O3[0]) and record order (#71) ------------------------------------------------------------
+
+@finding("S1", "Spielfolge O3[0]: je Spiel Mischen O3:2417, Runde O4[0], Autosave, Wertung, Sichern, Teams, Einkauf, GameNo+1")
+def s1(R, g, a):
+    return R.seq(g, a, "O3", 0x7847, 0x7A7D, [
+        r"call 0x2417$", r"call 0xb0c:0x20$", r"cmp word \[0x47e0\],byte \+0x0$",
+        r"cmp byte \[0x4818\],0x0$", r"call 0x3b54$", r"call 0x5aef$", r"cmp byte \[0x4816\],0x0$", r"call 0x46de$",
+        r"cmp byte \[0xe8bc\],0x0$", r"call 0x6696$", r"call 0x46de$", r"mov ax,\[0x47e2\]$", r"cmp ax,\[0xe8a6\]$",
+        r"call 0xe1f$", r"inc word \[0x47e2\]$", r"cmp ax,\[0xe8a6\]$"])
+
+
+@finding("S2", "Siegerbonus: Mitglieder des Teams DS:47E0 erhalten 1000·Spielerzahl div Anzahl Punkte, lebende +1 Sieg (+6Ah)")
+def s2(R, g, a):
+    return R.seq(g, a, "O3", 0x7885, 0x796B, [
+        r"mov ax,\[di\+0x4094\]$", r"inc word \[bp-0x4\]$", r"mov ax,\[di\+0x4094\]$", r"cmp byte \[di\+0x4051\],0x0$",
+        r"inc word \[di\+0x4098\]$", r"mov ax,0x3e8$", r"mul word \[0x47da\]$", r"idiv word \[bp-0x4\]$",
+        r"mov ax,\[di\+0x4041\]$", r"add ax,cx$", r"adc dx,bx$", r"mov \[di\+0x4041\],cx$"])
+
+
+@finding("S3", "Mischen vor jedem Spiel O3:2417: Random(20)+10 Tausche, je Paar Random(N)+1 zweimal bis verschieden, Tausch O3:0000")
+def s3(R, g, a):
+    return R.seq(g, a, "O3", 0x2417, 0x2474, [
+        imm(0x14), RND, r"add ax,0xa$", r"push word \[0x47da\]$", RND, r"inc ax$", r"push word \[0x47da\]$", RND,
+        r"inc ax$", r"cmp ax,\[bp-0x6\]$", r"jz 0x2449$", r"call 0x0$"])
+
+
+@finding("S4", "Tausch O3:0000: Satz (0x74 Byte, über Satz 0), Nummer O10:0161, Intelligenz DS:3BE8 mit 0129:01BF, Steuerart DS:E5A6")
+def s4(R, g, a):
+    return R.all_of(
+        R.seq(g, a, "O3", 0x0000, 0x012E, [
+            r"mov ax,0x74$", MOVE, MOVE, MOVE, r"call 0xb20:0x2f$", r"call 0xb20:0x2f$",
+            r"mov ax,\[di\+0x3be8\]$", r"mov \[0x3be8\],ax$", r"mov \[di\+0x3be8\],ax$", r"mov \[di\+0x3be8\],ax$",
+            r"call 0x129:0x1bf$", r"call 0x129:0x1bf$", r"mov ax,\[di-0x1a5a\]$", r"mov \[0xe5a6\],ax$",
+            r"mov \[di-0x1a5a\],ax$", r"mov \[di-0x1a5a\],ax$", r"retf 0x4$"]),
+        R.seq(g, a, "O10", 0x0161, 0x0171, [r"mov al,\[bp\+0xa\]$", r"les di,\[bp\+0x6\]$", r"mov \[es:di\],al$"]),
+        R.seq(g, a, "0129", 0x01BF, 0x01D0, [r"mov ax,\[bp\+0xa\]$", r"mov \[es:di\+0x10\],ax$"]))
+
+
+@finding("S5", "Wertung O3:5AEF sortiert dauerhaft: Blasensortierung nach Siegen (+6Ah), dann bei Gleichstand nach Punkten (+13h)")
+def s5(R, g, a):
+    return R.seq(g, a, "O3", 0x5B61, 0x5C70, [
+        r"mov cx,\[di\+0x4098\]$", r"mov ax,\[di\+0x4098\]$", r"cmp ax,cx$", r"jnl 0x5bbd$", r"call 0x0$",
+        r"mov cx,\[di\+0x4098\]$", r"mov ax,\[di\+0x4098\]$", r"cmp ax,cx$", r"jnz 0x5c5b$",
+        r"mov cx,\[di\+0x4041\]$", r"mov bx,\[di\+0x4043\]$", r"cmp dx,bx$", r"jl 0x5c4f$", r"call 0x0$"])
+
+
+# ---- 2. Round start (O4[0] = O4:44A7) ----------------------------------------------------------------------------
+
+@finding("R1", "Rundenbeginn O4:44A7: 0431:0006, Tastatur 0C48:0227, Spielfeld O8[0], Wind, Kopfzeile, Waffenleiste O8[1], Startspieler")
+def r1(R, g, a):
+    return R.seq(g, a, "O4", 0x44A7, 0x4770, [
+        r"call 0x431:0x6$", r"call 0xc48:0x227$", r"call 0xe26:0x1496$", r"call 0xb1a:0x20$", r"mov ax,\[0xe8a8\]$",
+        r"call 0xe26:0x1f12$", r"call 0xb1a:0x25$", r"push word \[0x47da\]$", RND])
+
+
+@finding("R2", "Wind: Option 5 → Random(5); Spanne 0/20/100/300/4000; Wert = Spanne div 2 − Random(Spanne) bis |Wert| ≥ Spanne div 10")
+def r2(R, g, a):
+    return R.seq(g, a, "O4", 0x44CC, 0x4559, [
+        r"cmp word \[0xe8a8\],byte \+0x5$", imm(5), RND, r"mov \[0x47e4\],ax$", r"mov \[0x4742\],ax$",
+        r"mov word \[0x4742\],0x14$", r"mov word \[0x4742\],0x64$", r"mov word \[0x4742\],0x12c$",
+        r"mov word \[0x4742\],0xfa0$", r"push word \[0x4742\]$", RND, r"mov cx,0x2$", r"idiv cx$",
+        r"sub ax,\[0x4740\]$", r"mov \[0xe8a2\],ax$", r"mov cx,0xa$", r"idiv cx$", r"cmp ax,cx$", r"jl 0x44e5$"])
+
+
+@finding("R3", "Wind: viermal Random:Real (< 0,1; < 0,1; < 0,05; < 0,05) → Wert × 4, danach begrenzt auf ±30000")
+def r3(R, g, a):
+    return R.all_of(
+        R.seq(g, a, "O4", 0x4559, 0x45F1, [
+            RREAL, RCMP, r"jnc 0x4578$", r"shl ax,1$", r"shl ax,1$", RREAL, RCMP, r"shl ax,1$", RREAL, RCMP,
+            r"shl ax,1$", RREAL, RCMP, r"shl ax,1$", r"cmp word \[0xe8a2\],0x7530$", r"mov word \[0xe8a2\],0x7530$",
+            r"cmp word \[0xe8a2\],0x8ad0$", r"mov word \[0xe8a2\],0x8ad0$"]),
+        R.real_at(g, a, "O4", 0x455E, 0.1), R.real_at(g, a, "O4", 0x457D, 0.1),
+        R.real_at(g, a, "O4", 0x459C, 0.05), R.real_at(g, a, "O4", 0x45BB, 0.05))
+
+
+@finding("R4", "Startspieler: Random(N) wiederholt, bis Satz s+1 das kleinste Feld +72h hat; danach +72h+1, Durchgang 1")
+def r4(R, g, a):
+    return R.seq(g, a, "O4", 0x46FF, 0x4794, [
+        r"push word \[0x47da\]$", RND, r"mov \[bp-0x2\],ax$", r"mov cx,\[di\+0x40a0\]$", r"mov ax,\[di\+0x40a0\]$",
+        r"cmp ax,cx$", r"jnl 0x474c$", r"mov byte \[0x4751\],0x0$", r"jz 0x46ff$", r"inc word \[di\+0x40a0\]$",
+        r"mov word \[0x47ea\],0x1$"])
+
+
+# ---- 3. Playfield (O8) ---------------------------------------------------------------------------------------------
+
+@finding("P1", "Wände der Runde: Option DS:E8AA, bei 5 Random(5); DS:4814 = Wand in {1,2,3}, DS:4815 = Wand 4 (Warp)")
+def p1(R, g, a):
+    return R.seq(g, a, "O8", 0x0984, 0x09EF, [
+        r"mov ax,\[0xe8aa\]$", r"cmp word \[0x47ec\],byte \+0x5$", imm(5), RND, r"mov \[0x47ec\],ax$",
+        r"mov di,0x904$", r"call 0x12ce:0xe02$", r"mov byte \[0x4814\],0x1$", r"cmp word \[0x47ec\],byte \+0x4$",
+        r"mov byte \[0x4815\],0x1$"])
+
+
+@finding("P2", "Hintergrund: Option ≤ 8 direkt, 9 → Random(9), 10 (USER) → Random(9) bis Bit in DS:E8AE; Zeichnen O8:0000(n)")
+def p2(R, g, a):
+    return R.seq(g, a, "O8", 0x0A28, 0x0A7D, [
+        r"cmp word \[0xe8ac\],byte \+0x8$", r"push word \[0xe8ac\]$", r"call 0x0$", r"cmp word \[0xe8ac\],byte \+0x9$",
+        imm(9), RND, r"call 0x0$", r"cmp word \[0xe8ac\],byte \+0xa$", imm(9), RND, r"shl ax,cl$",
+        r"and ax,\[0xe8ae\]$", r"jng 0xa58$", r"call 0x0$"])
+
+
+@finding("P3", "Hintergründe O8:0000: 1 Stars (Random(500)+250 Sterne, je x=Random(299)+11, y=Random(159)+31, Farbe Random(20)+30)")
+def p3(R, g, a):
+    return R.seq(g, a, "O8", 0x0000, 0x0163, [
+        r"mov ax,0xfa00$", r"call 0x12ce:0x1ed4$", r"cmp ax,0x1$", imm(0x1F4), RND, r"add ax,0xfa$", imm(0x12B), RND,
+        r"add ax,0xb$", imm(0x9F), RND, r"add ax,0x1f$", imm(0x14), RND, r"add ax,0x1e$", r"call 0xe26:0x1fe4$"])
+
+
+@finding("P4", "Hintergründe 2, 3, 4, 6, 7, 8 rufen zuerst 0431:000C (3 × 3 Random(64), Verlaufspalette 30..59); 5 Sky und 1 nicht")
+def p4(R, g, a):
+    return R.all_of(
+        R.seq(g, a, "0431", 0x000C, 0x0052, [imm(0x40), RND, r"cmp word \[bp-0x16\],byte \+0x2$",
+                                            r"cmp word \[bp-0x14\],byte \+0x2$"]),
+        R.seq(g, a, "O8", 0x0163, 0x06D4, [
+            r"cmp ax,0x2$", r"call 0x431:0xc$", r"cmp ax,0x3$", r"call 0x431:0xc$", r"cmp ax,0x4$", r"call 0x431:0xc$",
+            r"cmp ax,0x5$", r"call far \[0xe8f6\]$", r"cmp ax,0x6$", r"call 0x431:0xc$", r"cmp ax,0x7$",
+            r"call 0x431:0xc$", r"cmp ax,0x8$", r"call 0x431:0xc$"]))
+
+
+@finding("P5", "Hintergrund 6 Static: je Pixel des Fensters (x außen, y innen) Random(30)+30; 7 Rectangle: Random(3) → 80/150/159 Rahmen")
+def p5(R, g, a):
+    return R.all_of(
+        R.seq(g, a, "O8", 0x052C, 0x05E9, [r"mov ax,\[0xe8fa\]$", r"mov \[0x4746\],ax$", r"mov ax,\[0xe8fc\]$",
+                                           r"mov \[0x4748\],ax$", imm(0x1E), RND, r"add ax,0x1e$", r"call 0xcc8:0xbb6$"]),
+        R.seq(g, a, "O8", 0x05E9, 0x06AA, [imm(3), RND, r"mov word \[0x474c\],0x50$", r"mov word \[0x474c\],0x96$",
+                                           r"mov word \[0x474c\],0x9f$", r"call 0xcc8:0x31$"]))
+
+
+@finding("P6", "Hintergrund-Ende (alle, auch 0): Bild 10..310 × 30..190 in Puffer DS:E5C0, Rahmen Farbe 13, Random:Real < 0,5 → 0C79:0428")
+def p6(R, g, a):
+    return R.all_of(
+        R.seq(g, a, "O8", 0x06AA, 0x0905, [r"jmp 0x877$", r"les di,\[0xe5c0\]$", r"mov \[0xe904\],ax$",
+                                           r"mov word \[0x4746\],0xa$", r"mov dx,0xa000$", r"call 0xcc8:0xac0$",
+                                           r"cmp word \[0x4746\],0x136$", r"mov al,0xd$", r"call 0xcc8:0x31$",
+                                           r"mov al,0xd$", r"call 0xcc8:0x31$", r"mov word \[0xe904\],0xa000$",
+                                           RREAL, RCMP, r"jnc 0x8fe$", r"call 0xc79:0x428$"]),
+        R.real_at(g, a, "O8", 0x08EB, 0.5))
+
+
+@finding("P7", "Wandbeschriftung links senkrecht (SmallFont): STICKEY, ELASTIC, ACCELERATE, WARP; Faktor DS:47D2 = 0,707106 / 1 / 1,41421")
+def p7(R, g, a):
+    return R.all_of(
+        R.seq(g, a, "O8", 0x0AFF, 0x0BBF, [r"cmp ax,0x1$", r"mov di,0x924$", r"call 0xe26:0x1f12$",
+                                           r"mov word \[0x47d2\],0xce80$", r"cmp ax,0x2$", r"mov di,0x92c$",
+                                           r"cmp ax,0x3$", r"mov di,0x934$", r"cmp ax,0x4$", r"mov di,0x93f$"]),
+        R.real_at(g, a, "O8", 0x0B22, 0.707106), R.real_at(g, a, "O8", 0x0B57, 1.0),
+        R.real_at(g, a, "O8", 0x0B8B, 1.41421))
+
+
+@finding("P8", "Gelände Anfang: Farbe 2, x = 11, Steigung 0, Richtung 1 − 2·Random(2), Rand 60 − 7·(N−2), Höhe Random(150)")
+def p8(R, g, a):
+    return R.seq(g, a, "O8", 0x0BBF, 0x0C35, [
+        r"call 0xe26:0x1dc2$", r"mov word \[0x4746\],0xb$", r"mov \[bp-0x4\],ax$", imm(2), RND, r"shl ax,1$",
+        r"sub ax,cx$", r"mov \[bp-0x2\],ax$", r"mov ax,\[0x47da\]$", r"mov dx,0x7$", r"mul dx$", r"mov ax,0x3c$",
+        r"sub ax,dx$", r"mov \[bp-0x6\],ax$", imm(0x96), RND, r"mov \[0x473e\],ax$"])
+
+
+@finding("P9", "Gelände je Schritt bis x = 310: Rand flach (Line), sonst |Steigung| 0..4 → Spalten 3/3/3/2/1 und Höhenwechsel 0/1/2/2/2")
+def p9(R, g, a):
+    return R.seq(g, a, "O8", 0x0C35, 0x0EA6, [
+        r"cmp word \[0x4746\],0x136$", r"add ax,0xb$", r"call 0xe26:0x1c86$", r"mov ax,0x135$", r"sub ax,\[bp-0x6\]$",
+        r"call 0xe26:0x1c86$", r"cmp word \[bp-0x4\],byte \+0x0$", r"call 0xcc8:0x9e4$", r"call 0xcc8:0x9e4$",
+        r"call 0xcc8:0x9e4$", r"cmp ax,0x1$", r"cmp ax,0x2$", r"cmp ax,0x3$", r"cmp ax,0x4$"])
+
+
+@finding("P10", "Gelände: Random:Real < 0,2 → Steigung += Richtung; Random:Real < 0,1 oder |Steigung| > 4 → Richtung umkehren; Grenzen")
+def p10(R, g, a):
+    return R.all_of(
+        R.seq(g, a, "O8", 0x0EA6, 0x0F3D, [
+            RREAL, RCMP, r"jnc 0xec4$", r"add ax,\[bp-0x2\]$", RREAL, RCMP, r"jc 0xee6$", r"cmp ax,0x4$", r"neg ax$",
+            r"cmp word \[bp-0x4\],byte \+0x4$", r"mov word \[bp-0x4\],0x4$", r"cmp word \[bp-0x4\],byte -0x4$",
+            r"mov word \[bp-0x4\],0xfffc$", r"cmp word \[0x473e\],byte \+0x14$", r"mov word \[bp-0x2\],0x1$",
+            r"cmp word \[0x473e\],0x8c$", r"mov word \[bp-0x2\],0xffff$", r"cmp word \[0x473e\],byte \+0x3$",
+            r"mov word \[bp-0x4\],0x1$", r"cmp word \[0x473e\],0x9b$", r"mov word \[bp-0x4\],0xffff$",
+            r"inc word \[0x4746\]$", r"jmp 0xc35$"]),
+        R.real_at(g, a, "O8", 0x0EAB, 0.2), R.real_at(g, a, "O8", 0x0EC9, 0.1))
+
+
+@finding("P11", "Panzer x: Spieler 1 Random(28)+16, Spieler N 305 − Random(28), dazwischen gleichmäßig (Abstand div N−1)")
+def p11(R, g, a):
+    return R.seq(g, a, "O8", 0x0F3D, 0x0FC8, [
+        imm(0x1C), RND, r"add ax,0x10$", r"mov \[0x40b1\],ax$", imm(0x1C), RND, r"mov ax,0x131$", r"sub ax,dx$",
+        r"mov \[di\+0x403d\],cx$", r"sub ax,\[0x40b1\]$", r"idiv cx$", r"mul word \[0x4742\]$", r"add ax,\[0x40b1\]$",
+        r"mov \[di\+0x403d\],cx$"])
+
+
+@finding("P12", "Panzer je Spieler: Name, +1Dh 75 (Spieler 1 und N) sonst 90, +1Bh 200, +1Fh −1 (Spieler N) sonst 1, +23h 1, y 32")
+def p12(R, g, a):
+    return R.seq(g, a, "O8", 0x0FC8, 0x1114, [
+        r"call 0xe26:0x1f12$", r"mov di,0x944$", r"call 0x12ce:0xd8d$", r"call 0x12ce:0xe02$",
+        r"mov word \[di\+0x404b\],0x4b$", r"mov word \[di\+0x404b\],0x5a$", r"mov word \[di\+0x4049\],0xc8$",
+        r"mov word \[di\+0x404d\],0xffff$", r"mov word \[di\+0x404d\],0x1$", r"mov byte \[di\+0x4051\],0x1$",
+        r"mov word \[di\+0x403f\],0x20$", r"mov \[di\+0x408c\],ax$"])
+
+
+@finding("P13", "Panzer fallen: kein Fall, wenn eines der 9 Pixel x−4..x+4 unter dem Panzer Farbe 2 oder 13; sonst fallen bis alle 9")
+def p13(R, g, a):
+    return R.seq(g, a, "O8", 0x1114, 0x1251, [
+        r"mov byte \[bp-0x7\],0x1$", r"mov word \[0x4742\],0xfffc$", r"call 0xcc8:0xbff$", r"mov di,0x964$",
+        r"call 0x12ce:0xe02$", r"jz 0x1159$", r"mov byte \[bp-0x7\],0x0$", r"cmp word \[0x4742\],byte \+0x4$",
+        r"mov byte \[bp-0x8\],0x1$", r"call 0x431:0x685$", r"inc word \[di\+0x403f\]$", r"call 0x431:0x5ed$",
+        r"push word \[0xe8c8\]$", r"call 0x11f8:0x29c$", r"call 0xcc8:0xbff$", r"call 0x12ce:0xe02$",
+        r"jnz 0x1216$", r"mov byte \[bp-0x8\],0x0$", r"jmp 0x116d$"])
+
+
+@finding("P14", "Randomize in 0000:013B nach O2[0] und O2[3] (BOMB.CFG), vor Maustest, Titel und Hauptmenü O2[2]")
+def p14(R, g, a):
+    return R.seq(g, a, "0000", 0x013B, 0x0540, [
+        r"call 0xb02:0x20$", r"call 0xb02:0x2f$", r"call 0x12ce:0x16fc$", r"call 0xb02:0x25$", r"call 0xb02:0x2a$",
+        r"call 0xb08:0x20$"])
+
+
+@finding("P15", "Vor der ersten Runde: Hauptmenü O2:3B96(0) Random(2); „Random“-Computer Random(7)+1; Intelligenz-Init Random(4)+1 bis passend")
+def p15(R, g, a):
+    return R.all_of(
+        R.seq(g, a, "O2", 0x3B96, 0x3C40, [r"cmp ax,0x0$", imm(2), RND, r"mov word \[0x474c\],0x64$",
+                                           r"mov word \[0x474c\],0xa0$"]),
+        R.seq(g, a, "O2", 0x3E0A, 0x3E40, [r"xor ax,ax$", r"call 0x3b96$"]),
+        R.seq(g, a, "O2", 0x5A60, 0x5AB2, [r"call 0x12ce:0xc52$", imm(7), RND, r"inc ax$", r"call 0x78$"]),
+        R.seq(g, a, "0129", 0x0000, 0x00B7, [imm(4), RND, r"inc ax$", r"mov \[es:di\+0xe\],ax$",
+                                             r"call 0x12ce:0xe02$", r"jz 0x87$"]))
+
+
+@finding("P16", "Spielfeld-Ablauf: Rotation aus, SetRGB(19, 63, 63, 63) bzw. bei Inviso (0, 0, 0), Hintergrund, SetRGB(0, 14, 9, 10), Rahmen 13")
+def p16(R, g, a):
+    return R.seq(g, a, "O8", 0x0984, 0x0AC3, [
+        r"mov di,0x3706$", r"mov di,0xa0de$", r"mov ax,0x10$", MOVE, r"call 0xc79:0x3d$", r"mov ax,0x13$",
+        r"mov ax,0x3f$", r"mov ax,0x3f$", r"mov ax,0x3f$", r"call far \[0xe8f6\]$", r"cmp byte \[0xe8b4\],0x0$",
+        r"mov ax,0x13$", r"call far \[0xe8f6\]$", r"call 0xe26:0xf80$", r"call 0x0$", r"mov ax,0xe$", r"mov ax,0x9$",
+        r"mov ax,0xa$", r"call far \[0xe8f6\]$", r"mov ax,0xd$", r"call 0xe26:0x1dc2$", r"mov ax,0x8$",
+        r"mov ax,0x1c$", r"mov ax,0x138$", r"mov ax,0xc0$", r"call 0xe26:0x10d2$", r"call 0xe26:0x10d2$"])
+
+
+@finding("R5", "Erster Zug: Satz s+1 (Index + 1, über N zurück auf 1 mit Durchgang + 1), nur wenn +23h ≠ 0; Nummer nach DS:47EE")
+def r5(R, g, a):
+    return R.seq(g, a, "O4", 0x4766, 0x47A2, [
+        r"inc word \[di\+0x40a0\]$", r"mov word \[0x47ea\],0x1$", r"inc word \[bp-0x2\]$", r"cmp ax,\[0x47da\]$",
+        r"mov word \[bp-0x2\],0x1$", r"inc word \[0x47ea\]$", r"cmp byte \[di\+0x4051\],0x0$", r"jz 0x4770$",
+        r"mov \[0x47ee\],al$"])
