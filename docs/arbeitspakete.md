@@ -173,3 +173,5 @@ Leitstelle nach Welle 1 aus `analyse/runde.md`; die Abnahmen hier gelten als Rah
   Teil 3: Zugbeginn, Kopfzeile, Waffenleiste, Zug `O7:040C`, Tasten, Maus, Schummeltaste, Panzerinfo, Zielwahl, Computer-Rahmen
   `0129:01D0`, alle sieben Computer-Arten (§6); offen nur Sichtlinien von Wind Master (§6.6). Teil 4: Listings unverändert,
   README in bomb-referenz#10 nachgetragen. 81 Befunde. Alle Teile fertig, Ready for review (Merge-Basis `1128839`).
+- 12.11.2026, Fixlauf zum Review `docs/reviews/2026-11-12-re-runde.md`: P2-1 (#98, Wind in 16 Bit, R3 verschärft), P3-1 (#99),
+  P3-2 (#100), P3-3 (#101, Begründung im PR) behoben; P3-4 (#102) Hinweis für Welle 2. 81 Befunde.

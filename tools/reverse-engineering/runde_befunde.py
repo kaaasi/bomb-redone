@@ -88,13 +88,15 @@ def r2(R, g, a):
         r"sub ax,\[0x4740\]$", r"mov \[0xe8a2\],ax$", r"mov cx,0xa$", r"idiv cx$", r"cmp ax,cx$", r"jl 0x44e5$"])
 
 
-@finding("R3", "Wind: viermal Random:Real (< 0,1; < 0,1; < 0,05; < 0,05) → Wert × 4, danach begrenzt auf ±30000")
+@finding("R3", "Wind: viermal Random:Real (< 0,1; < 0,1; < 0,05; < 0,05) → Wert × 4 in 16 Bit (Überlauf), danach begrenzt auf ±30000 (vorzeichenbehaftet)")
 def r3(R, g, a):
+    # Each multiplication loads the word, shifts twice and stores the word: 16-bit wrap-around, no overflow check.
+    x4 = [r"mov ax,\[0xe8a2\]$", r"shl ax,1$", r"shl ax,1$", r"mov \[0xe8a2\],ax$"]
     return R.all_of(
-        R.seq(g, a, "O4", 0x4559, 0x45F1, [
-            RREAL, RCMP, r"jnc 0x4578$", r"shl ax,1$", r"shl ax,1$", RREAL, RCMP, r"shl ax,1$", RREAL, RCMP,
-            r"shl ax,1$", RREAL, RCMP, r"shl ax,1$", r"cmp word \[0xe8a2\],0x7530$", r"mov word \[0xe8a2\],0x7530$",
-            r"cmp word \[0xe8a2\],0x8ad0$", r"mov word \[0xe8a2\],0x8ad0$"]),
+        R.seq(g, a, "O4", 0x4559, 0x45F1, [RREAL, RCMP, r"jnc 0x4578$"] + x4 + [RREAL, RCMP, r"jnc 0x4597$"] + x4
+              + [RREAL, RCMP, r"jnc 0x45b6$"] + x4 + [RREAL, RCMP, r"jnc 0x45d5$"] + x4 + [
+            r"cmp word \[0xe8a2\],0x7530$", r"jng 0x45e3$", r"mov word \[0xe8a2\],0x7530$",
+            r"cmp word \[0xe8a2\],0x8ad0$", r"jnl 0x45f1$", r"mov word \[0xe8a2\],0x8ad0$"]),
         R.real_at(g, a, "O4", 0x455E, 0.1), R.real_at(g, a, "O4", 0x457D, 0.1),
         R.real_at(g, a, "O4", 0x459C, 0.05), R.real_at(g, a, "O4", 0x45BB, 0.05))
 

@@ -7,7 +7,7 @@ nur im Referenz-Repo (`analyse/re-runde/`, R2-D5 = A). Grundlagen und Adressschr
 
 **Beleg für jede Aussage:** `python3 tools/reverse-engineering/runde.py befunde` prüft die Befunde (Kürzel in Klammern) gegen
 `gamedata/` als Befehlsfolgen der eigenen Disassembly (Ergebnis zum Head: **81 von 81 bestätigt**). Weitere Aufrufe: `… procs`
-(Prozeduren mit Aufrufern), `… randoms` (alle 158 Aufrufe von `Random`), `… reals` (Real48-Konstanten), `… listings`
+(Prozeduren mit Aufrufern), `… randoms` (alle 160 Aufrufe: 141 `Random(n)`, 19 `Random:Real`), `… reals` (Real48-Konstanten), `… listings`
 (annotierte Listings); Ausgabe nur nach `analyse/re-runde/`. Werkzeuge: Python 3, `ndisasm` (Paket `nasm`).
 
 **Stand der Teile:** 1 (Spielfolge, Rundenbeginn, Spielfeld, Zufallsfolge) fertig; 2 (Schuss) fertig (Rest nur Bilddetails, §5.13); 3 (Zug,
@@ -44,7 +44,11 @@ Reihenfolge (R1): `0431:0006`, Tastatur `0C48:0227`, `SetTextStyle(0, 0, 1)`, **
 
 **Wind** (R2, R3): Stufe = Option `DS:E8A8`, bei 5 (RND) `Random(5)` → `DS:47E4`. Spanne S = 0, 20, 100, 300, 4000 für Stufe
 0..4. Wiederhole `w = S div 2 − Random(S)` bis `|w| ≥ S div 10` (bei S = 0: `Random(0)` = 0, einmal). Danach viermal
-`Random:Real` gegen 0,1 / 0,1 / 0,05 / 0,05: jeweils bei kleiner `w := w · 4`; zuletzt auf −30000..30000 begrenzt → `DS:E8A2`.
+`Random:Real` gegen 0,1 / 0,1 / 0,05 / 0,05: jeweils bei kleiner `w := w · 4` als **16-Bit-Integer** (`mov ax,[E8A2h]`, zweimal
+`shl ax,1`, Überlauf ohne Fehler, z. B. 2000 → 8000 → 32000 → −3072); erst danach auf −30000..30000 begrenzt (vorzeichenbehaftete
+16-Bit-Vergleiche `jng`/`jnl`, `O4:45D5–45EB`) → `DS:E8A2`. Die Klemme greift also nur, wenn der übergelaufene Wert außerhalb liegt;
+eine Umsetzung muss in `short` rechnen (Überlauf, sobald w · 4ⁿ außerhalb −32768..32767 liegt: bei S = 300 erst mit vier, bei
+S = 4000 ab drei Treffern).
 
 **Startspieler** (R4): `s = Random(N)` wiederholt, bis Satz s+1 im Feld +72h (Anzahl der Runden als Startspieler) keinen größeren
 Wert als jeder andere Satz hat; dann +72h von Satz s+1 erhöhen, Durchgangszähler `DS:47EA` = 1. Der erste Zug gehört **Satz
@@ -168,7 +172,8 @@ Dezimalwert) (P10).
 6. Wind: `Random(5)` bei RND, `Random(S)` (+ Wiederholungen), vier `Random:Real` (§2).
 7. Startspieler: `Random(N)` (+ Wiederholungen) (§2).
 8. Zug: für Menschen kein Zufall bis zum Schuss (§6); Computer `0129` (§6.5: je Plan einige `Random`).
-9. Schuss Lead Ball: `Random:Real` (Rückstoß, §5.1); im Flug kein Zufall; bei Volltreffer ggf. `Random:Real` im Schaden (§5.5);
+9. Schuss Lead Ball: `Random:Real` (Rückstoß, §5.1), bei Treffer < 0,2 ggf. ein zweites `Random:Real` im Schaden `O10:0000`
+   (Schild danach negativ, also Schild 0, und Repulser > 0; Q11, §5.5); im Flug kein Zufall; bei Volltreffer ggf. `Random:Real` im Schaden (§5.5);
    Explosionen: `Random` nur bei Ton (§5.6); nach dem Schuss `Random:Real` für den Erdrutsch bei Crumble > 0, je Fallzeile
    `Random(3)`, je Tod `Random(7)` und `Random:Real`, ab Durchgang 11 `Random(100)` (§5.8, §5.9).
 
