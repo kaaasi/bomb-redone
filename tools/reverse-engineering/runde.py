@@ -48,7 +48,7 @@ DSVARS = {
 }
 
 BLOCKS = ("ovl_O1_", "ovl_O2_", "ovl_O3", "ovl_O4", "ovl_O5", "ovl_O6", "ovl_O7", "ovl_O8", "ovl_O9", "ovl_O10", "seg_0129", "seg_0431", "seg_0CC8",
-          "seg_0000", "seg_0059", "seg_0B25", "seg_0C02", "seg_0C48", "seg_0C79", "seg_0DBD", "seg_0E11")
+          "seg_0000", "seg_0059", "seg_0B25", "seg_0C02", "seg_0C48", "seg_0C79", "seg_0DBD", "seg_0E11", "seg_12CE")
 
 REAL_CALLS = {(0x12CE, o): n for (s, o), n in bombre.NAMES.items() if s == 0x12CE and n.startswith("System.@Real")}
 

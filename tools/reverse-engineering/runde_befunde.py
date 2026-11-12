@@ -263,3 +263,201 @@ def r5(R, g, a):
         r"inc word \[di\+0x40a0\]$", r"mov word \[0x47ea\],0x1$", r"inc word \[bp-0x2\]$", r"cmp ax,\[0x47da\]$",
         r"mov word \[bp-0x2\],0x1$", r"inc word \[0x47ea\]$", r"cmp byte \[di\+0x4051\],0x0$", r"jz 0x4770$",
         r"mov \[0x47ee\],al$"])
+
+
+# ---- 4. Shot of the ballistic weapons (O4:01B7) -------------------------------------------------------------------
+
+def set_const(R, g, a, key, ofs):
+    """Members of a 32-byte Pascal set constant at offset ofs of block key."""
+    lines, data, f, base = R.block_lines(g, a, key)
+    b = data[ofs:ofs + 32]
+    return sorted(i for i in range(256) if b[i // 8] >> (i % 8) & 1)
+
+
+def set_is(R, g, a, key, ofs, members):
+    lines, data, f, base = R.block_lines(g, a, key)
+    got = set_const(R, g, a, key, ofs)
+    return got == members, "%s:%04X = {%s}, %s 0x%05X" % (key, ofs, ",".join(map(str, got)), f, base + ofs)
+
+
+@finding("Q1", "Waffe (+24h) {0..4, 6, 8..17} → O4:01B7 (Flugbahn), 5 Laser → O4:3426, 7 MIRV → O4:13D4; nach dem Zug O7:040C")
+def q1(R, g, a):
+    return R.all_of(
+        R.seq(g, a, "O4", 0x4960, 0x49CB, [r"call 0xb16:0x2f$", r"mov al,\[di\+0x4052\]$", r"mov di,0x4447$",
+                                           r"call 0x1b7$", r"mov di,0x4467$", r"call 0x3426$", r"mov di,0x4487$",
+                                           r"call 0x13d4$"]),
+        set_is(R, g, a, "O4", 0x4447, [0, 1, 2, 3, 4, 6, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]),
+        set_is(R, g, a, "O4", 0x4467, [5]), set_is(R, g, a, "O4", 0x4487, [7]))
+
+
+@finding("Q2", "Abschuss: Bestand der Waffe −1, Lenkung +26h ∈ {1,3} → +2Ah −1, ∈ {2,3} → +2Ch −1; Random:Real < 0,2 → 1 Schaden am Schützen")
+def q2(R, g, a):
+    return R.all_of(
+        R.seq(g, a, "O4", 0x02E4, 0x0384, [r"mov ax,\[di\+0x4052\]$", r"dec word \[di\+0x405c\]$", r"mov di,0x177$",
+                                           r"dec word \[di\+0x4058\]$", r"mov di,0x197$", r"dec word \[di\+0x405a\]$",
+                                           RREAL, RCMP, r"jnc 0x384$", r"mov ax,0x1$", r"mov al,0x0$",
+                                           r"call 0xb20:0x20$"]),
+        set_is(R, g, a, "O4", 0x0177, [1, 3]), set_is(R, g, a, "O4", 0x0197, [2, 3]),
+        R.real_at(g, a, "O4", 0x035A, 0.2))
+
+
+@finding("Q3", "Start: x = x_P + 10·cos(a)·r, y = y_P − 10·sin(a), vx = Kraft/50·cos(a)·r, vy = −Kraft/50·sin(a); a (+1Dh) in Grad, r = +1Fh")
+def q3(R, g, a):
+    return R.all_of(
+        R.seq(g, a, "O4", 0x0384, 0x0515, [
+            r"mov ax,\[di\+0x404b\]$", r"call 0xdbd:0xd9$", r"call 0x12ce:0x12ee$", r"call 0x12ce:0x11c8$",
+            r"mov ax,\[di\+0x404d\]$", r"call 0x12ce:0x11c8$", r"mov ax,\[di\+0x403d\]$", r"call 0x12ce:0x11b6$",
+            r"mov \[0x4796\],ax$", r"call 0x12ce:0x1301$", r"mov ax,\[di\+0x403f\]$", r"call 0x12ce:0x11bc$",
+            r"mov \[0x479c\],ax$", r"mov ax,\[di\+0x4049\]$", r"call 0x12ce:0x11ce$", r"call 0x12ce:0x12ee$",
+            r"mov ax,\[di\+0x404d\]$", r"mov \[0x47a2\],ax$", r"mov ax,\[di\+0x4049\]$", r"call 0x12ce:0x1301$",
+            r"xor dh,0x80$", r"mov \[0x47a8\],ax$"]),
+        R.real_at(g, a, "O4", 0x03A3, 10.0), R.real_at(g, a, "O4", 0x045B, 50.0))
+
+
+@finding("Q4", "Je Teilschritt (SS = DS:E8CA Teilschritte): x += vx/SS, y += vy/SS, vy += 0,1/SS, vx += (Wind/5000)/SS; Ticks je SS")
+def q4(R, g, a):
+    return R.all_of(
+        R.seq(g, a, "O4", 0x0524, 0x073F, [
+            r"mov ax,\[0xe8ca\]$", r"mov \[0x4744\],ax$", r"inc word \[0x4740\]$", r"cmp ax,\[0x4744\]$",
+            r"add word \[bp-0x2e\],byte \+0x1$", r"mov ax,\[0x47a2\]$", r"call 0x12ce:0x11ce$", r"mov cx,\[0x4796\]$",
+            r"call 0x12ce:0x11b6$", r"mov ax,\[0x47a8\]$", r"call 0x12ce:0x11ce$", r"mov cx,\[0x479c\]$",
+            r"call 0x12ce:0x11b6$", r"call 0x12ce:0x11ce$", r"mov cx,\[0x47a8\]$", r"call 0x12ce:0x11b6$",
+            r"mov \[0x47a8\],ax$", r"mov ax,\[0xe8a2\]$", r"call 0x12ce:0x11ce$", r"call 0x12ce:0x11ce$",
+            r"mov cx,\[0x47a2\]$", r"call 0x12ce:0x11b6$", r"mov \[0x47a2\],ax$", r"call 0x12ce:0x11e0$",
+            r"call 0x12ce:0x11e0$"]),
+        R.real_at(g, a, "O4", 0x06A6, 0.1), R.real_at(g, a, "O4", 0x06E8, 5000.0))
+
+
+@finding("Q5", "Repulser (+5Ah > 0) eines lebenden Panzers in ±40: d² = dx² + dy² ≤ 1600 → Stoß −600/(d²·SS) in Richtung ArcTan, Linie Farbe 14")
+def q5(R, g, a):
+    return R.all_of(
+        R.seq(g, a, "O4", 0x07B5, 0x0A37, [
+            r"cmp word \[di\+0x408a\],byte \+0x0$", r"cmp ax,0x28$", r"cmp ax,0x28$", r"call 0x12ce:0x122a$",
+            r"call 0x12ce:0x122a$", r"call 0x12ce:0x11e0$", r"cmp word \[bp-0x22\],0x640$", r"mov al,0xe$",
+            r"call 0xcc8:0x9e4$", r"call 0x12ce:0x11ce$", r"call 0x12ce:0x11ce$", r"call 0x12ce:0x14d8$",
+            r"call 0xdbd:0x11b$", r"add ax,0xb4$", r"mov word \[bp-0x24\],0x5a$", r"mov word \[bp-0x24\],0x10e$",
+            r"call 0xb25:0x5a$", r"mov \[0x47a2\],ax$", r"call 0xb25:0x0$", r"call 0x12ce:0x11bc$",
+            r"mov \[0x47a8\],ax$"]),
+        R.real_at(g, a, "O4", 0x091A, -600.0))
+
+
+@finding("Q6", "Wände 1–3: x ≤ 10 bzw. ≥ 310 (Richtung nach außen) → vx = −vx·F, vy·F; y ≤ 30 bzw. ≥ 188 → vy = −vy·F, vx·F (F = DS:47D2)")
+def q6(R, g, a):
+    return R.all_of(
+        R.seq(g, a, "O4", 0x0E5E, 0x1067, [
+            r"cmp byte \[0x4814\],0x0$", r"cmp word \[bp-0x18\],byte \+0xa$", r"mov ax,\[0x47a2\]$", RCMP,
+            r"jnc 0xedb$", r"xor dh,0x80$", r"mov cx,\[0x47d2\]$", r"mov cx,\[0x47d2\]$",
+            r"cmp word \[bp-0x18\],0x136$", r"jna 0xf4f$", r"xor dh,0x80$", r"mov cx,\[0x47d2\]$",
+            r"cmp word \[bp-0x1a\],byte \+0x1e$", r"jnc 0xfc2$", r"xor dh,0x80$", r"mov cx,\[0x47d2\]$",
+            r"cmp word \[bp-0x1a\],0xbc$", r"ja 0xfe7$", r"mov cx,\[0x47d2\]$", r"xor dh,0x80$",
+            r"and dh,0x7f$", RCMP, r"mov byte \[0x4750\],0x1$", r"mov byte \[0x4751\],0x1$"]),
+        R.real_at(g, a, "O4", 0x104A, 0.1))
+
+
+@finding("Q7", "Warp: x ≤ 10 → x + 300, x ≥ 310 → x − 300; keine Wand: rechts (vx > 1, Wind > 0) bzw. links (vx < 1, Wind < 0) ohne Lenkung → y = 300")
+def q7(R, g, a):
+    return R.all_of(
+        R.seq(g, a, "O4", 0x1067, 0x115D, [
+            r"cmp byte \[0x4815\],0x0$", r"cmp word \[bp-0x18\],byte \+0xa$", r"call 0x12ce:0x11b6$",
+            r"cmp word \[bp-0x18\],0x136$", r"call 0x12ce:0x11bc$", r"cmp byte \[0x4814\],0x0$",
+            r"cmp word \[bp-0x18\],0x136$", RCMP, r"jna 0x1116$", r"cmp word \[0xe8a2\],byte \+0x0$", r"jng 0x1116$",
+            r"cmp word \[di\+0x4054\],byte \+0x0$", r"mov word \[0x479c\],0x89$", r"cmp word \[bp-0x18\],byte \+0xa$",
+            RCMP, r"jnc 0x115d$", r"cmp word \[0xe8a2\],byte \+0x0$", r"jnl 0x115d$", r"mov word \[0x479c\],0x89$"]),
+        R.real_at(g, a, "O4", 0x107F, 300.0), R.real_at(g, a, "O4", 0x10E0, 1.0), R.real_at(g, a, "O4", 0x1127, 1.0),
+        R.real_at(g, a, "O4", 0x1104, 300.0))
+
+
+@finding("Q8", "Ende des Flugs: > 1000 Ticks; Wand 0/4: y < −5000 (ohne Einschlag) oder y ≥ 190; |vx| oder |vy| > 30 (mit Einschlag)")
+def q8(R, g, a):
+    return R.all_of(
+        R.seq(g, a, "O4", 0x115D, 0x12DD, [
+            r"cmp word \[bp-0x2c\],byte \+0x0$", r"cmp word \[bp-0x2e\],0x3e8$", r"mov byte \[0x4751\],0x1$",
+            r"mov byte \[0x4750\],0x1$", r"cmp byte \[0x4814\],0x0$", r"cmp word \[bp-0x1a\],0xec78$",
+            r"mov byte \[0x4750\],0x0$", r"cmp word \[bp-0x1a\],0xbe$", r"mov byte \[0x4751\],0x1$",
+            r"and dh,0x7f$", RCMP, r"and dh,0x7f$", RCMP, r"mov byte \[0x4751\],0x1$", r"mov byte \[0x4750\],0x1$",
+            r"jmp 0x60a$"]),
+        R.real_at(g, a, "O4", 0x129D, 30.0))
+
+
+@finding("Q9", "Treffertest im Feld (11 < x < 309, 33 < y < 187): Raute |dx|+|dy| ≤ 1; Farbe 2 Gelände, Farbe 20..29 Panzer → DS:47DE")
+def q9(R, g, a):
+    return R.seq(g, a, "O4", 0x0D00, 0x0E5E, [
+        r"cmp word \[bp-0x18\],byte \+0xb$", r"cmp word \[bp-0x1a\],byte \+0x21$", r"cmp word \[bp-0x18\],0x135$",
+        r"cmp word \[bp-0x1a\],0xbb$", r"mov word \[0x4746\],0xffff$", r"mov word \[0x4748\],0xffff$",
+        r"cmp ax,0x1$", r"call 0xcc8:0xbff$", r"cmp word \[bp-0x6\],byte \+0x2$", r"mov \[0x47de\],ax$",
+        r"cmp word \[bp-0x6\],byte \+0x14$", r"cmp word \[bp-0x6\],byte \+0x1d$", r"mov \[0x47de\],ax$",
+        r"mov byte \[0x4751\],0x1$"])
+
+
+@finding("Q10", "Einschlag O6:00E0: Lead Ball (Waffe 0) nur Volltreffer: 5 Schaden (O10:0000), 10 Punkte je verlorener Energie an andere Teams")
+def q10(R, g, a):
+    return R.all_of(
+        R.seq(g, a, "O4", 0x1343, 0x1376, [r"cmp byte \[0x4750\],0x0$", r"push word \[0x47de\]$", r"call 0xb13:0x20$"]),
+        R.seq(g, a, "O6", 0x00E0, 0x0180, [
+            r"cmp word \[di\+0x4052\],byte \+0x0$", r"jnz 0x180$", r"cmp word \[bp\+0x6\],byte \+0x14$",
+            r"cmp word \[bp\+0x6\],byte \+0x1d$", r"mov word \[bp-0x14\],0x5$", r"call 0xb20:0x20$", r"mov dx,0xa$",
+            r"mul dx$", r"mov ax,\[di\+0x4094\]$", r"cmp ax,cx$", r"jz 0x17d$", r"call 0xb20:0x34$"]))
+
+
+@finding("Q11", "Schaden O10:0000(d, k, Satz): Abwehr k −= d; darunter Energie +21h (≥ 0); k ≠ 1 mit Repulser: Random:Real < Rest/40 → Repulser −1")
+def q11(R, g, a):
+    return R.all_of(
+        R.seq(g, a, "O10", 0x0000, 0x014A, [
+            r"mov ax,\[bp\+0xc\]$", r"mov ax,\[es:di\+0x52\]$", r"sub ax,cx$", r"mov \[es:di\+0x52\],cx$",
+            r"mov ax,\[es:di\+0x21\]$", r"cmp word \[es:di\+0x54\],byte \+0x0$", r"add ax,cx$",
+            r"mov \[es:di\+0x21\],ax$", r"cmp byte \[bp\+0xa\],0x1$", r"cmp word \[es:di\+0x5c\],byte \+0x0$",
+            r"call 0x12ce:0x11ce$", RREAL, RCMP, r"jnc 0x113$", r"sub word \[es:di\+0x5a\],byte \+0x1$",
+            r"mov \[es:di\+0x52\],ax$", r"call 0x14a$", r"sub ax,\[es:di\+0x21\]$"]),
+        R.real_at(g, a, "O10", 0x00E7, 40.0))
+
+
+@finding("Q12", "Explosion O6:00E0 für Waffen {1,2,3,4,7,11}: Radius DS:47D8 = 10 / 15 (2, 7) / 30 / 60 / 2 (11); Farben 130.. als Verlauf")
+def q12(R, g, a):
+    return R.all_of(
+        R.seq(g, a, "O6", 0x0180, 0x0250, [
+            r"mov di,0x0$", r"call 0x12ce:0xe02$", r"cmp ax,0x1$", r"mov word \[0x47d8\],0xa$", r"cmp ax,0x2$",
+            r"cmp ax,0x7$", r"mov word \[0x47d8\],0xf$", r"cmp ax,0x3$", r"mov word \[0x47d8\],0x1e$", r"cmp ax,0x4$",
+            r"mov word \[0x47d8\],0x3c$", r"cmp ax,0xb$", r"mov word \[0x47d8\],0x2$", r"mov ax,0x3f$",
+            r"idiv word \[0x47d8\]$", r"mov ax,0x82$", r"call far \[0xe8f2\]$"]),
+        set_is(R, g, a, "O6", 0x0000, [1, 2, 3, 4, 7, 11]))
+
+
+@finding("Q13", "Erdrutsch nach dem Schuss O7:03C1: Rahmen neu, Random:Real · 100 ≤ Crumble % → 0431:0496 (Puffer DS:E5C0, DS:DFA2)")
+def q13(R, g, a):
+    return R.all_of(
+        R.seq(g, a, "O7", 0x03C1, 0x040C, [r"call 0x364$", r"mov ax,\[0xe8a4\]$", RREAL, r"call 0x12ce:0x11c8$", RCMP,
+                                           r"ja 0x408$", r"call 0x431:0x496$"]),
+        R.real_at(g, a, "O7", 0x03DC, 100.0))
+
+
+@finding("Q14", "Winkel: 12CE:12EE = Cos (Sin(π/2 − x)), 12CE:1301 = Sin, 12CE:122A = Int; 0DBD:00D9 Grad→Bogen, 011B Bogen→Grad; 0B25:0000/005A Sin/Cos-Tabelle")
+def q14(R, g, a):
+    return R.all_of(
+        R.seq(g, a, "0DBD", 0x00D9, 0x015D, [r"mov cx,0x88$", r"call 0x12ce:0x11ce$", r"mov cx,0x2182$",
+                                             r"call 0x12ce:0x11c8$", r"retf 0x6$", r"mov cx,0x2182$",
+                                             r"call 0x12ce:0x11ce$", r"mov cx,0x88$", r"call 0x12ce:0x11c8$"]),
+        R.real_at(g, a, "0DBD", 0x00F5, 3.141592653589793), R.real_at(g, a, "0DBD", 0x00E8, 180.0),
+        R.seq(g, a, "12CE", 0x12EE, 0x1310, [r"mov cx,0x2181$", r"mov di,0xc90f$", r"call 0xeb2$", r"xor dh,0x80$",
+                                             r"cmp al,0x6c$", r"mov cx,0x2183$"]),
+        R.real_at(g, a, "12CE", 0x12EE, -1.5707963267948966),
+        R.seq(g, a, "12CE", 0x122A, 0x127B, [r"cmp al,0xa8$", r"sub cl,0x80$", r"rcr dx,1$", r"and dx,di$"]),
+        R.seq(g, a, "0B25", 0x0000, 0x00F4, [r"cmp word \[bp\+0x6\],0xb4$", r"cmp word \[bp\+0x6\],byte \+0x5a$",
+                                             r"mov bx,0x6$", r"mov ax,\[cs:bx\+0xf9\]$", r"retf 0x2$", r"mov ax,0x5a$",
+                                             r"sub ax,\[bp\+0x6\]$", r"mov ax,\[cs:bx\+0xf9\]$"]))
+
+
+@finding("Q15", "Flug zeichnen: Spurfarbe 100 − i = 32 div Farbteiler, Ton 600 − 2·iy, Punkt 0431:03C3, Rahmenmarken Farbe 13; Explosion bei (x − 11, y − 31)")
+def q15(R, g, a):
+    return R.all_of(
+        R.seq(g, a, "O4", 0x0538, 0x0591, [r"sub ax,\[0x4740\]$", r"mov cx,\[di\+0x408e\]$", r"mov ax,0x20$",
+                                           r"idiv cx$", r"mov cx,\[di\+0x4090\]$", r"mov cx,\[di\+0x4092\]$",
+                                           r"call far \[0xe8f6\]$"]),
+        R.seq(g, a, "O4", 0x0C03, 0x0C82, [r"cmp byte \[0xe8b2\],0x0$", r"shl ax,1$", r"mov ax,0x258$", r"sub ax,cx$",
+                                           r"call 0x431:0x40f$", r"cmp byte \[0xe8b5\],0x0$", r"mov ax,0x64$",
+                                           r"sub ax,\[bp\+0x6\]$", r"call 0x431:0x56d$"]),
+        R.seq(g, a, "O4", 0x11EE, 0x1270, [r"call 0x431:0x3c3$", r"mov ax,0x1d$", r"mov al,0xd$", r"mov ax,0xbf$",
+                                           r"mov al,0xd$", r"mov ax,0x9$", r"mov al,0xd$", r"mov ax,0x137$",
+                                           r"mov al,0xd$"]),
+        R.seq(g, a, "O6", 0x024D, 0x02CA, [r"mov ax,0xb$", r"mov ax,0x1f$", r"call 0xe26:0xf93$",
+                                           r"call 0x12ce:0x11bc$", r"call 0x12ce:0x11bc$"]),
+        R.real_at(g, a, "O6", 0x0273, 11.0), R.real_at(g, a, "O6", 0x0292, 31.0))

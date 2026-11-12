@@ -6,12 +6,12 @@ nur im Referenz-Repo (`analyse/re-runde/`, R2-D5 = A). Grundlagen und Adressschr
 [../formate/spielstand.md](../formate/spielstand.md) (Satz i liegt bei `DS:402E + 74h·i`, „+0Fh“ = Feld im Satz).
 
 **Beleg für jede Aussage:** `python3 tools/reverse-engineering/runde.py befunde` prüft die Befunde (Kürzel in Klammern) gegen
-`gamedata/` als Befehlsfolgen der eigenen Disassembly (Ergebnis zum Head: **26 von 26 bestätigt**). Weitere Aufrufe: `… procs`
+`gamedata/` als Befehlsfolgen der eigenen Disassembly (Ergebnis zum Head: **41 von 41 bestätigt**). Weitere Aufrufe: `… procs`
 (Prozeduren mit Aufrufern), `… randoms` (alle 158 Aufrufe von `Random`), `… reals` (Real48-Konstanten), `… listings`
 (annotierte Listings); Ausgabe nur nach `analyse/re-runde/`. Werkzeuge: Python 3, `ndisasm` (Paket `nasm`).
 
-**Stand der Teile:** 1 (Spielfolge, Rundenbeginn, Spielfeld, Zufallsfolge bis zum Zug) fertig; 2 (Schuss O5–O7), 3 (Zug,
-Kopfzeile, Eingaben O4/O7/O9) und 4 (Listings, Liste für Sitzung 3) offen.
+**Stand der Teile:** 1 (Spielfolge, Rundenbeginn, Spielfeld, Zufallsfolge) fertig; 2 (Schuss) bis auf §5.6 fertig; 3 (Zug,
+Kopfzeile, Eingaben O4/O7/O9) offen; 4 (Listings im Referenz-Repo, Liste §7) mit Stand dieses Laufs.
 
 ## 1. Spielfolge `O3[0]` = `O3:7847` (`BOMB.OVR 0x102D3`)
 
@@ -167,7 +167,9 @@ Dezimalwert) (P10).
 5. Panzer: `Random(28)`, `Random(28)` (§3.6).
 6. Wind: `Random(5)` bei RND, `Random(S)` (+ Wiederholungen), vier `Random:Real` (§2).
 7. Startspieler: `Random(N)` (+ Wiederholungen) (§2).
-8. Zug: für Menschen kein Zufall bis zum Schuss; Computer `0129` (Teil 3); Schuss (Teil 2).
+8. Zug: für Menschen kein Zufall bis zum Schuss; Computer `0129` (Teil 3).
+9. Schuss Lead Ball: `Random:Real` (Rückstoß, §5.1); im Flug kein Zufall; bei Volltreffer ggf. `Random:Real` im Schaden (§5.5);
+   nach dem Schuss `Random:Real` für den Erdrutsch (§5.6).
 
 Jeder Aufruf von `Random(n)` und `Random:Real` macht genau einen Schritt `RandSeed := RandSeed · 08088405h + 1`
 (`re-grundlagen` D). **Vorschlag für das Suchwerkzeug (`gelaende`):** nicht die Menüfolge nachbilden, sondern den Stand von
@@ -175,7 +177,86 @@ Jeder Aufruf von `Random(n)` und `Random:Real` macht genau einen Schritt `RandSe
 (Menü, Intelligenzen), je Kandidat Schritte 1–5 rechnen und das Gelände mit dem Bild vergleichen; ohne feste Uhrzeit alle 2³²
 Stände sind zu viele – dann zuerst Panzer-x und Geländehöhe am Rand als Filter.
 
-## 5. Schuss (Teil 2, offen)
+## 5. Schuss der ballistischen Waffen `O4:01B7` (`BOMB.OVR 0x10EBC`)
+
+Teil 2 bis auf Krater, Explosionsbild, Erdrutsch und Fallen (§5.6) fertig. Waffe = Satz +24h (Index in `ItemCatalog.WeaponTable`),
+Lenkung +26h (0 keine, 1 Herb, 2 Vick, 3 beide), Ziel der Lenkung +28h.
+
+### 5.1 Auswahl und Abschuss (Q1, Q2)
+
+Nach der Eingabe des Zugs (`O7[3]` = `O7:040C`, Teil 3) wählt `O4:44A7` nach der Waffe: {0..4, 6, 8..17} → **`O4:01B7`**,
+5 (Laser) → `O4:3426`, 7 (MIRV) → `O4:13D4` (Q1). `O4:01B7`: Bestand der Waffe (+2Eh + 2·Waffe) − 1, bei Lenkung 1 oder 3 Herb
+(+2Ah) − 1, bei 2 oder 3 Vick (+2Ch) − 1; dann **`Random:Real` < 0,2 → `O10:0000(1, 0, Schütze)`**: jeder Schuss kostet mit
+20 % einen Punkt (Q2, Schaden §5.5).
+
+### 5.2 Startwerte (Q3, Q14)
+
+a = Rohrwinkel +1Dh (Grad), r = Richtung +1Fh (±1), P = Kraft +1Bh, (x_P, y_P) = Panzer (+0Fh, +11h); alle Rechnungen Real48:
+
+```text
+x  = x_P + cos(a°) · 10 · r          vx = (P / 50) · cos(a°) · r
+y  = y_P − sin(a°) · 10              vy = (P / 50) · (−sin(a°))
+```
+
+Grad → Bogen über `0DBD:00D9` (x / 180 · π, π = `82 21 A2 DA 0F 49`); `cos` = `12CE:12EE` (Sin(π/2 − x)), `sin` = `12CE:1301`
+(TP-6-Laufzeit). Für ganze Grad gibt es zusätzlich eine Tabelle `0B25:0000` (Sin) / `0B25:005A` (Cos = Sin(90 − a)) mit 91
+Real48-Werten bei `0B25:00F9` (benutzt vom Repulser) (Q14). Damit ist `re-grundlagen` §8 Nr. 6 beantwortet: `0B25` wird zur
+Laufzeit gebraucht.
+
+### 5.3 Flug (Q4, Q5)
+
+SS = Option `SS` (`DS:E8CA`, Teilschritte je Tick); Zähler t zählt Teilschritte, nach SS Teilschritten ein Tick. Je Teilschritt
+in dieser Reihenfolge (Q4):
+
+```text
+x  := x  + vx / SS
+y  := y  + vy / SS
+vy := vy + 0.1 / SS                   { Schwerkraft }
+vx := vx + (Wind / 5000) / SS         { Wind = DS:E8A2 }
+ix := Trunc(x); iy := Trunc(y)
+```
+
+Danach: **Repulser** (Q5) – hat ein lebender Panzer Repulser (+5Ah > 0), wirkt jeder solche Panzer im Abstand |dx|, |dy| ≤ 40
+(der Schütze erst, wenn der Schuss sein ±40-Feld einmal verlassen hat): d² = dx² + dy² ≤ 1600 → f = −600 / (d² · SS), Winkel
+w = Trunc(ArcTan(dy/dx) in Grad) (+180 bei dx < 0; dx = 0: 90 bzw. 270), vx += Cos(w)·f, vy −= Sin(w)·f (Tabellenwerte); als
+Effekt eine Linie Panzer–Schuss Farbe 14, die gleich wieder aus dem Puffer `DS:E5BC` gelöscht wird. Lenkung (+26h > 0) greift
+hier ebenfalls ein (`O4:0A37`, nicht ausgewertet `[APPROX]`). Ton: `Sound(600 − 2·iy)` bei Fluggeräusch und Ton an. Zeichnen:
+alten Punkt aus dem Hintergrundpuffer herstellen (`0431:040F`), bei Spur einen Punkt Farbe 100 − Spieler (`0431:056D`; die Farben
+90..99 setzt `O4:0541` auf 32 div Farbteiler +60h, +62h, +64h), neuen Punkt `0431:03C3`; Marken auf dem Rahmen (x bei y = 29 und 191, y bei
+x = 9 und 311, Farbe 13), auch wenn der Schuss außerhalb des Bilds fliegt (Q15).
+
+### 5.4 Wände, Treffer, Ende (Q6–Q9)
+
+| Wand (`DS:47EC`) | Regel | Beleg |
+|---|---|---|
+| 1–3 (Sticky, Elastic, Accel) | ix ≤ 10 und vx < 0 oder ix ≥ 310 und vx > 0: vx := −vx · F, vy := vy · F; iy ≤ 30 und vy < 0: vy := −vy · F, vx := vx · F; iy ≥ 188 und vy > 0: ebenso, und bei \|vy\| < 0,1 Ende mit Einschlag (F aus §3.1) | Q6 |
+| 4 (Warp) | ix ≤ 10: x + 300; ix ≥ 310: x − 300 | Q7 |
+| 0 (keine) | ix > 310, vx > 1, Wind > 0, ohne Lenkung → y := 300; ix < 10, **vx < 1**, Wind < 0, ohne Lenkung → y := 300 (`[ORIGINAL]` die linke Bedingung ist schwächer als die rechte) | Q7 |
+
+Treffertest nur für 11 < ix < 309 und 33 < iy < 187 (Q9): Pixel (ix + dx, iy + dy) mit |dx| + |dy| ≤ 1 vom Bildschirm; Farbe 2 →
+Gelände (`DS:47DE` = 2; Ende, außer eine Sonderregel mit Kraft und Tickzähler, `O4:0D8A`, `[APPROX]` nicht ausgewertet);
+Farbe 20..29 → Panzer (`DS:47DE` = Farbe, Ende), bei Waffe 12..16 kein Ende, sondern vy := −vy · 1,2 und Lenkung aus.
+
+Ende (Q8): mehr als 1000 Ticks; bei Wand 0 oder 4: iy < −5000 (**ohne** Einschlag) oder iy ≥ 190; |vx| > 30 oder |vy| > 30.
+Danach Rahmenmarken löschen, Treffer auf einen Panzer eines anderen Teams zählt beim Schützen +6Ch + 1, Einschlag `O6[0]` =
+`O6:00E0(DS:47DE, y, x, Schütze)`.
+
+### 5.5 Einschlag und Schaden (Q10–Q12)
+
+- **Lead Ball (Waffe 0)** hat **keinen Krater**: nur bei Panzerfarbe `O10:0000(5, 0, getroffener Satz)`, und ist das Team ein
+  anderes, erhält der Schütze 10 Punkte je verlorener Energie (`O10:018B`, +13h) (Q10).
+- **Schaden** `O10:0000(d, k, Satz)` (Q11): Abwehr k (+52h + 4k, LongInt; 0 Schild, 1 Inertia, 2 Repulser) −= d; ist sie danach
+  negativ, geht der Rest von der Energie +21h ab (nicht unter 0); bei k ≠ 1 und Repulser > 0: `Random:Real` < Rest / 40 →
+  Repulser − 1; Abwehr k := 0. Rückgabe: verlorene Energie.
+- **Explosion** für Waffen {1, 2, 3, 4, 7, 11}: Radius `DS:47D8` = 10 (1), 15 (2, 7), 30 (3), 60 (4), 2 (11); Palette ab Farbe
+  130 als Verlauf in 63 div Radius Stufen, Mittelpunkt (Trunc(x − 11), Trunc(y − 31)) im Fenster 11..309 × 31..189, Ringe mit
+  `0CC8:0351` und Farbe 130 + i, Ton `Random(500)` + 500 je Ring (Q12). Die übrigen Waffen (Dirt, CRI, Sonic) ab `O6:084E`.
+
+### 5.6 Offen in Teil 2
+
+Krater und Schaden durch Explosion (`O6:0522`–`084E`: Abstand `0DBD:008F`, Vergleich mit Radius · 1,5 und Radius · 1,8 −
+Abstand), Dirt-Waffen, **Erdrutsch** `0431:0496` (aufgerufen von `O7:03C1`, wenn `Random:Real` · 100 ≤ Crumble %, Q13),
+**Fallen** der Panzer `O7:0020` (`DS:E8B8`, Verzögerung `TS`/`FS`), Explosionen beim Tod `O5[0..5]` (`Random(7)`), Laser und MIRV.
 
 ## 6. Zug, Kopfzeile, Eingaben (Teil 3, offen)
 
@@ -186,3 +267,6 @@ Stände sind zu viele – dann zuerst Panzer-x und Geländehöhe am Rand als Fil
    Zufallsstand.
 2. Wirkung von `0C79:0428` (Richtung der Rotation): zwei Bilder desselben Hintergrunds im Abstand weniger Takte.
 3. Gelände bitgleich: ein Rundenbeginn je Spielerzahl 2 und 10 (Randbreite 60 bzw. 4) mit fester Uhrzeit.
+4. Flugbahn Lead Ball: je Wandart ein Schuss mit **Spur an**, notiert Winkel, Kraft, Wind (Kopfzeile) und `SS`; Bild nach dem
+   Schuss zeigt die Spur pixelgenau (§5.3). Dazu einmal Wand 0 mit Schuss nach links bei Wind < 0 (Randregel §5.4).
+5. Rückstoß (§5.1): Energie des Schützen vor und nach dem Schuss in der Panzerinfo (`O9`), mehrere Schüsse.
