@@ -156,7 +156,9 @@ Leitstelle nach Welle 1 aus `analyse/runde.md`; die Abnahmen hier gelten als Rah
 
 ### Status real48
 
-- noch nicht begonnen.
+- 12.11.2026, Claude Code (Opus 5.5), PR #93: Teile 1–3 fertig, wartet auf Erstreview. Probe
+  `tools/reverse-engineering/real48.py` (8086-Emulator der Originalroutinen), Abgleich je Operation 20.000 Fälle;
+  Befund: `Randomize` legt CX ins untere Wort (Desktop-Fassung korrigiert). Bericht [analyse/real48.md](analyse/real48.md).
 
 ### Status re-runde
 
