@@ -79,10 +79,10 @@ gepushte Stand; der Nachfolger schreibt zuerst einen Übernahmekommentar („üb
      die erfolglose Codesuche). Ohne Beleg höchstens P3 „Verdacht“. Widerspricht ein Fixlauf mit eigenem Beleg: Label
      `beleg-strittig`, **keine** Nachprüfung für diesen Punkt; die Leitstelle führt beide Belege aus und entscheidet, nur wenn das
      nicht gelingt, gibt es eine Nachprüfung allein dieses Punkts.
-  8. **Verkettung und Labels:** Der Fixlauf legt bei behobenem P0/P1 selbst die Nachprüfung als geplanten
-     Lauf an (Kurzaufruf aus `review-anfrage.md`, Modell nach „Modellwahl“, etwa 5 Minuten später, vorher `list_triggers` auf
-     eine ausstehende Nachprüfung dieses PRs). Lehnt die Freigabe `create_trigger` ab: `spur-wartet`, Prompt im
-     Übergabekommentar (wie bei Fortsetzungen). Die Leitstelle wartet auf Labels bzw. Review-PRs, nicht auf Kommentare, legt
+  8. **Verkettung und Labels:** Geplante Aufgaben legt **nur die Leitstelle** an (Nutzer 11. und 12.11.2026). Der Fixlauf
+     setzt bei behobenem P0/P1 `spur-wartet` und schreibt „Nachprüfung anlegen – Leitstelle“ mit fertigem Kurzaufruf aus
+     `review-anfrage.md` (Delta alter..neuer Head, nur diese Befunde) und Modell nach „Modellwahl“ in die Übergabe; die
+     Leitstelle legt die Nachprüfung an (vorher `list_triggers` auf eine ausstehende Nachprüfung dieses PRs). Die Leitstelle wartet auf Labels bzw. Review-PRs, nicht auf Kommentare, legt
      nach `review-nein` Fixläufe an und merged nach §6. **Wer ein Label abarbeitet, entfernt es:**
 
      | Label | gesetzt von, wann | entfernt von, wann |
@@ -90,7 +90,7 @@ gepushte Stand; der Nachfolger schreibt zuerst einen Übernahmekommentar („üb
      | `review-ja` / `review-nein` | jedes Review am geprüften PR (das andere entfernen) | gegenseitig durch das nächste Review; `review-nein` der Fixlauf mit dem Push des neuen Heads |
      | `leitstelle-delta` | Fixlauf, der nur P2/P3 behebt, und Fixlauf ohne Befund (nur Rebase/Planpflicht) | Leitstelle nach der Delta-Prüfung |
      | `beleg-strittig` | Fixlauf, der einem belegten Befund mit eigenem Beleg widerspricht | Leitstelle nach ihrer Entscheidung |
-     | `spur-wartet` | Lauf endet und braucht die Leitstelle (Teile offen → Fortsetzung anlegen, Zugriff oder Teil blockiert, Kettenende, Freigabe `create_trigger` abgelehnt, laufender Fremdlauf) | Leitstelle nach Anlegen des Laufs bzw. Entscheidung; wartet der Punkt auf den Nutzer, sobald sie ihn dem Nutzer vorgelegt und das im PR vermerkt hat |
+     | `spur-wartet` | Lauf endet und braucht die Leitstelle (Teile offen → Fortsetzung anlegen, Zugriff oder Teil blockiert, Kettenende, Nachprüfung anlegen, laufender Fremdlauf) | Leitstelle nach Anlegen des Laufs bzw. Entscheidung; wartet der Punkt auf den Nutzer, sobald sie ihn dem Nutzer vorgelegt und das im PR vermerkt hat |
 
      Reviews ohne Netz (ChatGPT/Codex) setzen kein Label; dann wartet die Leitstelle auf den Review-PR (`review/*`) und setzt das
      Label beim Auswerten ([anhang.md](anhang.md) D).
