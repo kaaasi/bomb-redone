@@ -461,3 +461,208 @@ def q15(R, g, a):
         R.seq(g, a, "O6", 0x024D, 0x02CA, [r"mov ax,0xb$", r"mov ax,0x1f$", r"call 0xe26:0xf93$",
                                            r"call 0x12ce:0x11bc$", r"call 0x12ce:0x11bc$"]),
         R.real_at(g, a, "O6", 0x0273, 11.0), R.real_at(g, a, "O6", 0x0292, 31.0))
+
+
+# ---- 5.6 Impact, crater, landslide, falling, death, lightning, round end ------------------------------------------
+
+SOUND = r"cmp byte \[0xe8b3\],0x0$"
+DELAY_ES = r"push word \[0xe8c6\]$"
+DAMAGE = r"call 0xb20:0x20$"
+POINTS = r"call 0xb20:0x34$"
+
+
+@finding("K1", "Explosion O6:00E0: je Ring nur bei Ton Random(500)+500, drei Ellipsen 0CC8:0351 Farbe 130+i; dann drei Palettenläufe mit Delay(ES)")
+def k1(R, g, a):
+    return R.seq(g, a, "O6", 0x02CA, 0x0522, [
+        SOUND, imm(0x1f4), RND, r"add ax,0x1f4$", r"call 0x11f8:0x2c7$", r"add ax,0x82$", r"call 0xcc8:0x351$",
+        r"call 0xcc8:0x351$", r"call 0xcc8:0x351$",
+        SOUND, imm(0x1f4), RND, r"add ax,0xfa$", r"call far \[0xe8f2\]$", DELAY_ES,
+        SOUND, imm(0x1f4), RND, r"add ax,0x3$", r"call far \[0xe8f2\]$", DELAY_ES,
+        SOUND, imm(0xfa), RND, r"add ax,0x3$", r"call far \[0xe8f2\]$", DELAY_ES, r"call 0x11f8:0x2f4$"])
+
+
+@finding("K2", "Krater: Radius 0..R je drei Ellipsen (x±1, x) mit 0CC8:0687 aus dem Hintergrundpuffer DS:E5C0 (Gelände wird Hintergrund)")
+def k2(R, g, a):
+    return R.all_of(
+        R.seq(g, a, "O6", 0x0522, 0x058E, [r"mov ax,\[0x47d8\]$", r"inc ax$", r"push word \[0xe5c0\]$",
+                                           r"call 0xcc8:0x687$", r"dec ax$", r"push word \[0xe5c0\]$",
+                                           r"call 0xcc8:0x687$", r"push word \[0xe5c0\]$", r"call 0xcc8:0x687$"]),
+        R.seq(g, a, "0CC8", 0x0687, 0x0760, [r"mov ax,\[bp\+0xc\]$", r"mul ax$", r"mov ax,\[bp\+0xa\]$", r"mul ax$",
+                                             r"mov ax,0x140$"]))
+
+
+@finding("K3", "Volltreffer einer Sprengwaffe (Farbe 20..29): 200 Schaden am getroffenen Satz, Schütze 10 Punkte je Energie bei anderem Team")
+def k3(R, g, a):
+    return R.seq(g, a, "O6", 0x058E, 0x05FC, [
+        r"cmp word \[bp\+0x6\],byte \+0x14$", r"cmp word \[bp\+0x6\],byte \+0x1d$", r"mov word \[bp-0x14\],0xc8$",
+        DAMAGE, r"mov dx,0xa$", r"mov ax,\[di\+0x4094\]$", r"cmp ax,cx$", POINTS])
+
+
+@finding("K4", "Explosionsschaden je lebendem Satz: d = Sqrt(dx²+dy²); d ≤ 1,5R: +Trunc(1,8R−d); d < R: +10+2·Trunc(1,8R−d); d < 0,7R: +150")
+def k4(R, g, a):
+    return R.all_of(
+        R.seq(g, a, "O6", 0x0654, 0x084B, [
+            r"cmp byte \[di\+0x4051\],0x0$", r"mov ax,\[di\+0x403d\]$", r"mov ax,\[di\+0x403f\]$", r"call 0xdbd:0x8f$",
+            r"mov ax,\[0x47d8\]$", r"call 0x12ce:0x11c8$", RCMP, r"jc 0x75e$", r"call 0x12ce:0x11c8$",
+            r"call 0x12ce:0x11bc$", r"call 0x12ce:0x11e0$", r"add ax,cx$", RCMP, r"jna 0x7bd$", r"call 0x12ce:0x11bc$",
+            r"call 0x12ce:0x11e0$", r"mov cx,0x2$", r"call 0x12ce:0xa9d$", r"add ax,0xa$", RCMP, r"jna 0x7ed$",
+            r"add ax,0x96$", r"mov al,0x0$", DAMAGE, r"mov dx,0xa$", POINTS]),
+        R.real_at(g, a, "O6", 0x0708, 1.5), R.real_at(g, a, "O6", 0x072E, 1.8), R.real_at(g, a, "O6", 0x0780, 1.8),
+        R.real_at(g, a, "O6", 0x07C6, 0.7),
+        R.seq(g, a, "0DBD", 0x008F, 0x00D9, [r"call 0x12ce:0x11c2$", r"call 0x12ce:0x11c2$", r"call 0x12ce:0x11b6$",
+                                             r"call 0x12ce:0x128f$"]),
+        R.seq(g, a, "12CE", 0x11C2, 0x11CE, [r"mov cx,ax$", r"mov si,bx$", r"mov di,dx$", r"call 0xf75$"]))
+
+
+@finding("K5", "CRI {5..10}: Panzer → Random(6·Waffe)+1 Schaden; Gelände → Äste 4/4/8/8/20/20, je Schritt Random(Nachbarn), Diagonalen nur {6,8,10}")
+def k5(R, g, a):
+    return R.all_of(
+        R.seq(g, a, "O6", 0x084E, 0x0E4A, [
+            r"mov di,0x20$", r"call 0x12ce:0xe02$", r"mov di,0x40$", r"call 0x12ce:0xe02$", r"shl ax,1$", r"shl ax,1$",
+            r"add ax,si$", RND, r"inc ax$", DAMAGE, POINTS, r"mov word \[bp-0x2\],0x3e8$", r"cmp word \[bp-0x2\],0x7530$",
+            r"cmp word \[bp\+0x6\],byte \+0x2$", r"mov word \[0x47d8\],0x4$", r"mov word \[0x47d8\],0x4$",
+            r"mov word \[0x47d8\],0x8$", r"mov word \[0x47d8\],0x8$", r"mov word \[0x47d8\],0x14$",
+            r"mov word \[0x47d8\],0x14$", r"call 0xcc8:0xbff$", r"cmp al,0x2$", r"mov \[di-0x17e0\],ax$",
+            r"mov \[di-0x17de\],ax$", r"mov di,0x60$", r"call 0x12ce:0xe02$", r"push word \[bp-0x6\]$", RND, r"inc ax$",
+            SOUND, imm(0x1f4), RND, r"push word \[0xe5c0\]$", r"call 0xcc8:0xbd8$", r"cmp word \[0x474c\],byte \+0x15$",
+            r"mov \[0x47d8\],ax$", r"call 0x11f8:0x2f4$"]),
+        set_is(R, g, a, "O6", 0x0020, [5, 6, 7, 8, 9, 10]), set_is(R, g, a, "O6", 0x0040, list(range(20, 30))),
+        set_is(R, g, a, "O6", 0x0060, [6, 8, 10]))
+
+
+@finding("K6", "Sonic Blaster 12: 2 × 100 Takte Farbe 19 = (Random(64),0,0), im zweiten Farbe 2 = 3 × Random(32)+32; dann Farbe 2 = (0,42,0), Erdrutsch")
+def k6(R, g, a):
+    return R.all_of(
+        R.seq(g, a, "O6", 0x0E4A, 0x0FBA, [
+            r"mov di,0x80$", r"call 0x12ce:0xe02$", r"call 0x431:0x3c3$", r"mov ax,0x13$", imm(0x40), RND,
+            r"call far \[0xe8f6\]$", SOUND, imm(0x3e8), RND, r"add ax,0xbb8$", DELAY_ES, r"cmp word \[bp-0x2\],byte \+0x64$",
+            r"mov ax,0x13$", imm(0x40), RND, r"call far \[0xe8f6\]$", r"mov ax,0x2$", imm(0x20), RND, r"add ax,0x20$",
+            imm(0x20), RND, r"add ax,0x20$", imm(0x20), RND, r"add ax,0x20$", r"call far \[0xe8f6\]$", SOUND, imm(0x3e8),
+            RND, r"add ax,0xdac$", DELAY_ES, r"call 0x431:0x40f$", r"mov ax,0x13$", r"mov ax,0x3f$",
+            r"call far \[0xe8f6\]$", r"mov ax,0x2$", r"mov ax,0x2a$", r"call far \[0xe8f6\]$", r"push word \[0xdfa2\]$",
+            r"call 0x431:0x496$"]),
+        set_is(R, g, a, "O6", 0x0080, [12]))
+
+
+@finding("K7", "Dirt 13..16: Radius 10/15/30/60, Farbe 2, je i = 0..R Kreise 0E26:11EA um (x+1, x−1, x) – Erde, kein Schaden, kein Zufall")
+def k7(R, g, a):
+    return R.all_of(
+        R.seq(g, a, "O6", 0x0FBA, 0x117B, [
+            r"mov di,0xa0$", r"call 0x12ce:0xe02$", r"mov word \[0x47d8\],0xa$", r"mov word \[0x47d8\],0xf$",
+            r"mov word \[0x47d8\],0x1e$", r"mov word \[0x47d8\],0x3c$", r"mov ax,0x2$", r"call 0xe26:0x1dc2$",
+            r"call 0x12ce:0x11b6$", r"call 0xe26:0x11ea$", r"call 0x12ce:0x11bc$", r"call 0xe26:0x11ea$",
+            r"call 0xe26:0x11ea$"]),
+        set_is(R, g, a, "O6", 0x00A0, [13, 14, 15, 16]))
+
+
+@finding("K8", "Xplosive Dirt 17: m = Random(100)+300, k = Random(8)+3; Ring i, Korn j: r = Random(20i), x += Trunc(Random(r+1) − r/2), y − r + 2")
+def k8(R, g, a):
+    return R.all_of(
+        R.seq(g, a, "O6", 0x117B, 0x14BF, [
+            r"mov di,0xc0$", r"call 0x12ce:0xe02$", imm(0x64), RND, r"add ax,0x12c$", imm(0x8), RND, r"add ax,0x3$",
+            r"mov ax,0x14$", r"mul word \[bp-0x2\]$", RND, r"mov \[di-0x6554\],bx$", r"call 0x12ce:0x11ce$", r"inc ax$",
+            RND, r"call 0x12ce:0x11bc$", r"mov \[di-0x6556\],bx$", r"add ax,0x2$", r"mov \[di-0x6554\],bx$",
+            r"mov ax,0x2$", r"call 0xe26:0x1fe4$", SOUND, imm(0xc8), RND, r"mov ax,0x64$", r"call 0x11f8:0x2c7$",
+            r"mov ax,\[0xe8a4\]$", r"shl ax,1$", RREAL, r"call 0x12ce:0x11c8$", RCMP, r"jnc 0x14bf$", r"call 0x431:0x496$"]),
+        R.real_at(g, a, "O6", 0x127F, 2.0), R.real_at(g, a, "O6", 0x1493, 100.0),
+        set_is(R, g, a, "O6", 0x00C0, [17]))
+
+
+@finding("K9", "Erdrutsch 0431:0496: Bild rückwärts nach Farbe 2 absuchen, Pixel darunter 0 oder 30..99 → eine Zeile tiefer; Liste bis alle stehen")
+def k9(R, g, a):
+    return R.seq(g, a, "0431", 0x0496, 0x056D, [
+        r"mov cx,0xa$", r"rep stosw$", r"mov ax,0xa000$", r"mov di,0xfa00$", r"std$", r"mov ax,0x2$", r"repne scasb$",
+        r"cmp byte \[es:di\+0x141\],0x0$", r"cmp byte \[es:di\+0x141\],0x1e$", r"cmp byte \[es:di\+0x141\],0x63$",
+        r"mov ax,0x140$", r"mov al,0x2$", r"mov \[es:di\+0x140\],al$", r"mov al,\[di\]$", r"mov \[es:di\],al$",
+        r"mov word \[si\],0xffff$", r"repe scasw$", r"mov al,\[es:di\+0x140\]$", r"cmp al,0x0$", r"cmp al,0x1e$",
+        r"cmp al,0x63$", r"mov word \[si\],0x0$", r"mov \[es:di\+0x140\],al$", r"add di,0x140$", r"retf 0x8$"])
+
+
+@finding("K10", "Fallen O7:0020: steht, wenn ein Pixel (x−3..x+3, y+1) oder beide (x±4, y+1) ∈ {2,13}; je Zeile Random(3)+1 Schaden an Inertia (k=1), Delay(FS)")
+def k10(R, g, a):
+    return R.all_of(
+        R.seq(g, a, "O7", 0x0020, 0x0344, [
+            r"call 0x364$", r"mov al,\[di\+0x4051\]$",
+            r"mov word \[0x4742\],0xfffd$", r"call 0xcc8:0xbff$", r"call 0x12ce:0xe02$", r"cmp word \[0x4742\],byte \+0x3$",
+            r"add ax,0x4$", r"call 0xcc8:0xbff$", r"sub ax,0x4$", r"call 0xcc8:0xbff$", r"call 0x12ce:0x12ee$",
+            r"call 0x12ce:0x1301$", r"call 0xcc8:0xac0$", r"add ax,0x13$", r"call 0x431:0x5ed$", r"call 0xb20:0x2a$",
+            r"inc word \[di\+0x403f\]$", r"add ax,0x4$", r"dec word \[di\+0x403d\]$", r"sub ax,0x4$",
+            r"inc word \[di\+0x403d\]$", r"mov word \[0x4742\],0xfffc$", r"mov byte \[bp-0x2\],0x0$",
+            r"cmp word \[0x4742\],byte \+0x4$", imm(0x3), RND, r"inc ax$", r"mov al,0x1$", DAMAGE,
+            r"push word \[0xe8c8\]$", r"call 0x11f8:0x29c$", r"call 0x431:0x685$", r"call 0x431:0x7ba$"]),
+        R.real_at(g, a, "O7", 0x0156, 8.0), set_is(R, g, a, "O7", 0x0000, [2, 13]))
+
+
+@finding("K11", "Nach dem Schuss O4:44A7: alle Panzer neu, Crumble > 0 → O7:03C1, Fallen an → O7:0020; Schussprotokoll DS:4A80 + 7DAh·i")
+def k11(R, g, a):
+    return R.all_of(
+        R.seq(g, a, "O4", 0x49CB, 0x4B57, [
+            r"call 0x431:0x7ba$", r"cmp word \[0xe8a4\],byte \+0x0$", r"jng 0x49ff$", r"call 0xb16:0x2a$",
+            r"cmp byte \[0xe8b8\],0x0$", r"call 0xb16:0x20$", r"mov ax,\[0x4796\]$", RCMP, r"mov word \[di\+0x4a86\],0x7fff$",
+            r"mov \[di\+0x4a88\],bx$", r"mov \[di\+0x4a84\],bx$", r"mov \[di\+0x4a82\],bx$", r"mov \[di\+0x4a80\],bx$",
+            r"call 0x0$"]),
+        R.seq(g, a, "O7", 0x0364, 0x03C1, [r"call 0xcc8:0x31$", r"call 0xcc8:0x31$", r"mov al,\[0x47ec\]$",
+                                           r"call 0x12ce:0xe02$", r"mov ax,0xbd$", r"mov ax,0x135$", r"mov ax,0xbd$",
+                                           r"mov al,0x2$", r"call 0xcc8:0x9e4$"]),
+        set_is(R, g, a, "O7", 0x0344, [1, 2, 3]))
+
+
+@finding("K12", "Tod: Energie ≤ 0 → +23h = 0, Name, Random(7) → O5[0,1,2,1,3,4,5]; Schütze +1500 und +6Eh+1 (anderes Team) bzw. −1000; Erdrutsch, Fallen")
+def k12(R, g, a):
+    return R.seq(g, a, "O4", 0x4B57, 0x4D67, [
+        r"mov byte \[0x480f\],0x0$", r"cmp word \[di\+0x404f\],byte \+0x0$", r"cmp byte \[di\+0x4051\],0x0$",
+        r"mov byte \[0x480f\],0x1$", r"mov byte \[di\+0x4051\],0x0$", r"call 0x431:0x7ba$", r"call 0xe26:0x1f12$",
+        imm(0x7), RND, r"call 0xb0f:0x20$", r"call 0xb0f:0x25$", r"call 0xb0f:0x2a$", r"call 0xb0f:0x25$",
+        r"call 0xb0f:0x2f$", r"call 0xb0f:0x34$", r"call 0xb0f:0x39$", r"mov ax,\[di\+0x4094\]$", r"cmp ax,cx$",
+        r"add ax,0x5dc$", r"mov ax,\[di\+0x409c\]$", r"inc ax$", r"sub ax,0x3e8$", r"call 0xb16:0x25$",
+        r"call 0xb16:0x2a$", r"cmp byte \[0xe8b8\],0x0$", r"call 0xb16:0x20$"])
+
+
+@finding("K13", "Blitz: ohne Tod und Durchgang > 10 und > Random(100) → O6:14C5(0); Zickzack Random(300)+10 oben/unten, Random(7)−3, Random(8)+1 Blitze")
+def k13(R, g, a):
+    return R.all_of(
+        R.seq(g, a, "O4", 0x4D67, 0x4DAE, [r"cmp byte \[0x480f\],0x0$", r"cmp word \[0x47ea\],byte \+0xa$", imm(0x64),
+                                           RND, r"mov ax,\[0x47ea\]$", r"call 0xb13:0x25$", r"mov byte \[0x480f\],0x1$",
+                                           r"jmp 0x4b57$"]),
+        R.seq(g, a, "O6", 0x14C5, 0x18CC, [
+            r"mov ax,0xc8$", r"call far \[0xe8f6\]$", r"mov ax,0xc9$", r"mov ax,0x32$", r"call far \[0xe8f6\]$",
+            r"mov ax,0x12c$", RND, r"add ax,0xa$", r"mov ax,0x12c$", RND, r"add ax,0xa$", r"call 0x12ce:0x11ce$",
+            r"mov word \[bp-0x2\],0x1f$", imm(0x7), RND, r"sub ax,0x3$", r"sub ax,0xbd$", r"call 0x12ce:0x11ce$",
+            r"call 0x12ce:0x11c8$", r"cmp word \[bp-0x2\],0xbd$", imm(0x8), RND, r"inc ax$", r"call 0xcc8:0xbff$",
+            r"cmp word \[0x47de\],byte \+0x14$", r"cmp word \[0x47de\],byte \+0x1d$", r"mov ax,0x3$", DAMAGE,
+            r"mov al,0xc8$", r"call 0xcc8:0xbb6$", r"mov al,0xc9$", r"call 0xcc8:0xbb6$", r"mov al,0xc9$",
+            r"call 0xcc8:0xbb6$", imm(0x7), RND, r"call 0xcc8:0xbd8$", SOUND, imm(0x258), RND, r"add ax,0x258$",
+            r"mov cx,0x3$", r"idiv cx$", r"mov \[0x4052\],ax$", r"mov word \[0x4052\],0xb$", r"call 0xe0$",
+            r"call 0x431:0x7ba$", r"cmp word \[0xe8a4\],byte \+0x0$", r"call 0xb16:0x2a$", r"call 0xb16:0x20$"]),
+        R.real_at(g, a, "O6", 0x1543, 189.0))
+
+
+@finding("K14", "Rundenende: alle Lebenden im selben Team (+66h) → DS:47E0 = Team, 0431:0000, je Satz +68h += 100 − Energie (außerhalb 0..100: 100)")
+def k14(R, g, a):
+    return R.seq(g, a, "O4", 0x4DAE, 0x4EF3, [
+        r"mov byte \[0x4813\],0x1$", r"cmp byte \[di\+0x4051\],0x0$", r"mov ax,\[di\+0x4094\]$", r"mov \[0x4744\],ax$",
+        r"cmp byte \[di\+0x4051\],0x0$", r"mov ax,\[di\+0x4094\]$", r"mov byte \[0x4813\],0x0$", r"mov \[0x47e0\],ax$",
+        r"mov ax,\[0x4744\]$", r"mov \[0x47e0\],ax$", r"jmp 0x4770$", r"call 0x431:0x0$", r"mov ax,0x64$", r"sub ax,dx$",
+        r"cmp word \[di\+0x404f\],byte \+0x64$", r"mov word \[0x4742\],0x64$", r"mov ax,\[di\+0x4096\]$",
+        r"mov \[di\+0x4096\],cx$", r"call 0xc48:0x269$"])
+
+
+@finding("K15", "Todesexplosion O5:29A0: Satz → Satz 0, Random(10) → k = 1 (0–1), 2 (2–4), 3 (5–7), 4 (8–9); Waffen 1..k nacheinander über O6:00E0")
+def k15(R, g, a):
+    return R.seq(g, a, "O5", 0x29A0, 0x2B40, [
+        imm(0x2), RND, r"call 0x431:0x7ba$", r"call 0xb20:0x25$", r"cmp word \[bp-0xe\],byte \+0x64$",
+        r"call 0xb20:0x25$", r"mov di,0x402e$", r"mov ax,0x74$", r"call 0x12ce:0xa81$", imm(0xa), RND,
+        r"mov word \[0x474c\],0x1$", r"mov word \[0x474c\],0x2$", r"mov word \[0x474c\],0x3$", r"mov word \[0x474c\],0x4$",
+        r"mov \[0x4052\],ax$", r"mov ax,\[0x403d\]$", r"mov ax,\[0x403f\]$", r"call 0xb13:0x20$"])
+
+
+@finding("K16", "Schaden der Todesexplosionen: O5:001F Random(10)+5, O5:1BDE Random(10)+10, O5:09EC/0C6C Random(3)+1 je getroffenem Panzerpixel")
+def k16(R, g, a):
+    hit = [r"cmp word \[0x474c\],byte \+0x14$", r"cmp word \[0x474c\],byte \+0x1d$"]
+    return R.all_of(
+        R.seq(g, a, "O5", 0x039D, 0x03EE, [r"call 0xe26:0x1fcc$"] + hit + [imm(0xa), RND, r"add ax,0x5$", DAMAGE]),
+        R.seq(g, a, "O5", 0x2056, 0x20AB, [r"call 0xe26:0x1fcc$"] + hit + [imm(0xa), RND, r"add ax,0xa$", DAMAGE]),
+        R.seq(g, a, "O5", 0x0A49, 0x0A85, [r"call 0xcc8:0xbff$", imm(0x3), RND, r"inc ax$", DAMAGE]),
+        R.seq(g, a, "O5", 0x0B3A, 0x0B76, [r"call 0xcc8:0xbff$", imm(0x3), RND, r"inc ax$", DAMAGE]),
+        R.seq(g, a, "O5", 0x0CEC, 0x0D2C, [r"call 0xcc8:0xbff$", imm(0x3), RND, r"inc ax$", DAMAGE]),
+        R.seq(g, a, "O5", 0x0D2C, 0x0D40, [imm(0xe), RND]))

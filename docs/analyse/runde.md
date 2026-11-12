@@ -6,11 +6,11 @@ nur im Referenz-Repo (`analyse/re-runde/`, R2-D5 = A). Grundlagen und Adressschr
 [../formate/spielstand.md](../formate/spielstand.md) (Satz i liegt bei `DS:402E + 74h·i`, „+0Fh“ = Feld im Satz).
 
 **Beleg für jede Aussage:** `python3 tools/reverse-engineering/runde.py befunde` prüft die Befunde (Kürzel in Klammern) gegen
-`gamedata/` als Befehlsfolgen der eigenen Disassembly (Ergebnis zum Head: **41 von 41 bestätigt**). Weitere Aufrufe: `… procs`
+`gamedata/` als Befehlsfolgen der eigenen Disassembly (Ergebnis zum Head: **57 von 57 bestätigt**). Weitere Aufrufe: `… procs`
 (Prozeduren mit Aufrufern), `… randoms` (alle 158 Aufrufe von `Random`), `… reals` (Real48-Konstanten), `… listings`
 (annotierte Listings); Ausgabe nur nach `analyse/re-runde/`. Werkzeuge: Python 3, `ndisasm` (Paket `nasm`).
 
-**Stand der Teile:** 1 (Spielfolge, Rundenbeginn, Spielfeld, Zufallsfolge) fertig; 2 (Schuss) bis auf §5.6 fertig; 3 (Zug,
+**Stand der Teile:** 1 (Spielfolge, Rundenbeginn, Spielfeld, Zufallsfolge) fertig; 2 (Schuss) bis auf Laser, MIRV, Lenkung (§5.10) fertig; 3 (Zug,
 Kopfzeile, Eingaben O4/O7/O9) offen; 4 (Listings im Referenz-Repo, Liste §7) mit Stand dieses Laufs.
 
 ## 1. Spielfolge `O3[0]` = `O3:7847` (`BOMB.OVR 0x102D3`)
@@ -169,7 +169,8 @@ Dezimalwert) (P10).
 7. Startspieler: `Random(N)` (+ Wiederholungen) (§2).
 8. Zug: für Menschen kein Zufall bis zum Schuss; Computer `0129` (Teil 3).
 9. Schuss Lead Ball: `Random:Real` (Rückstoß, §5.1); im Flug kein Zufall; bei Volltreffer ggf. `Random:Real` im Schaden (§5.5);
-   nach dem Schuss `Random:Real` für den Erdrutsch (§5.6).
+   Explosionen: `Random` nur bei Ton (§5.6); nach dem Schuss `Random:Real` für den Erdrutsch bei Crumble > 0, je Fallzeile
+   `Random(3)`, je Tod `Random(7)` und `Random:Real`, ab Durchgang 11 `Random(100)` (§5.8, §5.9).
 
 Jeder Aufruf von `Random(n)` und `Random:Real` macht genau einen Schritt `RandSeed := RandSeed · 08088405h + 1`
 (`re-grundlagen` D). **Vorschlag für das Suchwerkzeug (`gelaende`):** nicht die Menüfolge nachbilden, sondern den Stand von
@@ -179,7 +180,7 @@ Stände sind zu viele – dann zuerst Panzer-x und Geländehöhe am Rand als Fil
 
 ## 5. Schuss der ballistischen Waffen `O4:01B7` (`BOMB.OVR 0x10EBC`)
 
-Teil 2 bis auf Krater, Explosionsbild, Erdrutsch und Fallen (§5.6) fertig. Waffe = Satz +24h (Index in `ItemCatalog.WeaponTable`),
+Teil 2 bis auf Laser, MIRV und Lenkung (§5.10) fertig. Waffe = Satz +24h (Index in `ItemCatalog.WeaponTable`),
 Lenkung +26h (0 keine, 1 Herb, 2 Vick, 3 beide), Ziel der Lenkung +28h.
 
 ### 5.1 Auswahl und Abschuss (Q1, Q2)
@@ -250,13 +251,82 @@ Danach Rahmenmarken löschen, Treffer auf einen Panzer eines anderen Teams zähl
   Repulser − 1; Abwehr k := 0. Rückgabe: verlorene Energie.
 - **Explosion** für Waffen {1, 2, 3, 4, 7, 11}: Radius `DS:47D8` = 10 (1), 15 (2, 7), 30 (3), 60 (4), 2 (11); Palette ab Farbe
   130 als Verlauf in 63 div Radius Stufen, Mittelpunkt (Trunc(x − 11), Trunc(y − 31)) im Fenster 11..309 × 31..189, Ringe mit
-  `0CC8:0351` und Farbe 130 + i, Ton `Random(500)` + 500 je Ring (Q12). Die übrigen Waffen (Dirt, CRI, Sonic) ab `O6:084E`.
+  `0CC8:0351` und Farbe 130 + i, Ton `Random(500)` + 500 je Ring **nur bei Ton** (Q12, K1). Die übrigen Waffen §5.7.
 
-### 5.6 Offen in Teil 2
+### 5.6 Explosion, Krater und Schaden (K1–K4)
 
-Krater und Schaden durch Explosion (`O6:0522`–`084E`: Abstand `0DBD:008F`, Vergleich mit Radius · 1,5 und Radius · 1,8 −
-Abstand), Dirt-Waffen, **Erdrutsch** `0431:0496` (aufgerufen von `O7:03C1`, wenn `Random:Real` · 100 ≤ Crumble %, Q13),
-**Fallen** der Panzer `O7:0020` (`DS:E8B8`, Verzögerung `TS`/`FS`), Explosionen beim Tod `O5[0..5]` (`Random(7)`), Laser und MIRV.
+`O6:00E0(Farbe, y, x, Schütze)` (Real-Koordinaten): Lead Ball §5.5; Sprengwaffen {1, 2, 3, 4, 7, 11} mit Radius R (Q12):
+
+1. **Bild** (K1): je Ring i = 0..R bei Ton `Sound(Random(500) + 500)`, drei Ellipsen `0CC8:0351` um (x+1, y), (x−1, y), (x, y)
+   (Fensterkoordinaten, x − 11, y − 31) mit Radius i und Farbe 130 + i. Danach drei Palettenläufe über die Farben 130..130+R
+   (nur Rotanteil, Stufe 63 div R), je Schritt `SetPal` und `Delay(ES)`, bei Ton `Sound(Random(500) + 250)`, `Random(500) + 3`
+   bzw. `Random(250) + 3`. **Ohne Ton keine `Random`-Aufrufe** im Bild.
+2. **Krater** (K2): Ring i = 0..R, je drei Ellipsen `0CC8:0687` an denselben Mittelpunkten, die die Pixel aus dem Hintergrundpuffer
+   `DS:E5C0` kopieren – das Gelände im Kreis wird zum Hintergrund (auch Panzerpixel; neu gezeichnet wird nach dem Schuss).
+3. **Volltreffer** (K3): Farbe 20..29 → `O10:0000(200, 0, Satz Farbe − 19)`, Punkte für den Schützen wie §5.5.
+4. **Flächenschaden** (K4) je lebendem Satz (+23h ≠ 0, auch Schütze und Volltreffer): d = `Sqrt(dx² + dy²)` (`0DBD:008F`,
+   `12CE:11C2` = Sqr, `12CE:128F` = Sqrt `[APPROX]` nach Aufruf) zwischen Panzer (+0Fh, +11h) und Einschlag, S = 0;
+   d ≤ 1,5·R: S += Trunc(1,8·R − d); d < R: S += 10 + 2·Trunc(1,8·R − d); d < 0,7·R: S += 150. Dann `O10:0000(S, 0, Satz)`
+   (Schild zuerst, Q11) und bei anderem Team 10 Punkte je verlorener Energie an den Schützen. `Random:Real` in `O10:0000` nur, wenn
+   die Abwehr negativ wird (Q11).
+
+### 5.7 Übrige Waffen (K5–K8)
+
+| Waffe | Wirkung | Zufall | Beleg |
+|---|---|---|---|
+| CRI {6, 8, 9, 10} (Satz {5..10}) | Panzer getroffen: `Random(6 · Waffe) + 1` Schaden, Sirene 1000→30000→1000 Hz. Gelände: Astzahl R = 4, 4, 8, 8, 20, 20 für Waffe 5..10; Start senkrecht unter dem Einschlag, bis ein Nachbar (oben, unten, links, rechts) Farbe 2 ist; je Durchgang je Ast die Nachbarn mit Farbe 2 sammeln (Richtung 1 oben, 3 rechts, 5 unten, 7 links; Diagonalen 2, 4, 6, 8 nur für {6, 8, 10} – „/D“), eine davon wählen, Ast dorthin, Pixel aus dem Hintergrund (Gelände frisst sich weg); Ast ohne Nachbarn erlischt und übernimmt die Lage des nächsten lebenden Asts; Ende, wenn alle erloschen | je Schritt und Ast `Random(Anzahl) + 1`, bei Ton `Random(500)` | K5 |
+| Sonic Blaster 12 | Schusspunkt, 100 Takte Farbe 19 = (Random(64), 0, 0), 100 Takte zusätzlich Farbe 2 = 3 × (Random(32) + 32), je `Delay(ES)`; danach Farbe 19 = (63, 63, 63), **Farbe 2 = (0, 42, 0)**, Erdrutsch `0431:0496` (§5.8) – sonst kein Schaden | je Takt 1 bzw. 4 `Random`, bei Ton +1 | K6 |
+| Dirt 13..16 | Radius 10 / 15 / 30 / 60, Farbe 2, je i = 0..R drei Kreise `0E26:11EA` (`[APPROX]` Circle) um (x+1, y), (x−1, y), (x, y) – Erdkugel, kein Schaden | keiner | K7 |
+| Xplosive Dirt 17 | m = `Random(100) + 300` Körner je Ring, k = `Random(8) + 3` Ringe; Ring i, Korn j: r = `Random(20·i)`, Korn bei (x + Trunc(Random(r + 1) − r / 2), y − r + 2) im Fenster; alle Körner Farbe 2 (`PutPixel`), bei Ton `Sound(Random(200) + 100·i)`; danach `Random:Real · 100 < 2 · Crumble` → Erdrutsch | wie links | K8 |
+
+### 5.8 Erdrutsch und Fallen (K9, K10)
+
+**Erdrutsch** `0431:0496(Puffer DS:E5C0, Liste DS:DFA2)` (K9), kein Zufall, keine Verzögerung: Bildschirm von Adresse 64000
+rückwärts nach Farbe 2 absuchen; ist das Pixel darunter „Luft“ (0 oder 30..99), wird es Farbe 2, das alte Pixel kommt aus dem
+Hintergrundpuffer und die neue Adresse in die Liste. Danach Durchgänge über die Liste: jedes Pixel rückt eine Zeile tiefer, solange
+darunter Luft ist, sonst fällt es aus der Liste; Ende, wenn alle stehen. Panzer (20..29), Rahmen (13) und andere Farben halten das
+Gelände. Aufruf nach dem Schuss `O7:03C1`: Rahmen neu (`O7:0364`), dann `Random:Real · 100 ≤ Crumble` (Q13).
+
+`O7:0364` zeichnet die Rahmen Farbe 13 und **bei Wand ∉ {1, 2, 3} eine Bodenlinie Farbe 2** (11, 189)–(309, 189) (K11).
+
+**Fallen** `O7:0020` (Option „Fall down“ `DS:E8B8`) (K10), je lebendem Spieler: steht, wenn eines der Pixel (x − 3 .. x + 3, y + 1)
+oder beide Pixel (x ± 4, y + 1) Farbe 2 oder 13 sind. Sonst je Zeile: Rohr mit dem Hintergrund löschen (`0CC8:0AC0` von (x, y) bis
+(x + Trunc(cos a · 8) · r, y − Trunc(sin a · 8))), Panzer zeichnen (`0431:05ED`, Farbe i + 19), y + 1; ist (x + 4, y + 1) fest,
+x − 1; ist (x − 4, y + 1) fest, x + 1 (Abgleiten); **`O10:0000(Random(3) + 1, 1, Satz)`** (Schaden zuerst an Inertia),
+`Delay(FS)`, alten Panzer löschen (`0431:0685`); weiter, bis alle neun Pixel (x − 4 .. x + 4, y + 1) fest sind; dann `0431:07BA`.
+
+### 5.9 Nach dem Schuss: Tod, Blitz, Rundenende (K11–K16)
+
+Reihenfolge in `O4:44A7` nach der Waffe (K11): alle Panzer neu (`0431:07BA`), **Crumble > 0 → `O7:03C1`**, **Fallen an →
+`O7:0020`**, Schussprotokoll des Schützen (`DS:4A80 + 7DAh · Satz + 10 · (+5Eh)`: Rohr, Kraft, x, Einschlag x (≤ 32767) und y;
+für die Computer, Teil 3), `O4:0000`. Dann die **Todesschleife** (K12): je Satz mit Energie ≤ 0 und +23h ≠ 0: +23h = 0, Name in
+der Kopfzeile, **`Random(7)`** wählt die Todesexplosion `O5[0]`, `O5[1]`, `O5[2]`, `O5[1]`, `O5[3]`, `O5[4]`, `O5[5]` (0..6); der
+Spieler am Zug (`DS:47EE`) erhält bei anderem Team **+1500 Punkte und +6Eh + 1**, bei eigenem Team (auch Selbstmord) **−1000**;
+dann `O7:0364`, **`O7:03C1` ohne Prüfung von Crumble** (ein `Random:Real` je Tod) und Fallen. Wiederholen, solange jemand starb.
+
+Gab es im letzten Durchgang keinen Tod und ist der Durchgang `DS:47EA` > 10: **`Random(100)`**, bei Durchgang > Zufallswert
+**Blitz** `O6:14C5(0)` und zurück zur Todesschleife (K13). Blitz: Farben 200 = (63, 63, 63), 201 = (0, 0, 50); oben x₀ =
+`Random(300) + 10`, unten x₁ = `Random(300) + 10`; Bahn y = 31..189 mit o += `Random(7)` − 3 und x(y) = x₀ + Trunc((y − 189) · o / 189
++ y · (x₁ − x₀) / 189); `Random(8) + 1` Blitze, je Blitz die Bahn zeichnen (Farbe 200, daneben 201; Panzerpixel auf der Bahn: 3
+Schaden), dabei die nächste Bahn würfeln, alte Bahn löschen (bei Ton `Random(600) + 600`). Zum Schluss Explosion bei (x₁, 189) mit
+Schütze Satz 0 und Waffe (Anzahl div 3), 0 → 11 (Hand Grenade), 1 → Incinerator, 2 → Mark II; dann Panzer neu, Erdrutsch bei
+Crumble > 0, Fallen.
+
+**Rundenende** (K14): leben nur noch Spieler eines Teams (+66h), ist `DS:47E0` = dieses Team (keiner am Leben: 0) und die Runde zu
+Ende: `0431:0000`, je Satz +68h += 100 − Energie (Energie außerhalb 0..100: 100), Tastatur zurück (`0C48:0269`). Sonst nächster Zug
+ab `O4:4770` (§2).
+
+**Todesexplosionen O5** (K15, K16, Bild nur `[APPROX]` nicht ausgewertet): `O5:001F` und `O5:1BDE` Splitter mit Wind (Wind / 5000),
+Schaden `Random(10) + 5` bzw. `Random(10) + 10` je getroffenem Panzer (`0E26:1FCC`, `[APPROX]` GetPixel); `O5:0DA0` Teilchen über
+`O5:09EC`/`O5:0C6C`, `Random(3) + 1` je getroffenem Panzerpixel; `O5:2662`, `O5:28DE` ohne Schaden; `O5:29A0`: Panzer flackert
+(`Random(2)` = 1 → ohne Verzögerung), Satz wird nach Satz 0 kopiert, `Random(10)` → k = 1 (0–1), 2 (2–4), 3 (5–7), 4 (8–9), dann
+Explosionen der Waffen 1..k nacheinander am Panzer (Schütze Satz 0, also ohne Punkte für einen Spieler). Die Zahl der
+`Random`-Aufrufe der Bilder hängt von Ton, Treffern und Splitterbahnen ab – für das Suchwerkzeug zählt nur die Folge bis zum
+ersten Schuss (§4).
+
+### 5.10 Offen in Teil 2
+
+Laser `O4:3426`, MIRV `O4:13D4`, Lenkung `O4:0A37`, Sonderregel Gelände/Kraft `O4:0D8A`, Bilder `O5` im Einzelnen.
 
 ## 6. Zug, Kopfzeile, Eingaben (Teil 3, offen)
 
