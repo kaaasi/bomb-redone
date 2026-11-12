@@ -666,3 +666,66 @@ def k16(R, g, a):
         R.seq(g, a, "O5", 0x0B3A, 0x0B76, [r"call 0xcc8:0xbff$", imm(0x3), RND, r"inc ax$", DAMAGE]),
         R.seq(g, a, "O5", 0x0CEC, 0x0D2C, [r"call 0xcc8:0xbff$", imm(0x3), RND, r"inc ax$", DAMAGE]),
         R.seq(g, a, "O5", 0x0D2C, 0x0D40, [imm(0xe), RND]))
+
+
+# ---- 5.10 Laser (O4:3426) ---------------------------------------------------------------------------------------
+
+@finding("L1", "Laser: E = 10·Kraft, Richtung a (r > 0) bzw. 180 − a, Random:Real < 0,2 → 1 Schaden am Schützen, Start Rohr · 7, Schritt (cos, −sin)")
+def l1(R, g, a):
+    return R.all_of(
+        R.seq(g, a, "O4", 0x3990, 0x3B17, [
+            r"mov ax,0xa$", r"mul word \[di\+0x4049\]$", r"cmp word \[di\+0x404d\],byte \+0x0$", r"mov ax,\[di\+0x404b\]$",
+            r"mov dx,\[di\+0x404b\]$", r"mov ax,0x5a$", r"sub ax,dx$", r"add ax,0x5a$", RREAL, RCMP, r"jnc 0x3a09$",
+            r"mov ax,0x1$", DAMAGE, r"call 0x12ce:0x12ee$", r"call 0x12ce:0x11c8$", r"mov ax,\[di\+0x404d\]$",
+            r"call 0x12ce:0x11c8$", r"mov ax,\[di\+0x403d\]$", r"call 0x12ce:0x11b6$", r"mov \[0x4796\],ax$",
+            r"call 0x12ce:0x1301$", r"mov ax,\[di\+0x403f\]$", r"call 0x12ce:0x11bc$", r"mov \[0x479c\],ax$",
+            r"call 0x12ce:0x12ee$", r"mov \[0x47a2\],ax$", r"call 0x12ce:0x1301$", r"xor dh,0x80$",
+            r"mov \[0x47a8\],ax$"]),
+        R.real_at(g, a, "O4", 0x39DF, 0.2), R.real_at(g, a, "O4", 0x3A28, 7.0), R.real_at(g, a, "O4", 0x3A99, 7.0))
+
+
+@finding("L2", "Laserschritt: E −10, Farbe 254 = Grau Trunc(E·53/(10P)+10); Gelände: 15 Funken Random(20)·Richtung zurück frei; Panzer: erst +6Ch+1, E −10, 3 Schaden, zurück")
+def l2(R, g, a):
+    return R.all_of(
+        R.seq(g, a, "O4", 0x3B83, 0x40C5, [
+            r"mov ax,0xa$", r"mul word \[di\+0x4049\]$", r"mov ax,0x86$", r"call 0x12ce:0x11ce$", r"call 0x12ce:0x11b6$",
+            r"call 0x12ce:0x11b6$", r"sub word \[bp-0xa\],byte \+0xa$", r"call 0x12ce:0x11c8$", r"call 0x12ce:0x11b6$",
+            r"mov ax,0xfe$", r"call far \[0xe8f6\]$", r"call 0xcc8:0xbff$", r"cmp word \[bp-0x20\],byte \+0x2$",
+            imm(0x14), RND, r"call 0x12ce:0x11bc$", imm(0x14), RND, r"call 0x12ce:0x11bc$", SOUND, r"mov ax,0x1f4$",
+            r"mul word \[0x4742\]$", RND, r"cmp word \[0x477e\],0xfe$", r"call 0xcc8:0xbd8$",
+            r"cmp word \[0x4742\],byte \+0xf$", r"cmp word \[bp-0x20\],byte \+0x13$", r"cmp word \[bp-0x20\],byte \+0x1e$",
+            r"cmp word \[di\+0x404f\],byte \+0x0$", r"inc word \[di\+0x409a\]$", r"sub ax,0xa$",
+            r"cmp word \[di\+0x4082\],byte \+0x0$", r"jmp 0x404e$", imm(0x28), RND, r"mov ax,0x3$", r"mov al,0x0$",
+            DAMAGE, r"call 0x12ce:0x11bc$", r"call 0x12ce:0x11bc$"]),
+        R.seq(g, a, "O4", 0x3BA0, 0x3BA8, [r"mov ax,0x86$", r"xor bx,bx$", r"mov dx,0x5400$"]),
+        (abs(R.real48(0x86, 0, 0x5400) - 53.0) < 1e-9, "Real48 86 00 00 00 00 54 = 53"),
+        R.real_at(g, a, "O4", 0x3C27, 10.0))
+
+
+@finding("L3", "Laserwände: Stick/Elastic/Accel spiegeln bei 11/309/31/189 ohne Faktor, Warp ±300 bei 10/310; sonst Ende am Rand; E ≤ 0 Ende")
+def l3(R, g, a):
+    return R.all_of(
+        R.seq(g, a, "O4", 0x4101, 0x43F0, [
+            r"cmp byte \[0x4814\],0x0$", RCMP, r"xor dh,0x80$", RCMP, r"xor dh,0x80$", RCMP, r"xor dh,0x80$", RCMP,
+            r"xor dh,0x80$", r"jmp 0x43a9$", r"cmp byte \[0x4815\],0x0$", r"call 0x12ce:0x11b6$", r"call 0x12ce:0x11bc$",
+            r"mov byte \[0x4751\],0x1$", r"mov byte \[0x4751\],0x1$", r"mov byte \[0x4751\],0x1$",
+            r"mov byte \[0x4751\],0x1$", r"call 0xcc8:0xbb6$", r"cmp word \[bp-0xa\],byte \+0x0$", r"jmp 0x3bbb$"]),
+        R.real_at(g, a, "O4", 0x4116, 11.0), R.real_at(g, a, "O4", 0x4165, 309.0), R.real_at(g, a, "O4", 0x41B4, 31.0),
+        R.real_at(g, a, "O4", 0x4203, 189.0), R.real_at(g, a, "O4", 0x425C, 10.0), R.real_at(g, a, "O4", 0x4276, 300.0),
+        R.real_at(g, a, "O4", 0x4299, 310.0))
+
+
+# ---- 5.11 MIRV (O4:13D4) ----------------------------------------------------------------------------------------
+
+@finding("M1", "MIRV-Teilung in 5: Muster 0 Random vx, vy += Random:Real·6 − 3; 1 vx += (i−3)·1,75; 2 vy += (i−3)·1,75; 3 und 4 ±1,75 je Teil; Einschlag O6:00E0")
+def m1(R, g, a):
+    return R.all_of(
+        R.seq(g, a, "O4", 0x2F83, 0x3426, [
+            r"mov word \[bp-0xe0\],0x5$", r"cmp word \[bp-0x102\],byte \+0x0$", RREAL, r"call 0x12ce:0x11c8$",
+            r"call 0x12ce:0x11b6$", r"call 0x12ce:0x11bc$", RREAL, r"call 0x12ce:0x11c8$", r"call 0x12ce:0x11b6$",
+            r"call 0x12ce:0x11bc$", r"cmp word \[bp-0x102\],byte \+0x1$", r"sub ax,0x3$", r"call 0x12ce:0x11c8$",
+            r"call 0x12ce:0x11b6$", r"cmp word \[bp-0x102\],byte \+0x2$", r"sub ax,0x3$", r"call 0x12ce:0x11c8$",
+            r"cmp word \[0x4742\],byte \+0x5$", r"cmp word \[bp-0x102\],byte \+0x3$", r"cmp word \[bp-0x102\],byte \+0x4$",
+            r"call 0xb13:0x20$", r"call 0x431:0x7ba$"]),
+        R.real_at(g, a, "O4", 0x3048, 6.0), R.real_at(g, a, "O4", 0x3072, 3.0), R.real_at(g, a, "O4", 0x30FE, 1.75),
+        R.real_at(g, a, "O4", 0x3153, 1.75))

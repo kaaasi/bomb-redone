@@ -6,11 +6,11 @@ nur im Referenz-Repo (`analyse/re-runde/`, R2-D5 = A). Grundlagen und Adressschr
 [../formate/spielstand.md](../formate/spielstand.md) (Satz i liegt bei `DS:402E + 74h·i`, „+0Fh“ = Feld im Satz).
 
 **Beleg für jede Aussage:** `python3 tools/reverse-engineering/runde.py befunde` prüft die Befunde (Kürzel in Klammern) gegen
-`gamedata/` als Befehlsfolgen der eigenen Disassembly (Ergebnis zum Head: **57 von 57 bestätigt**). Weitere Aufrufe: `… procs`
+`gamedata/` als Befehlsfolgen der eigenen Disassembly (Ergebnis zum Head: **61 von 61 bestätigt**). Weitere Aufrufe: `… procs`
 (Prozeduren mit Aufrufern), `… randoms` (alle 158 Aufrufe von `Random`), `… reals` (Real48-Konstanten), `… listings`
 (annotierte Listings); Ausgabe nur nach `analyse/re-runde/`. Werkzeuge: Python 3, `ndisasm` (Paket `nasm`).
 
-**Stand der Teile:** 1 (Spielfolge, Rundenbeginn, Spielfeld, Zufallsfolge) fertig; 2 (Schuss) bis auf Laser, MIRV, Lenkung (§5.10) fertig; 3 (Zug,
+**Stand der Teile:** 1 (Spielfolge, Rundenbeginn, Spielfeld, Zufallsfolge) fertig; 2 (Schuss) bis auf MIRV-Auslöser und Lenkung (§5.12) fertig; 3 (Zug,
 Kopfzeile, Eingaben O4/O7/O9) offen; 4 (Listings im Referenz-Repo, Liste §7) mit Stand dieses Laufs.
 
 ## 1. Spielfolge `O3[0]` = `O3:7847` (`BOMB.OVR 0x102D3`)
@@ -180,7 +180,7 @@ Stände sind zu viele – dann zuerst Panzer-x und Geländehöhe am Rand als Fil
 
 ## 5. Schuss der ballistischen Waffen `O4:01B7` (`BOMB.OVR 0x10EBC`)
 
-Teil 2 bis auf Laser, MIRV und Lenkung (§5.10) fertig. Waffe = Satz +24h (Index in `ItemCatalog.WeaponTable`),
+Teil 2 bis auf MIRV-Auslöser und Lenkung (§5.12) fertig. Waffe = Satz +24h (Index in `ItemCatalog.WeaponTable`),
 Lenkung +26h (0 keine, 1 Herb, 2 Vick, 3 beide), Ziel der Lenkung +28h.
 
 ### 5.1 Auswahl und Abschuss (Q1, Q2)
@@ -221,7 +221,7 @@ Danach: **Repulser** (Q5) – hat ein lebender Panzer Repulser (+5Ah > 0), wirkt
 (der Schütze erst, wenn der Schuss sein ±40-Feld einmal verlassen hat): d² = dx² + dy² ≤ 1600 → f = −600 / (d² · SS), Winkel
 w = Trunc(ArcTan(dy/dx) in Grad) (+180 bei dx < 0; dx = 0: 90 bzw. 270), vx += Cos(w)·f, vy −= Sin(w)·f (Tabellenwerte); als
 Effekt eine Linie Panzer–Schuss Farbe 14, die gleich wieder aus dem Puffer `DS:E5BC` gelöscht wird. Lenkung (+26h > 0) greift
-hier ebenfalls ein (`O4:0A37`, nicht ausgewertet `[APPROX]`). Ton: `Sound(600 − 2·iy)` bei Fluggeräusch und Ton an. Zeichnen:
+hier ebenfalls ein (`O4:0A37`, nicht ausgewertet `[APPROX]`, §5.12). Ton: `Sound(600 − 2·iy)` bei Fluggeräusch und Ton an. Zeichnen:
 alten Punkt aus dem Hintergrundpuffer herstellen (`0431:040F`), bei Spur einen Punkt Farbe 100 − Spieler (`0431:056D`; die Farben
 90..99 setzt `O4:0541` auf 32 div Farbteiler +60h, +62h, +64h), neuen Punkt `0431:03C3`; Marken auf dem Rahmen (x bei y = 29 und 191, y bei
 x = 9 und 311, Farbe 13), auch wenn der Schuss außerhalb des Bilds fliegt (Q15).
@@ -324,13 +324,40 @@ Explosionen der Waffen 1..k nacheinander am Panzer (Schütze Satz 0, also ohne P
 `Random`-Aufrufe der Bilder hängt von Ton, Treffern und Splitterbahnen ab – für das Suchwerkzeug zählt nur die Folge bis zum
 ersten Schuss (§4).
 
-### 5.10 Offen in Teil 2
+### 5.10 Laser `O4:3426` (L1–L3)
 
-Laser `O4:3426`, MIRV `O4:13D4`, Lenkung `O4:0A37`, Sonderregel Gelände/Kraft `O4:0D8A`, Bilder `O5` im Einzelnen.
+Vorab ein Aufladebild mit Verzögerung `LS` (`DS:E8CC`) und den Farben 130.. (`[APPROX]` nicht im Einzelnen ausgewertet). Dann (L1):
+Energie E = 10 · Kraft (+1Bh); Richtung b = a bei r > 0, sonst 180 − a; **`Random:Real` < 0,2 → 1 Schaden am Schützen** (wie §5.1);
+Start (x_P + cos a · 7 · r, y_P − sin a · 7), Schritt (cos b, −sin b) je Takt, keine Schwerkraft, kein Wind.
+
+Je Schritt (L2): Position + Schritt, E − 10, Farbe 254 = Grau Trunc(E · 53 / (10 · Kraft) + 10). Pixel an der Spitze:
+
+- **Gelände (2):** 15 Funken bei (x − Random(20) · cos b, y − Random(20) · (−sin b)) – im Fenster und nicht Farbe 254 oder Panzer:
+  Pixel aus dem Hintergrund; bei Ton `Random(500 · k) + 500`. Der Strahl brennt sich so durch das Gelände.
+- **Panzer (20..29) mit Energie > 0:** beim ersten Kontakt Schütze +6Ch + 1; E − 10 zusätzlich; ohne Schild (+52h ≤ 0) 15 Funken
+  `Random(40)` um die Spitze; dann **3 Schaden** (`O10:0000(3, 0, Satz)`) und ein Schritt zurück – der Strahl steht am Panzer, bis E
+  verbraucht ist (je Schritt 3 Schaden für 20 Energie).
+
+Wände (L3): Stick, Elastic, Accel spiegeln die Richtung bei x ≤ 11, x ≥ 309, y ≤ 31, y ≥ 189 **ohne** Faktor; Warp: x ≤ 10 → +300,
+x ≥ 310 → −300; ohne Spiegelung endet der Strahl, wenn er am Rand nach außen zeigt. Sonst Spitze Farbe 254 (`0CC8:0BB6`); Ende bei
+E ≤ 0. Danach `0431:0594` und `NoSound` (`[APPROX]` Löschen des Strahls nicht ausgewertet).
+
+### 5.11 MIRV `O4:13D4` (M1)
+
+Vor dem Abschuss ein Dialog „MIRV Setup“ (Maus `0E11`, Tasten) mit dem Muster (Random, Horizontal, Vertical, + 4 Way, X 4 Way →
+0..4) und „Detonations“ (Impact, Simultanious, None) – Bedienung mit Teil 3. Die Mutter fliegt wie §5.3; bei der Teilung entstehen
+fünf Teile mit Lage und Geschwindigkeit der Mutter, verändert je Muster (M1): 0 `vx, vy += Random:Real · 6 − 3` (je Teil zwei
+`Random:Real`), 1 vx += (i − 3) · 1,75, 2 vy += (i − 3) · 1,75, 3 und 4 je Teil ±1,75 in x und y (`[APPROX]` Zuordnung der
+Vorzeichen zu den Teilen nicht ausgewertet). Einschläge über `O6:00E0` (als Waffe 7: Radius 15, §5.5).
+
+### 5.12 Offen in Teil 2
+
+Auslöser der MIRV-Teilung und die Detonationsarten, Lenkung `O4:0A37`, Sonderregel Gelände/Kraft `O4:0D8A`, Bilder `O5` im
+Einzelnen.
 
 ## 6. Zug, Kopfzeile, Eingaben (Teil 3, offen)
 
-## 7. Nicht entscheidbar ohne DOSBox (Stand Teil 1)
+## 7. Nicht entscheidbar ohne DOSBox (Stand Teil 1 und 2)
 
 1. Verlauf der Palette 30..59 aus den 9 Stützwerten von `0431:000C` und die genaue Zeichnung von Circles, Spread, Sky, Asterisk:
    je Hintergrund ein Bild **vor dem ersten Schuss** mit notierter Uhrzeit (Sitzung 3); Static und Stars liefern zusätzlich den
@@ -340,3 +367,10 @@ Laser `O4:3426`, MIRV `O4:13D4`, Lenkung `O4:0A37`, Sonderregel Gelände/Kraft `
 4. Flugbahn Lead Ball: je Wandart ein Schuss mit **Spur an**, notiert Winkel, Kraft, Wind (Kopfzeile) und `SS`; Bild nach dem
    Schuss zeigt die Spur pixelgenau (§5.3). Dazu einmal Wand 0 mit Schuss nach links bei Wind < 0 (Randregel §5.4).
 5. Rückstoß (§5.1): Energie des Schützen vor und nach dem Schuss in der Panzerinfo (`O9`), mehrere Schüsse.
+6. Krater und Flächenschaden (§5.6): Schuss mit 20 Kiloton Nuke neben einen Panzer, Bild nach dem Einschlag und Energie in der
+   Panzerinfo vorher und nachher; dazu ein Bild mit Spread/Static-Hintergrund, um das Freilegen aus dem Puffer zu sehen.
+7. Erdrutsch und Fallen (§5.8): Crumble 100 % und „Fall down“ an, ein Schuss unter einen Panzer; Bildfolge (Video) zeigt
+   Reihenfolge und Abgleiten; Energie vorher und nachher (`Random(3) + 1` je Zeile).
+8. Todesexplosionen O5 und Blitz (§5.9): Video je Todesart; Blitz erst ab Durchgang 11 (lange Runde ohne Treffer).
+9. Laser (§5.10): ein Schuss durch Gelände und einer gegen einen Panzer mit und ohne Schild; Bild des Strahls und der Funken.
+10. MIRV (§5.11): je Muster ein Schuss mit Spur an; Zeitpunkt der Teilung (Scheitel oder Taste) im Video.
