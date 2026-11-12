@@ -1,3 +1,4 @@
+using BombRedone.Core.Numerics;
 using BombRedone.Core.Setup;
 using BombRedone.Formats;
 using BombRedone.UI;
