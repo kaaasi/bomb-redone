@@ -143,7 +143,7 @@ Spieleinstellung, O3[0] Spielfolge → O4[0] Runde (ruft O5–O9), O3[1] Enderge
 | Statusfenster (Game Status) | `0431:0F1B` | `BOMB.EXE 0x068CB` |
 | Wertung (einzeln / Teams), Endergebnis | `O3:5AEF`, `O3:6696`, `O3:7566` | `0x0E57B`, `0x0F122`, `0x0FFF2` |
 | Einkauf, Statistik, Sichern, Laden | `O3:0E1F`, `O3:2508`, `O3:46DE`, `O3:4D97` | `0x098AB`, `0x0AF94`, `0x0D16A`, `0x0D823` |
-| Hintergründe (Zeichnen) | offen; Kandidaten `O8:0984` (Spielfeldaufbau), `0129` | – |
+| Hintergründe (Zeichnen) | `O8:0000(n)`, gerufen aus `O8:0984` ([runde.md](runde.md) §3.3) | `0x1C0C0` |
 
 Zuordnung über die Texte, die eine Prozedur lädt (`mov di,<Text>; push cs`); `bombre.py karte` prüft jede Zeile.
 
@@ -158,9 +158,11 @@ Computernamen). Die Tabelle liegt im Referenz-Repo, nicht hier.
 1. Sättigung von `Crt.Delay`: tatsächlicher Wert von `DS:EC44` bei `cycles=3000` und die Zyklengrenze (§5).
 2. Ob DOSBox Staging den Rücklauf-Interrupt IRQ2 liefert (Option `PV`); sonst bleibt die Rotation stehen.
 3. Wirkung von `LS` (vermutlich Schussgeschwindigkeit) und die Voreinstellungen von TS/FS/ES/SS/LS aus `BOMB.CFG`.
-4. Welche Prozedur welchen Hintergrund zeichnet (O5–O8, `0129` ohne Texte) – Haltepunkte auf `0CC8` beim Rundenstart.
+4. ~~Welche Prozedur welchen Hintergrund zeichnet~~ – beantwortet: `O8:0000(n)` ([runde.md](runde.md) §3.3); offen bleiben die
+   Verläufe der Palette 30..59 (dort §7).
 5. Bildgenaue Schrift: Rasterung der Strichschriften EURO/LITT/TINY durch den BGI-Kern bei Größe 1 und 4 (Referenzbild nötig).
-6. Ob `0B25` (Namenssätze der Graph-Prozeduren) zur Laufzeit gebraucht wird.
+6. ~~Ob `0B25` (Namenssätze der Graph-Prozeduren) zur Laufzeit gebraucht wird~~ – beantwortet: ja, `0B25:0000`/`005A` sind
+   Sin/Cos-Tabellen für ganze Grad, benutzt von Repulser und Computern ([runde.md](runde.md) §5.2, §6.5).
 
 ## 9. Listings (Referenz-Repo)
 

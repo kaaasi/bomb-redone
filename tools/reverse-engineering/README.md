@@ -22,3 +22,17 @@ Suchen nach Aufrufen bekannter Routinen bauen die Befehlskodierung aus Ziel und 
 nur allgemeine Befehlsmuster (Prolog `push bp; mov bp,sp`, Overlay-Stub `INT 3Fh`, Opcode-Muster mit Platzhaltern) und
 kurze Texte (Menütexte, Dateinamen, Optionskürzel). Neue Befunde: Hash mit dem Skript aus den Originalen berechnen, nie die Bytes
 eintragen.
+
+## `runde.py` (Spur `re-runde`)
+
+Schreibt nur nach `analyse/re-runde/` (Ablage im Referenz-Repo per PR, R2-D5 = A). Nutzt `bombre.py` (Ladebild, Overlays).
+
+| Aufruf | Ergebnis |
+|---|---|
+| `python3 tools/reverse-engineering/runde.py befunde` | prüft alle Befunde aus `docs/analyse/runde.md` (Befehlsfolgen in `runde_befunde.py`), Rückgabe ≠ 0 bei Abweichung |
+| `… procs` / `… randoms` / `… reals` | `prozeduren.tsv` (Aufrufer, Aufrufe) / `random.tsv` (alle `Random`-Aufrufe mit Argument) / `real48.tsv` (Real48-Konstanten) |
+| `… listings` | annotierte Listings: Ziele, Real48-Werte, DS-Variablen, Prozeduranfänge (`ndisasm -s` je Prozedur) |
+| `… all` | alles nacheinander |
+
+Die Befunde vergleichen reguläre Ausdrücke über die eigene Disassembly (aus Ziel und Operand gebaut), keine Bytes der Originale;
+wie bei `bombre.py` stehen nur kurze Bildschirmtexte (z. B. „Wind: “, „Maximum Power:“) als Klartext im Skript.
