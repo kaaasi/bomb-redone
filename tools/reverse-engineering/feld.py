@@ -11,6 +11,9 @@ Usage:
   feld.py [...] run --seed HEX [--players N] [--wall W] [--background B] [--mask M] [--wind W]
                     [--invisible] [--no-fall] [--out DIR]
                                                  one case; writes screen/background/DAC dumps and result.json
+  feld.py [...] call [--fill C] [--show] SEG:OFS(args) ...
+                                                 after the boot: far call routines (segment of the load image or
+                                                 On:ofs) with Pascal arguments, dump the screen (primitives)
   feld.py [...] cpu [--count N]                  cross-check the interpreter against real48.py (wave 1 cases)
   feld.py [...] hashes [--only I ...] [--write]  fixed case list -> SHA-256 per dump (TSV on stdout and in
                                                  analyse/feld/hashes.tsv); the C# tests compare against these
@@ -271,6 +274,40 @@ def cmd_befunde(p, args):
     return 0 if ok else 1
 
 
+def parse_target(p, text):
+    """'O8:0351' (overlay n) or '0CC8:0351' (segment of the load image) -> (segment, offset) in the machine."""
+    seg, ofs = text.split(":")
+    if seg.upper().startswith("O"):
+        return p.ovseg[int(seg[1:])], int(ofs, 16)
+    return fm.LOAD_SEG + int(seg, 16), int(ofs, 16)
+
+
+def cmd_call(p, args):
+    """Boot, optionally clear the screen to a colour, far call one routine with Pascal arguments, dump the screen."""
+    m = p.boot()
+    if args.fill is not None:
+        m.mem[0xA0000:0xA0000 + 64000] = bytes([args.fill]) * 64000
+    for text in args.call:
+        name, _, rest = text.partition("(")
+        values = [int(v, 0) for v in rest.rstrip(")").split(",") if v.strip()] if rest else []
+        seg, ofs = parse_target(p, name)
+        m.far_call(seg, ofs, args=values, limit=m.cpu.steps + 50_000_000)
+    screen = bytes(m.mem[0xA0000:0xA0000 + 64000])
+    os.makedirs(args.root_out, exist_ok=True)
+    path = os.path.join(args.root_out, "call-screen.bin")
+    with open(path, "wb") as f:
+        f.write(screen)
+    print("screen", sha(screen), path)
+    if args.show:
+        base = args.fill or 0
+        for y in range(200):
+            row = screen[y * 320:(y + 1) * 320]
+            if any(v != base for v in row):
+                xs = [x for x in range(320) if row[x] != base]
+                print("%3d %3d..%3d %s" % (y, xs[0], xs[-1], " ".join("%d:%d" % (x, row[x]) for x in xs[:24])))
+    return 0
+
+
 def cmd_cpu(p, args):
     """Cross-check feld_cpu against the Cpu of real48.py on the Real48/Random cases of wave 1."""
     import real48
@@ -379,6 +416,10 @@ def main():
     r.add_argument("--invisible", action="store_true")
     r.add_argument("--no-fall", action="store_true")
     r.add_argument("--out")
+    a = sub.add_parser("call")
+    a.add_argument("call", nargs="+", help="routine with Pascal arguments, e.g. 0CC8:09E4(10,20,30,40,5) or O8:0000(3)")
+    a.add_argument("--fill", type=lambda v: int(v, 0))
+    a.add_argument("--show", action="store_true", help="print the changed pixels per row")
     k = sub.add_parser("cpu")
     k.add_argument("--count", type=int, default=2000)
     h = sub.add_parser("hashes")
@@ -394,7 +435,7 @@ def main():
     elif args.cmd not in ("befunde", "cpu"):
         print("Warnung: keine 8x8-Schrift (%s), Text mit DefaultFont bleibt leer" % args.font, file=sys.stderr)
     p = Probe(args.gamedata, font)
-    return {"befunde": cmd_befunde, "run": cmd_run, "hashes": cmd_hashes, "cpu": cmd_cpu}[args.cmd](p, args)
+    return {"befunde": cmd_befunde, "run": cmd_run, "hashes": cmd_hashes, "cpu": cmd_cpu, "call": cmd_call}[args.cmd](p, args)
 
 
 if __name__ == "__main__":

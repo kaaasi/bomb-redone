@@ -1,5 +1,6 @@
 using System.Globalization;
 using BombRedone.Core;
+using BombRedone.Core.Graphics;
 using BombRedone.Core.Setup;
 using BombRedone.Formats;
 using BombRedone.UI.Text;
@@ -132,29 +133,13 @@ public sealed class PlayerSelectTeamScreen : IScreen
     public static void DrawTank(Surface target, int x, int y, byte color, int angle = 90, int width = 1)
     {
         ArgumentNullException.ThrowIfNull(target);
-        for (var dx = -4; dx <= 4; dx++)
-        {
-            Set(target, x + dx, y, color);
-            if (dx is not (-1 or 1))
-                Set(target, x + dx, y - 1, color);
-            if (dx is >= -3 and <= 3)
-            {
-                Set(target, x + dx, y - 2, color);
-                Set(target, x + dx, y - 3, color);
-            }
-
-            if (dx is >= -1 and <= 1)
-                Set(target, x + dx, y - 4, color);
-        }
+        VgaDraw.TankBody(target.Pixels, x, y, color);
 
         var radians = angle * Math.PI / 180;
         var x2 = x + (int)Math.Truncate(Math.Cos(radians) * 8) * width;
         var y2 = y - (int)Math.Truncate(Math.Sin(radians) * 8);
         MenuGraphics.Line(target, x, y, x2, y2, color);
     }
-
-    private static void Set(Surface target, int x, int y, byte color) =>
-        target.Pixels[y * target.Width + x] = color;
 
     public IScreen? Update(TimeSpan elapsed, ScreenInput input)
     {

@@ -275,7 +275,10 @@ R2-D6 = B); Stufe 2b `schuss` nach Merge von `gelaende`. Integrationsfolge: `gel
 
 ### Status gelaende
 
-- noch nicht begonnen.
+- 13.11.2026, Claude Code (Opus 5.5), Draft-PR #107, Base `6d91e69`. Teil 1 fertig: Probe `tools/reverse-engineering/feld*.py`
+  (Originalcode unverändert im eigenen 8086-Interpreter, 11 feste Fälle bis zum Startspieler), Festlegung des Vergleichs (N4-1) in
+  [analyse/feld.md](analyse/feld.md) §2. Teil 2 begonnen: `Core/Graphics` (`IndexBuffer`, `VgaDraw` Line/Rectangle/PutPixel/
+  Panzerkörper, bitgleich zur Probe), `MenuGraphics` und `DrawTank` darauf umgestellt. Offen: Rest Teil 2, Teile 3–5.
 
 ### Status tws-leser
 
