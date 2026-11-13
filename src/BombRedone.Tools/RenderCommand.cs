@@ -154,24 +154,34 @@ internal static class RenderCommand
                 shot = shotText.Split(',').Select(v => int.Parse(v, CultureInfo.InvariantCulture)).ToArray();
             if (options.TryGetValue("shooter", out var shooterText))
                 shooter = int.Parse(shooterText, CultureInfo.InvariantCulture);
-            data = GameData.Locate(positional.ElementAtOrDefault(0));
-            config = options.TryGetValue("cfg", out var cfg) ? GameConfig.Load(cfg) : GameConfig.BombCfgDefaults;
             seed = uint.Parse(options.GetValueOrDefault("seed", "12345678"), NumberStyles.HexNumber, CultureInfo.InvariantCulture);
             players = int.Parse(options.GetValueOrDefault("players", "2"), CultureInfo.InvariantCulture);
         }
-        catch (Exception ex) when (ex is DirectoryNotFoundException or IOException or GameConfigException or FormatException
-                                       or OverflowException)
+        catch (Exception ex) when (ex is FormatException or OverflowException)
         {
             Console.Error.WriteLine(ex.Message);
             return 1;
         }
 
+        // Usage errors come before the game data is looked for (the CI has none).
         if (!Core.GameLimits.IsValidPlayerCount(players) || shot is not (null or { Length: 2 or 3 })
             || shot is not null && (shot[0] is < 0 or > 180 || !Core.Shot.Impact.IsSupported(shot.ElementAtOrDefault(2)))
             || shooter is not null && (shot is null || shooter < 1 || shooter > players))
         {
             Console.Error.WriteLine(PlayfieldUsage);
             return 2;
+        }
+
+        try
+        {
+            data = GameData.Locate(positional.ElementAtOrDefault(0));
+            config = options.TryGetValue("cfg", out var cfg) ? GameConfig.Load(cfg) : GameConfig.BombCfgDefaults;
+        }
+        catch (Exception ex) when (ex is DirectoryNotFoundException or IOException or GameConfigException or FormatException
+                                       or OverflowException)
+        {
+            Console.Error.WriteLine(ex.Message);
+            return 1;
         }
 
         var screen = RenderPlayfield(data, config, seed, players, out var report, shot, shooter);
