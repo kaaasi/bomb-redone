@@ -97,7 +97,7 @@ Abnahme verlangt den Pixelvergleich mit Bildern aus Sitzung 3 (R2-D3); Sitzungen
 | C: jetzt starten ohne Probe, Umsetzung nur nach `runde.md`, alles Bildbezogene `[APPROX]` bis Sitzung 3 | schnell sichtbar | Lesefehler der Analyse bleiben bis Sitzung 3 unentdeckt (#102), Nacharbeit wahrscheinlich |
 | D: zuerst eigene Spur `feld-probe` (nur Probe), danach `gelaende` | Probe einzeln geprüft | eine Welle mehr, Probe ohne Verbraucher schwer abzunehmen |
 
-Empfehlung: **A**. Gelingt die Probe für einen Baustein nicht, bleibt dieser Teil blockiert (`spur-wartet`, `AGENTS.md` §2.10).
+Empfehlung: **A**. Präzisiert im Zuschnitt `gelaende` (Abschnitt „Probe“): Graph und Treiber werden mit emuliert statt abgefangen. Gelingt die Probe für einen Baustein nicht, bleibt dieser Teil blockiert (`spur-wartet`, `AGENTS.md` §2.10).
 
 **R2-D8 – Krater in `schuss`, obwohl Lead Ball keinen hat – entschieden: A (Nutzer 13.11.2026; Vorlage Leitstelle, Review #104 P2-1).** Problem: R2-D1 A
 nennt „Schuss der Standardwaffe mit … Krater“; laut `runde.md` §5.5 (Q10) macht Lead Ball (Waffe 0) aber weder Explosion noch Krater,
@@ -121,8 +121,8 @@ Empfehlung: **A**.
   Spielstände nach `formate/spielstand.md` „Benötigte Originalstände“ (Nr. 1–8). Uhrzeit beim Start notieren (R2-D3).
   Ergänzt nach Welle 1 (`analyse/runde.md` §7): je Hintergrund ein Bild vor dem ersten Schuss, zwei Bilder desselben Hintergrunds
   kurz nacheinander (Rotation); Rundenbeginn mit 2 und 10 Spielern; je Wandart ein Schuss mit Spur an (Winkel, Kraft, Wind, `SS`
-  notieren), dazu Wand 0 nach links bei Wind < 0; Energie in der Panzerinfo vor und nach Schüssen (Rückstoß); Schuss neben einen
-  Panzer (Krater, Energie vorher/nachher); Crumble 100 % mit „Fall down“, Schuss unter einen Panzer (Video); Schuss mit höchster Kraft
+  notieren), dazu Wand 0 nach links bei Wind < 0; Energie in der Panzerinfo vor und nach Schüssen (Rückstoß); Schuss mit Baby Missile
+  (vorher einkaufen) neben einen Panzer (Krater, Energie vorher/nachher); Crumble 100 % mit „Fall down“, Schuss unter einen Panzer (Video); Schuss mit höchster Kraft
   in einen Hügel. Nr. 8–10 (Tod, Laser, MIRV) erst für Runde 3.
 
 ### Welle 1 (parallel) – gemergt 12.11.2026 (#93, #94)
@@ -178,12 +178,15 @@ R2-D6 = B); Stufe 2b `schuss` nach Merge von `gelaende`. Integrationsfolge: `gel
   `RandSeed`. **Pixelzustand im Spielkern** (Review #104 P2-2): Die Regeln des Originals lesen den Bildschirm (Fallen P13 über
   `0CC8:0BFF`, später Treffer Q9, Erdrutsch K9, Krater K2 aus dem Hintergrundpuffer `DS:E5C0`). Deshalb hält `Core/Playfield` einen
   Bildschirm- und einen Hintergrundpuffer (320 × 200 Palettenindizes) samt Palette und zeichnet dort selbst: Rahmen Farbe 13,
-  Wandbeschriftung `O8:0984`, die neun Hintergründe §3.3 samt Palette 30..59, Gelände Farbe 2, Panzerbild (`0431:05ED`/`0685`,
-  `[ORIGINAL]`); Regeln lesen nur diese Puffer. `UI`: `PlayfieldScreen` kopiert die Puffer in `Surface` und ergänzt Kopfzeile und
-  Waffenleiste (`runde.md` §6.1 Z1, Z2: `O4:0000` setzt die Farben 100..119, `O4:44A7`, `O8:1268`); Desktop-Vorschau;
+  die neun Hintergründe §3.3 samt Palette 30..59, Gelände Farbe 2, Panzerbild (`0431:05ED`/`0685`, `[ORIGINAL]`); Regeln lesen nur
+  diese Puffer. **Zeichenroutinen** (Nachprüfung #104 N2-1): `gelaende` legt `Core/Graphics` an (Indexpuffer, Line, Rectangle, Bar,
+  Circle/Ellipse, Panzer) und stellt die vorhandenen UI-Fassungen darauf um (`UI/Screens/MenuGraphics.cs`, `UI/Text/LineRasterizer.cs`,
+  `DrawTank` in `UI/Screens/PlayerSelectTeamScreen.cs`; bestehende UI-Tests sind die Gegenprobe), statt sie zu verdoppeln. `UI`:
+  `PlayfieldScreen` kopiert die Puffer in `Surface` und ergänzt die Wandbeschriftung `O8:0984` (links außerhalb des Rahmens, von
+  keiner Regel gelesen; BGI-Text bleibt in `UI`), Kopfzeile und Waffenleiste (`runde.md` §6.1 Z1, Z2: `O4:0000` setzt die Farben 100..119, `O4:44A7`, `O8:1268`); Desktop-Vorschau;
   `bombtool render playfield --seed <n> [--cfg …]`; Suchwerkzeug für den Startwert (R2-D3, `runde.md` §4 „Vorschlag“).
-- **Probe (R2-D7 = A, Review #104 P3-1, P3-2):** Ansatz wie die Probe im Review #104 (`Cpu` aus `real48.py` mit Fernaufrufen,
-  Overlays mit Fixups). Graph `0E26` und der gelinkte Treiber VGA256 2.00 (`BOMB.EXE 0x7EB7`) werden **mit emuliert** (nur INT 10h
+- **Probe (R2-D7 = A, Review #104 P3-1, P3-2):** Die Spur baut die Probe selbst nach dem Ansatz im Review #104 (`Cpu` aus `real48.py`
+  mit Fernaufrufen, Segmentregistern, Zeichenkettenbefehlen, Overlays mit Fixups); das Skript des Reviews liegt nicht im Zugriff der Spur. Graph `0E26` und der gelinkte Treiber VGA256 2.00 (`BOMB.EXE 0x7EB7`) werden **mit emuliert** (nur INT 10h
   und Ports abgefangen), ebenso `0CC8` (schreibt direkt nach A000h); DAC-Modell für `SetRGB` über `DS:E8F6` und das Lesen der DAC
   (Stars, `0CC8:0C20`). Umfang: `O8:0984` vollständig und `O4:44A7` bis vor die Kopfzeile (Wind, Startspieler). Was die Probe nicht
   abdeckt, bekommt `[ORIGINAL]` mit Test nach `runde.md` (Wind-Überlauf #98 immer als Test) oder bleibt nach `AGENTS.md` §2.10 blockiert.
@@ -191,7 +194,9 @@ R2-D6 = B); Stufe 2b `schuss` nach Merge von `gelaende`. Integrationsfolge: `gel
   Panzerbild, Panzer, Fallen, Wind, Startspieler; 3. `PlayfieldScreen` (Kopfzeile, Waffenleiste); 4. `bombtool`, Desktop-Vorschau,
   Suchwerkzeug (zählt die Schritte des Mischens `runde.md` §4 Nr. 1, ohne Tausch der Sätze, R2-D4); 5. Bildvergleich mit
   Sitzung 3 (blockiert, bis die Bilder im Referenz-Repo gemergt sind: `spur-wartet`, kein erneuter Versuch).
-- **Dateien:** `src/BombRedone.Core/Playfield/*` (neu), `src/BombRedone.UI/Screens/Playfield*` (neu), `src/BombRedone.Desktop/*`,
+- **Dateien:** `src/BombRedone.Core/Playfield/*` (neu), `src/BombRedone.Core/Graphics/*` (neu), `src/BombRedone.UI/Screens/Playfield*` (neu),
+  Umstellung auf `Core/Graphics` in `src/BombRedone.UI/Screens/MenuGraphics.cs`, `src/BombRedone.UI/Text/LineRasterizer.cs`,
+  `src/BombRedone.UI/Screens/PlayerSelectTeamScreen.cs` (nur `DrawTank`) – gemeinsame Dateien, Begründung im PR; `tests/BombRedone.Core.Tests/Graphics/*` (neu), `src/BombRedone.Desktop/*`,
   `src/BombRedone.Tools/RenderCommand.cs`, `src/BombRedone.Tools/Program.cs` (eine Zeile, falls nötig),
   `tests/BombRedone.Core.Tests/Playfield/*`, `tests/BombRedone.UI.Tests/Screens/Playfield*`, `tests/BombRedone.UI.Tests/Tools/Render*`,
   `tools/reverse-engineering/feld*` (neu), `docs/analyse/feld.md` (neu), `docs/anforderungen/bildschirme.md` (nur Abschnitt Spielfeld).
@@ -222,9 +227,10 @@ R2-D6 = B); Stufe 2b `schuss` nach Merge von `gelaende`. Integrationsfolge: `gel
   Laser, MIRV, Lenkung, Tod/Blitz/Rundenende §5.9, Zugfolge, Computer.
 - **Teile:** 1. Probe nach R2-D7 (Flug `O4:01B7`, Explosion `O6`); 2. Flug, Wände, Ende; 3. Einschlag, Schaden, Krater; 4. Erdrutsch,
   Fallen; 5. Darstellung; 6. Bildvergleich mit Sitzung 3 (`runde.md` §7 Nr. 4, 5, 7, 11, Nr. 6 mit Baby Missile statt Nuke; blockiert bis die Bilder da sind).
-- **Dateien:** `src/BombRedone.Core/Shot/*` (neu), `src/BombRedone.Core/Numerics/Real48.Trig*.cs` (neu: `Sin`, `Cos` `12CE:12EE`/`1301`,
+- **Dateien:** `src/BombRedone.Core/Shot/*` (neu), `src/BombRedone.Core/Numerics/Real48.Trig*.cs` (neu: `Cos` `12CE:12EE`, `Sin` `12CE:1301`,
   Grad→Bogen `0DBD:00D9`, π, `Sqrt` `12CE:128F`), `tests/BombRedone.Core.Tests/Numerics/Real48Trig*` (neu),
-  `tools/reverse-engineering/real48.py` (nur neue Einsprünge, Hash-Probe wie Welle 1; Review #104 P2-3), `src/BombRedone.Core/Playfield/*` (nur Erweiterungen für Krater/Erdrutsch, nach
+  `tools/reverse-engineering/real48.py` (nur neue Einsprünge, Hash-Probe wie Welle 1; Review #104 P2-3),
+  `src/BombRedone.Tools/RenderCommand.cs` (Waffenwahl, nach `gelaende`), `tests/BombRedone.UI.Tests/Tools/Render*`, `src/BombRedone.Core/Playfield/*` (nur Erweiterungen für Krater/Erdrutsch, nach
   `gelaende`), `src/BombRedone.UI/Screens/Playfield*`, `src/BombRedone.Desktop/*`, `tests/BombRedone.Core.Tests/Shot/*`,
   `tests/BombRedone.UI.Tests/Screens/Playfield*`, `tools/reverse-engineering/feld*` (Erweiterung der Probe), `docs/analyse/feld.md`.
 - **Abnahme:** nach R2-D7; Bahn und Endpunkt je Wandart, Krater und Flächenschaden für Baby Missile (R2-D8 = A); `Sin`/`Cos`/`Sqrt` bitgleich gegen die Laufzeit (Probe);
@@ -236,8 +242,9 @@ R2-D6 = B); Stufe 2b `schuss` nach Merge von `gelaende`. Integrationsfolge: `gel
 - `AGENTS.md`, `CLAUDE.md`, `docs/prozess/*`, `docs/vorlagen/*`, `docs/entscheidungen.md`, `tools/pruefen*.sh`,
   `tools/originalschutz-selbsttest.sh`, `.gitignore`, `.github/*`, `tests/**/Support/`: allein die Leitstelle.
 - `src/BombRedone.Desktop/*`: Welle 1 nur `real48` (Umzug des Zufalls), Stufe 2a nur `gelaende`, Stufe 2b nur `schuss`.
-- `src/BombRedone.Tools/Program.cs`: je Spur eine Registrierungszeile (`gelaende`, `tws-leser`); `RenderCommand.cs`: nur `gelaende`.
+- `src/BombRedone.Tools/Program.cs`: je Spur eine Registrierungszeile (`gelaende`, `tws-leser`); `RenderCommand.cs`: `gelaende`, danach `schuss`.
 - `src/BombRedone.Core/Numerics/*` und `tools/reverse-engineering/real48.py`: in Welle 2 nur `schuss` (neue Dateien bzw. Einsprünge).
+- `src/BombRedone.Core/Graphics/*` (neu), `MenuGraphics.cs`, `LineRasterizer.cs`, `PlayerSelectTeamScreen.cs` (`DrawTank`): nur `gelaende`.
 - `src/BombRedone.Core/Playfield/*`, `src/BombRedone.UI/Screens/Playfield*`, `tools/reverse-engineering/feld*`, `docs/analyse/feld.md`:
   `gelaende`, danach `schuss` (nacheinander, nie gleichzeitig).
 - `tools/reverse-engineering/bombre.py`: nur `re-runde` (neue Unterbefehle).
