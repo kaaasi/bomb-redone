@@ -245,6 +245,7 @@ public sealed class Playfield
             tank.Active = true;
             tank.Y = 32;
             tank.Field5E = 0;
+            tank.Team = tank.Number;
             UpdateColor(tank);
 
             // O8:1118: the tank falls (without being drawn at y = 32) until all nine pixels below it are terrain or frame.
@@ -275,7 +276,7 @@ public sealed class Playfield
     /// [ORIGINAL] O10:01AC (BOMB.OVR 0x1F2CF): v = 63 · e div 100; DAC 19 + n = (v div r, v div g, v div b) for e &gt; 0,
     /// otherwise black.
     /// </summary>
-    private void UpdateColor(PlayfieldTank tank)
+    internal void UpdateColor(PlayfieldTank tank)
     {
         var v = (short)(63 * tank.Energy) / 100;
         if (tank.Energy > 0)

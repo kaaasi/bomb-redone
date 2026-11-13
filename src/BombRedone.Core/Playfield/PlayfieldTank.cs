@@ -37,4 +37,31 @@ public sealed class PlayfieldTank
 
     /// <summary>Word +5Eh, set to 0 (meaning not derived, docs/formate/spielstand.md).</summary>
     public int Field5E { get; internal set; }
+
+    // Fields used by the shot (spur schuss, docs/analyse/runde.md sections 5.5 and 5.6). They belong to the player record
+    // and survive rounds; until the game flow exists (round 3) a playfield starts them like O2:0216 without team play.
+
+    /// <summary>Team (+66h); without team play the player number (Core/Setup/TeamPlay).</summary>
+    public int Team { get; set; }
+
+    /// <summary>Points (+13h, LongInt).</summary>
+    public int Score { get; set; }
+
+    /// <summary>Defences (+52h, LongInt[3]): 0 shield, 1 inertia, 2 repulser (ItemCatalog.DefenseTable).</summary>
+    public int[] Defense { get; } = new int[3];
+
+    /// <summary>Hits on tanks of other teams (+6Ch).</summary>
+    public int Hits { get; set; }
+
+    /// <summary>Weapon chosen for the shot (+24h, index into ItemCatalog.WeaponTable).</summary>
+    public int Weapon { get; set; }
+
+    /// <summary>Sets the barrel and the power for the next shot (the turn input of O7:040C, Teil 3 of runde.md).</summary>
+    public void Aim(int angle, int power)
+    {
+        ArgumentOutOfRangeException.ThrowIfLessThan(angle, 0);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(angle, 180);
+        Angle = angle;
+        Power = power;
+    }
 }

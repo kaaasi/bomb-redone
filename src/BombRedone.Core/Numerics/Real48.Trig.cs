@@ -55,7 +55,7 @@ public readonly partial struct Real48
         }
 
         int keep = exponent - 0x80; // sign + integer bits below the hidden bit, from the top of DX:BX:AH
-        ulong bits = ((ulong)value._dx << 24) | ((ulong)value._bx << 8) | (ulong)(value._ax >> 8);
+        ulong bits = ((ulong)value._dx << 24) | ((ulong)value._bx << 8) | (uint)(value._ax >> 8);
         ulong mask = ((1UL << keep) - 1) << (40 - keep);
         bits &= mask;
         return new((ushort)((((uint)bits & 0xFF) << 8) | exponent), (ushort)(bits >> 8), (ushort)(bits >> 24));
