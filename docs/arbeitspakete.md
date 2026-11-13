@@ -7,7 +7,7 @@ Den Status pflegt jede Spur nur in ihrem eigenen Abschnitt. Abgeschlossene Runde
 **Koordination:** Die Leitstelle verteilt Pakete, prüft und mergt Pull Requests und pflegt Plan und Doku
 (Rollen: [prozess/zusammenarbeit.md](prozess/zusammenarbeit.md)). **Spuren starten erst nach dem Go des Nutzers.**
 
-## Aktuelle Runde: Runde 2 – Spielfeld, Gelände, Schuss, Leser `*.TWS` (Plan 12.11.2026, Welle 1 gemergt 12.11.2026, Welle 2 **wartet auf R2-D7 und Go**)
+## Aktuelle Runde: Runde 2 – Spielfeld, Gelände, Schuss, Leser `*.TWS` (Plan 12.11.2026, Welle 1 gemergt 12.11.2026, Welle 2 **wartet auf Go**)
 
 Runde 1 abgeschlossen: [archiv/runde-1.md](archiv/runde-1.md). Grundlagen: [analyse/re-grundlagen.md](analyse/re-grundlagen.md)
 (Overlays O3–O9, Real48, Zufall), [formate/spielstand.md](formate/spielstand.md), [anforderungen/bildschirme.md](anforderungen/bildschirme.md)
@@ -17,7 +17,7 @@ Regeln wie Runde 1: Base aktueller `main` (tatsächlichen SHA in den Draft-PR), 
 `[ORIGINAL]`/`[APPROX]`, höchstens drei Fortsetzungen je Spur, Originalmaterial nur in Schutzordnern (`AGENTS.md` §2.1).
 Erstreview je Spur: Claude Opus 5.5, frische Sitzung; Gesamtreview am Rundenende: ChatGPT (`prozess/anhang.md` C).
 
-### Entscheidungen der Runde (Vorlage Leitstelle; R2-D1…D6 entschieden vom Nutzer 12.11.2026: alle wie empfohlen; R2-D7 offen)
+### Entscheidungen der Runde (Vorlage Leitstelle; R2-D1…D6 entschieden vom Nutzer 12.11.2026, R2-D7 am 13.11.2026: alle wie empfohlen)
 
 **R2-D1 – Umfang der Runde – entschieden: A (Nutzer 12.11.2026).** Problem: „Spielfeld, Gelände, Schuss“ reicht von einem Standbild bis zur spielbaren Runde.
 
@@ -86,7 +86,7 @@ Leser „nach der DOSBox-Aufnahme mit Beispielständen“ vor.
 
 Empfehlung: **B**.
 
-**R2-D7 – Abnahme von `gelaende` und `schuss`, solange Sitzung 3 fehlt – offen (Vorlage Leitstelle 13.11.2026).** Problem: Die
+**R2-D7 – Abnahme von `gelaende` und `schuss`, solange Sitzung 3 fehlt – entschieden: A (Nutzer 13.11.2026).** Problem: Die
 Abnahme verlangt den Pixelvergleich mit Bildern aus Sitzung 3 (R2-D3); Sitzungen 2 und 3 sind noch nicht aufgenommen, `TIME` in
 0.74-3 ist ungeprüft. `runde.md` beschreibt Gelände und Schuss Befehl für Befehl; offen sind Bilddetails (§5.13, §7).
 

@@ -41,6 +41,7 @@ und Nachteilen, Empfehlung); hier steht nur das Ergebnis mit der gewählten Opti
 | R2-D4 | Satzreihenfolge nach der Wertung (#71) | **A:** in `re-runde` beschreiben, Umsetzung mit der Spielfolge in Runde 3. |
 | R2-D5 | Listings der Spur `re-runde` | **A:** wie R1-D4 – die Spur öffnet selbst einen PR im Referenz-Repo (`daten/listings-re-runde`, nur `analyse/`), merged nicht. |
 | R2-D6 | Zeitpunkt des Lesers `*.TWS` (#78) | **B:** Stufe 2a, Voraussetzung: Spielstände aus DOSBox-Sitzung 3 im Referenz-Repo gemergt. |
+| R2-D7 | Abnahme von `gelaende` und `schuss`, solange Sitzung 3 fehlt | **A** (13.11.2026): sofort starten; Probe führt die Originalroutinen im 8086-Emulator aus (Grafikaufrufe abgefangen), Vergleich von Pixeln und `RandSeed`; Bildvergleich mit Sitzung 3 als letzter Teil. Gelingt die Probe für einen Baustein nicht, bleibt der Teil blockiert (`AGENTS.md` §2.10). |
 
 Arbeitsweise (Nutzer 11.11.2026): `main` nur über Branch und PR; Deutsch in Doku und Commits, Quelltext und Kommentare englisch;
 knappe Antworten; je Aufgabe ein Claude-Modell; ChatGPT nur für Reviews; Spuren erst nach Go; Entscheidungen gesammelt.
