@@ -188,6 +188,11 @@ mit Cursor-Unterstrich. Länge der Namen unbekannt.
   00060–00063), Rundenende bei letzter Zerstörung (Ball + Wertung).
 - **Übergänge:** nach dem Rundenende direkt B5 (LP 00063 → 00064; 00105 → 00106); Aufbau des nächsten Spiels über
   Übergangsbilder (1.1).
+- **Umsetzung (Runde 2, `gelaende`, `[ORIGINAL]`):** Aufbau `Core/Playfield` (O8:0984), Bild `UI/Screens/PlayfieldScreen`
+  (Wandbeschriftung „STICKEY“/„ELASTIC“/„ACCELERATE“/„WARP“, Name, Kopfzeile „Angle:“, „Power:“, „Direction( )“, „Men:“,
+  „Wind: n →/←“, Waffenleiste O8:1268 mit den Bildern O8:131C–1EE9) – bitgleich zur Probe an den Messpunkten A und K
+  ([analyse/feld.md](../analyse/feld.md) §2, §3a). Die Werte von Winkel, Kraft, Richtung und Men zeichnet erst der Zug
+  (`O7:040C`, Spur `schuss`/später); Palettenrotation nicht umgesetzt.
 
 ### B5 Wertung (Status)
 

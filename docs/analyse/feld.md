@@ -101,6 +101,11 @@ ohne BGI-Text (`screen_core`), gesetzte DAC-Einträge; an S Windstufe, Wind, Sta
 - Nach jedem Panzer `O7:0364`: Rahmen neu und bei Wand ∉ [1, 2, 3] (`O7:0344`) Bodenlinie (11, 189)–(309, 189) Farbe 2.
 - **BGI-Linie** (`0E26:1C86`, Treiber VGA256): symmetrischer Bresenham ab (x0, y0), bitgleich auf über 1.000 Zufallslinien im
   Bildschirm (`feld.py call`); `Core/Graphics/BgiDraw.Line`, `UI/Text/LineRasterizer` ruft sie auf (vorher `[APPROX]`).
+- **Teil 3** `UI/Screens/PlayfieldScreen`: an A (mit Wandbeschriftung, SmallFont senkrecht, und Name in der Kopfzeile, DefaultFont)
+  und an K (Kopfzeile `O4:45F1–46FA`, Waffenleiste `O8:1268`) bitgleich in allen 13 Fällen, ebenso die gesetzten DAC-Einträge an K
+  (100..119 schwarz). Die Waffenbilder sind Aufrufe relativ zum Fenster des Felds (15i + 10, 18)–(15i + 25, 27) mit Clip; der
+  untere Rand des Rahmens (0, 0)–(14, 10) liegt außerhalb. BGI-`Circle` kommt nur mit Radius 1 vor (vier Nachbarpunkte, gemessen
+  mit `call`); andere Radien sind nicht abgeleitet (Radius 2 ist wegen des Seitenverhältnisses nur drei Zeilen hoch).
 - Wind (#98): Fall `00015446` ergibt −548 · 4³ = −35072 → 30464 → 30000, Fall `002B423B` −977 · 4³ → 3008 (Probe bestätigt).
 
 ## 4. Grenzen
