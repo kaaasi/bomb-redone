@@ -42,6 +42,10 @@ ENTRIES = {
     "round": 0x11E8,
     "random": 0x168B,
     "random_n": 0x1675,
+    # Welle 2 (spur schuss): Sin, Cos (= Sin(pi/2 - x)) and Sqrt, argument and result in DX:BX:AX.
+    "sin": 0x1301,
+    "cos": 0x12EE,
+    "sqrt": 0x128F,
 }
 RUNERROR = 0x00E2
 
@@ -50,10 +54,14 @@ RUNERROR = 0x00E2
 REGIONS = {
     "real48": (0x0EAE, 0x1202),
     "random": (0x1675, 0x170A),
+    "trig": (0x1202, 0x138C),  # helpers 1202-1229, Int 122A, Frac 127B, Sqrt 128F, Cos 12EE, Sin 1301, table 1362
+    "poly": (0x160D, 0x1675),  # polynomial in x^2 with coefficient table (used by Sin)
 }
 REGION_HASHES = {
     "real48": "b38e4a079563fece462ac02174d165263ba69db3ca799ff68876a68f84cc0dbc",
     "random": "afe015890f68f4a8a28d397eb4e164d0d6d6cb2d0d2b18a4d19f0ce535658904",
+    "trig": "e74a110c179a43c85d071aab80c6d912a71f1d84cccadb20ee4f4230ef0ca76e",
+    "poly": "bdffe8b24b350ae89be2c7bb9c8ed62ee6d2e4f85ac77e7955fbd6570127e10a",
 }
 
 
@@ -220,6 +228,10 @@ class Cpu:
                 self.cf = bool(v & 1)
                 v >>= 1
                 self.szf(v, w)
+            elif kind == 7:  # sar (used by Sqrt 12CE:128F)
+                self.cf = bool(v & 1)
+                v = (v >> 1) | (v & (1 << (bits - 1)))
+                self.szf(v, w)
             else:
                 raise EmuError("shift %d" % kind)
         return v
@@ -256,6 +268,8 @@ class Cpu:
             res = self.alu(kind, a, imm, w)
             if kind != 7:
                 (self.s16(0, res) if w else self.s8(0, res))
+        elif op == 0x0E:  # push cs (Sin: near call into a far routine, 12CE:131E)
+            self.push(self.cs)
         elif 0x40 <= op <= 0x4F:
             i = op & 7
             cf = self.cf
@@ -455,7 +469,7 @@ def run(rt, op, a, b=None):
         if op == "cmp":
             return bytes([0 if cpu.zf else (0xFF if cpu.cf else 1)]), err
         return (b"" if err else regs_real(cpu)), err
-    if op == "sqr":
+    if op in ("sqr", "sin", "cos", "sqrt"):
         cpu, err = rt.call(e, real_regs(a, ("ax", "bx", "dx")))
         return (b"" if err else regs_real(cpu)), err
     if op == "float":
@@ -495,7 +509,7 @@ class SplitMix64:
 
 
 SEEDS = {"add": 1, "sub": 2, "sqr": 3, "mul": 4, "div": 5, "cmp": 6, "float": 7, "trunc": 8, "round": 9,
-         "random": 10, "random_n": 11}
+         "random": 10, "random_n": 11, "sin": 12, "cos": 13, "sqrt": 14}
 
 SPECIAL_EXP = [0, 1, 2, 0x7F, 0x80, 0x81, 0x82, 0x9E, 0x9F, 0xA0, 0xA1, 0xFE, 0xFF]
 
@@ -542,7 +556,7 @@ def gen_case(op, g):
         n = (r >> 48) & 0xFFFF if r & 1 else (r >> 48) & 0x3FF  # small ranges are the common case
         return ((r >> 8) & 0xFFFFFFFF, n)
     a = gen_real(g)
-    if op in ("sqr", "trunc", "round"):
+    if op in ("sqr", "trunc", "round", "sin", "cos", "sqrt"):
         return (a,)
     return (a, gen_real(g, near=a[0]))
 
@@ -557,6 +571,30 @@ def op_hash(rt, op, count):
     for _ in range(count):
         res, err = run(rt, op, *gen_case(op, g))
         h.update(result_record(res, err))
+    return h.hexdigest()
+
+
+# Whole degrees as the game uses them: Rad(a) = a / 180 * pi (0DBD:00D9, BOMB.EXE 0x0F349; the two
+# constants are the operands of that routine), then Sin and Cos of the runtime. Computed with the runtime's
+# own Div and Mul, so every step is original code.
+DEG_180 = bytes.fromhex("880000000034")
+PI = bytes.fromhex("8221A2DA0F49")
+DEG_RANGE = range(-360, 721)
+
+
+def deg_record(rt, deg):
+    a, _ = run(rt, "float", deg & 0xFFFFFFFF)
+    q, _ = run(rt, "div", a, DEG_180)
+    rad, _ = run(rt, "mul", q, PI)
+    s, es = run(rt, "sin", rad)
+    c, ec = run(rt, "cos", rad)
+    return rad + bytes([es]) + s + bytes([ec]) + c
+
+
+def deg_hash(rt):
+    h = hashlib.sha256()
+    for deg in DEG_RANGE:
+        h.update(deg_record(rt, deg))
     return h.hexdigest()
 
 
@@ -580,6 +618,7 @@ def cmd_befunde(rt, args):
 def cmd_hashes(rt, args):
     for op in ENTRIES:
         print(op, args.count, op_hash(rt, op, args.count))
+    print("deg", len(DEG_RANGE), deg_hash(rt))
     return 0
 
 
