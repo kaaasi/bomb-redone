@@ -308,4 +308,4 @@ R2-D6 = B); Stufe 2b `schuss` nach Merge von `gelaende`. Integrationsfolge: `gel
 
 ### Status schuss
 
-- noch nicht begonnen (nach Merge von `gelaende`).
+- 13.11.2026, Claude Code (Opus 5.5), Draft-PR `paket/schuss`, Base `090bf9e`. Teil 1 begonnen.
