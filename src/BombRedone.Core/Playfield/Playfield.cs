@@ -368,6 +368,19 @@ public sealed class Playfield
         (-7, 0),
     ];
 
+    /// <summary>y of the topmost terrain pixel (colour 2) in column <paramref name="x"/> above the floor, or 190 if none.</summary>
+    public static int TerrainTop(Playfield field, int x)
+    {
+        ArgumentNullException.ThrowIfNull(field);
+        for (var y = 31; y <= 189; y++)
+        {
+            if (field.Screen[x, y] == TerrainColor)
+                return y;
+        }
+
+        return 190;
+    }
+
     /// <summary>
     /// [ORIGINAL] O7:0364 (BOMB.OVR 0x1ACFA): both frames UCC8:0031 in colour 13; for a wall not in [1, 2, 3] (O7:0344)
     /// the floor line (11, 189)–(309, 189) in colour 2.

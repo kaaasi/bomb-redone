@@ -14,7 +14,7 @@ Hintergrundpuffer, DAC und Zustand geprüft. Inhalt des Aufbaus: [runde.md](rund
 |---|---|
 | `python3 -I tools/reverse-engineering/feld.py befunde` | SHA-256 der Codebereiche, auf denen die Probe aufsetzt (O8 ganz, O4 `44A7–47A1`, O3 `7847–787A`, O2 `0216–04A1`, Hauptprogramm `00FA–04DF`) |
 | `… cpu` | Gegenprobe des Interpreters gegen die `Cpu` aus `real48.py` (Fälle von Welle 1, je Operation 2.000) |
-| `… run --seed <hex> --players N --wall W --background B [--mask M] [--wind W] [--invisible] [--no-fall]` | ein Fall: `analyse/feld/<fall>/` mit `<punkt>-screen.bin`, `-background.bin`, `-dac.bin`, `-dac_set.bin`, `result.json` |
+| `… run --seed <hex> --players N --wall W --background B [--mask M] [--wind W] [--invisible] [--no-fall] [--before-shuffle]` | ein Fall: `analyse/feld/<fall>/` mit `<punkt>-screen.bin`, `-background.bin`, `-dac.bin`, `-dac_set.bin`, `result.json` |
 | `… hashes [--write]` | feste Fallliste (13 Fälle, alle Wände, Hintergründe 0–10, 2–10 Spieler, RND/USER, Wind-Überlauf #98) → `analyse/feld/hashes.tsv`; Spalte `screen_core` = Bildschirm ohne BGI-Text (§2) |
 | `… call [--fill C] [--show] SEG:OFS(args) …` | nach dem Start Routinen fern aufrufen (Pascal-Argumente), SHA-256 des Bildschirms (Einzelvergleich der Zeichenroutinen) |
 | `… barrel` | Rohrende von `U431:07BA` für die Winkel 0..180 (Tabelle `Playfield.BarrelOffset`) |
@@ -107,6 +107,21 @@ ohne BGI-Text (`screen_core`), gesetzte DAC-Einträge; an S Windstufe, Wind, Sta
   untere Rand des Rahmens (0, 0)–(14, 10) liegt außerhalb. BGI-`Circle` kommt nur mit Radius 1 vor (vier Nachbarpunkte, gemessen
   mit `call`); andere Radien sind nicht abgeleitet (Radius 2 ist wegen des Seitenverhältnisses nur drei Zeilen hoch).
 - Wind (#98): Fall `00015446` ergibt −548 · 4³ = −35072 → 30464 → 30000, Fall `002B423B` −977 · 4³ → 3008 (Probe bestätigt).
+
+## 3b. Werkzeuge (Teil 4)
+
+- `bombtool render playfield [gamedata] [out.png] [--seed HEX] [--players N] [--cfg BOMB.CFG]`: Runde aus `RandSeed` nach dem
+  Mischen, Ausgabe PNG (Stand K) und `RandSeed`, Wand, Hintergrund, Wind, Panzer.
+- `bombtool seed --time HH:MM:SS.cc --players N [--cfg …] [--max-steps K] [--tanks X1,…] [--terrain X:Y,…]`: Suchwerkzeug nach
+  `runde.md` §4 „Vorschlag“ (R2-D3): `Randomize` aus der Uhrzeit, k = 0..K Schritte (Menü, Intelligenzen), Mischen
+  (`SeedSearch.SkipShuffle`: `Random(20)` + 10 Tausche, je `Random(N)` + Wiederholungen, ohne Tausch der Sätze, R2-D4), Aufbau,
+  Vergleich mit Panzer-x und oberstem Geländepixel je Spalte. **Befund:** Weil das Mischen unterschiedlich viele Schritte
+  verbraucht, laufen verschiedene k oft in denselben Stand nach dem Mischen zusammen (Test: k = 26, 37, 60) – das Bild legt den
+  Stand nach dem Mischen fest, nicht die Zahl der Menüschritte.
+- Gegenprobe des Mischens: `feld.py run --before-shuffle` setzt `--seed` vor `O3[0]` und meldet `seed_after_shuffle`; für 2, 5 und 10
+  Spieler gleich `SkipShuffle` (`SeedSearchTests`).
+- Desktop: nach der Spielerauswahl eine Vorschau der Runde (`PlayfieldScreen`), jede Taste baut die nächste (`[APPROX]` bis Zug
+  und Schuss folgen); nicht gesetzte DAC-Einträge 0..15 aus der VGA-Grundpalette (`MenuGraphics.DefaultColors`, `[APPROX]`).
 
 ## 4. Grenzen
 

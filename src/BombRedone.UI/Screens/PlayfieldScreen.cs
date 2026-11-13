@@ -13,7 +13,9 @@ namespace BombRedone.UI.Screens;
 /// <remarks>
 /// Order as in the original: O8:0984 (wall label, per player the name in the header), O4:45F1 (header texts and wind),
 /// O8:1268 (weapon bar). Checked against the probe at messpunkte A and K (PlayfieldScreenOriginalTests).
-/// [APPROX] DAC entries the round does not set keep the values of earlier screens in the original; here they are 0.
+/// [APPROX] DAC entries the round does not set keep the values of earlier screens in the original; here the 16 colours of
+/// the VGA default palette (<see cref="MenuGraphics.DefaultColors"/>: terrain 2 green, frame 13 magenta, as in the probe),
+/// the rest 0.
 /// </remarks>
 public sealed class PlayfieldScreen : IScreen
 {
@@ -32,12 +34,18 @@ public sealed class PlayfieldScreen : IScreen
     private readonly Surface _screen = new();
     private readonly byte[] _dac = new byte[Formats.Palette.ByteLength];
     private readonly bool[] _dacWritten = new bool[Surface.PaletteSize];
+    private readonly Func<IScreen?>? _next;
 
     /// <param name="fonts">SmallFont (wall label) and DefaultFont (names, header).</param>
     /// <param name="field">The playfield of the round.</param>
     /// <param name="wind">Wind of the round (header).</param>
     /// <param name="names">Names of players 1..N.</param>
-    public PlayfieldScreen(MenuFonts fonts, Playfield field, Wind wind, IReadOnlyList<string> names)
+    /// <param name="next">
+    /// Called on a key press; returns the next screen. [APPROX] Preview only (Desktop): the turns of the round follow
+    /// later (runde.md section 6); without it the screen stays.
+    /// </param>
+    public PlayfieldScreen(MenuFonts fonts, Playfield field, Wind wind, IReadOnlyList<string> names,
+        Func<IScreen?>? next = null)
     {
         ArgumentNullException.ThrowIfNull(fonts);
         ArgumentNullException.ThrowIfNull(field);
@@ -45,10 +53,15 @@ public sealed class PlayfieldScreen : IScreen
         if (names.Count != field.Tanks.Count)
             throw new ArgumentException("One name per player.", nameof(names));
         Field = field;
+        _next = next;
         field.Screen.Pixels.CopyTo(_screen.Pixels, 0);
-        field.Palette.Rgb.CopyTo(_dac);
+        MenuGraphics.DefaultColors.CopyTo(_dac);
         for (var i = 0; i < Surface.PaletteSize; i++)
+        {
             _dacWritten[i] = field.Palette.IsWritten(i);
+            if (_dacWritten[i])
+                field.Palette.Rgb.Slice(3 * i, 3).CopyTo(_dac.AsSpan(3 * i));
+        }
 
         var text = new GraphText(fonts.Default);
         DrawSetupTexts(_screen, text, fonts, field, names);
@@ -82,7 +95,8 @@ public sealed class PlayfieldScreen : IScreen
         return [.. result];
     }
 
-    public IScreen? Update(TimeSpan elapsed, ScreenInput input) => this;
+    public IScreen? Update(TimeSpan elapsed, ScreenInput input) =>
+        _next is not null && input.KeyPressed ? _next() : this;
 
     public void Draw(Surface surface)
     {

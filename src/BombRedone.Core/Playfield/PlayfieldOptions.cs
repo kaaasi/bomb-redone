@@ -1,3 +1,5 @@
+using BombRedone.Formats;
+
 namespace BombRedone.Core.Playfield;
 
 /// <summary>Wall of a round (DS:47EC, docs/analyse/runde.md section 3.1).</summary>
@@ -27,6 +29,14 @@ public sealed record PlayfieldOptions(
     public const int RandomBackground = 9;
     public const int UserBackground = 10;
     public const int RandomWind = 5;
+
+    /// <summary>Options of a BOMB.CFG (docs/formate/konfiguration.md) for <paramref name="players"/> players.</summary>
+    public static PlayfieldOptions FromConfig(GameConfig config, int players)
+    {
+        ArgumentNullException.ThrowIfNull(config);
+        return new PlayfieldOptions(players, (int)config.Wall, config.Background, config.UserBackgroundMask,
+            (int)config.Wind, config.InvisibleShot);
+    }
 
     /// <summary>Checks the ranges the original accepts (docs/formate/konfiguration.md).</summary>
     public void Validate()

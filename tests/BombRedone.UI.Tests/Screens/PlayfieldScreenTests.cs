@@ -87,4 +87,23 @@ public sealed class PlayfieldScreenTests
     [InlineData(WallKind.Warp, "WARP")]
     public void Wall_labels_are_the_texts_of_the_original(WallKind wall, string label) =>
         Assert.Equal(label, PlayfieldScreen.WallLabel(wall));
+
+    [Fact]
+    public void A_key_switches_to_the_next_screen_only_with_a_callback()
+    {
+        var random = new TurboPascalRandom(7);
+        var field = Playfield.Build(new PlayfieldOptions(2), random);
+        var still = new PlayfieldScreen(Fonts, field, new Wind(0, 0), ["A", "B"]);
+        Assert.Same(still, still.Update(TimeSpan.Zero, new ScreenInput(KeyPressed: true)));
+
+        var calls = 0;
+        var moving = new PlayfieldScreen(Fonts, field, new Wind(0, 0), ["A", "B"], () =>
+        {
+            calls++;
+            return null;
+        });
+        Assert.Same(moving, moving.Update(TimeSpan.FromSeconds(1), ScreenInput.None));
+        Assert.Null(moving.Update(TimeSpan.Zero, new ScreenInput(KeyPressed: true)));
+        Assert.Equal(1, calls);
+    }
 }

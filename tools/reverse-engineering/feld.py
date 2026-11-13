@@ -9,7 +9,7 @@ code regions are checked by SHA-256 only; outputs go to analyse/feld/ (protected
 Usage:
   feld.py [--gamedata DIR] befunde [--print]     check the code regions the probe relies on
   feld.py [...] run --seed HEX [--players N] [--wall W] [--background B] [--mask M] [--wind W]
-                    [--invisible] [--no-fall] [--out DIR]
+                    [--invisible] [--no-fall] [--before-shuffle] [--out DIR]
                                                  one case; writes screen/background/DAC dumps and result.json
   feld.py [...] call [--fill C] [--show] SEG:OFS(args) ...
                                                  after the boot: far call routines (segment of the load image or
@@ -188,10 +188,16 @@ class Probe:
         saved = [(a, bytes(m.mem[a:a + n])) for a, n in (
             (lin(self.ds(), RECORD), RECORD_SIZE * 11), (lin(self.ds(), 0xE5A6), 2 * 11), (lin(self.ds(), 0x3BE8), 4 * 11))]
 
+        shuffle = {}
+
         def set_seed(mm):
             for a, b in saved:
                 mm.mem[a:a + len(b)] = b
-            self.wds(mm, RANDSEED, case["seed"], 4)
+            if case.get("before_shuffle"):
+                # --before-shuffle: the seed was set before O3[0]; keep what the shuffle O3:2417 left.
+                shuffle["seed_after_shuffle"] = self.rds(mm, RANDSEED, 4)
+            else:
+                self.wds(mm, RANDSEED, case["seed"], 4)
             counts["counting"] = True
             mm.dac_written.clear()
             return False
@@ -226,6 +232,8 @@ class Probe:
         m.traps[lin(self.ovseg[4], O4_AFTER_WIND)] = snap("wind")
         m.traps[lin(self.ovseg[4], O4_AFTER_HEADER)] = snap("header")
         m.traps[lin(self.ovseg[4], O4_START_PLAYER)] = snap("start", stop=True)
+        if case.get("before_shuffle"):
+            self.wds(m, RANDSEED, case["seed"], 4)
         m.far_call(load + self.game.overlays[2]["stub"], 0x20, limit=c.steps + 400_000_000)
         if "start" not in snaps:
             raise RuntimeError("O4:479A not reached")
@@ -238,6 +246,7 @@ class Probe:
         result = {
             "case": case,
             "background_drawn": backgrounds,
+            **shuffle,
             "wall_round": self.rds(m, 0x47EC),
             "wall_factor_real48": bytes(m.mem[lin(self.ds(), 0x47D2):lin(self.ds(), 0x47D2) + 6]).hex(),
             "wind_level": self.rds(m, 0x47E4),
@@ -269,7 +278,8 @@ def core_screen(screen):
 def parse_case(args):
     return {"seed": int(args.seed, 16) & 0xFFFFFFFF, "players": args.players, "wall": args.wall,
             "background": args.background, "mask": int(args.mask, 0), "wind": args.wind,
-            "invisible": args.invisible, "no_fall": args.no_fall}
+            "invisible": args.invisible, "no_fall": args.no_fall,
+            "before_shuffle": getattr(args, "before_shuffle", False)}
 
 
 def cmd_befunde(p, args):
@@ -460,6 +470,8 @@ def main():
     r.add_argument("--wind", type=int, default=2)
     r.add_argument("--invisible", action="store_true")
     r.add_argument("--no-fall", action="store_true")
+    r.add_argument("--before-shuffle", action="store_true",
+                   help="set --seed before O3[0] (before the shuffle) and report RandSeed after it")
     r.add_argument("--out")
     a = sub.add_parser("call")
     a.add_argument("call", nargs="+", help="routine with Pascal arguments, e.g. 0CC8:09E4(10,20,30,40,5) or O8:0000(3)")
