@@ -7,7 +7,7 @@ Den Status pflegt jede Spur nur in ihrem eigenen Abschnitt. Abgeschlossene Runde
 **Koordination:** Die Leitstelle verteilt Pakete, prüft und mergt Pull Requests und pflegt Plan und Doku
 (Rollen: [prozess/zusammenarbeit.md](prozess/zusammenarbeit.md)). **Spuren starten erst nach dem Go des Nutzers.**
 
-## Aktuelle Runde: Runde 2 – Spielfeld, Gelände, Schuss, Leser `*.TWS` (Plan 12.11.2026, Welle 1 gemergt 12.11.2026, Welle 2: Go 13.11.2026, `schuss` wartet auf R2-D8)
+## Aktuelle Runde: Runde 2 – Spielfeld, Gelände, Schuss, Leser `*.TWS` (Plan 12.11.2026, Welle 1 gemergt 12.11.2026, Welle 2: Go 13.11.2026)
 
 Runde 1 abgeschlossen: [archiv/runde-1.md](archiv/runde-1.md). Grundlagen: [analyse/re-grundlagen.md](analyse/re-grundlagen.md)
 (Overlays O3–O9, Real48, Zufall), [formate/spielstand.md](formate/spielstand.md), [anforderungen/bildschirme.md](anforderungen/bildschirme.md)
@@ -17,7 +17,7 @@ Regeln wie Runde 1: Base aktueller `main` (tatsächlichen SHA in den Draft-PR), 
 `[ORIGINAL]`/`[APPROX]`, höchstens drei Fortsetzungen je Spur, Originalmaterial nur in Schutzordnern (`AGENTS.md` §2.1).
 Erstreview je Spur: Claude Opus 5.5, frische Sitzung; Gesamtreview am Rundenende: ChatGPT (`prozess/anhang.md` C).
 
-### Entscheidungen der Runde (Vorlage Leitstelle; R2-D1…D6 entschieden vom Nutzer 12.11.2026, R2-D7 am 13.11.2026: alle wie empfohlen; R2-D8 offen)
+### Entscheidungen der Runde (Vorlage Leitstelle; R2-D1…D6 entschieden vom Nutzer 12.11.2026, R2-D7 und R2-D8 am 13.11.2026: alle wie empfohlen)
 
 **R2-D1 – Umfang der Runde – entschieden: A (Nutzer 12.11.2026).** Problem: „Spielfeld, Gelände, Schuss“ reicht von einem Standbild bis zur spielbaren Runde.
 
@@ -99,7 +99,7 @@ Abnahme verlangt den Pixelvergleich mit Bildern aus Sitzung 3 (R2-D3); Sitzungen
 
 Empfehlung: **A**. Gelingt die Probe für einen Baustein nicht, bleibt dieser Teil blockiert (`spur-wartet`, `AGENTS.md` §2.10).
 
-**R2-D8 – Krater in `schuss`, obwohl Lead Ball keinen hat – offen (Vorlage Leitstelle 13.11.2026, Review #104 P2-1).** Problem: R2-D1 A
+**R2-D8 – Krater in `schuss`, obwohl Lead Ball keinen hat – entschieden: A (Nutzer 13.11.2026; Vorlage Leitstelle, Review #104 P2-1).** Problem: R2-D1 A
 nennt „Schuss der Standardwaffe mit … Krater“; laut `runde.md` §5.5 (Q10) macht Lead Ball (Waffe 0) aber weder Explosion noch Krater,
 nur 5 Schaden bei Volltreffer. Krater, Explosion und Flächenschaden (§5.6 K1–K4) gibt es nur für die Sprengwaffen {1, 2, 3, 4, 7, 11}.
 
@@ -216,17 +216,18 @@ R2-D6 = B); Stufe 2b `schuss` nach Merge von `gelaende`. Integrationsfolge: `gel
 
 - **Inhalt (R2-D1 = A, nur Lead Ball):** `Core`: Abschuss und Startwerte §5.1–5.2 (Rückstoß-`Random:Real`, Q2; Schaden Q11), Flug §5.3 in Real48
   (`SS`/`LS`, Schwerkraft, Wind/5000/SS), Wände §5.4 (alle Wandarten, Randregel), Treffer und Ende §5.4, Einschlag und Schaden §5.5,
-  Explosion und Krater §5.6 nach **R2-D8** (`Random` nur bei Ton), Erdrutsch und Fallen §5.8 (Crumble, `Random(3)` je Zeile), Gelände bei voller
+  Explosion, Krater und Flächenschaden §5.6 (K1–K4) für Baby Missile (Waffe 1, Radius 10) nach R2-D8 = A, wählbar in
+  Vorschau und `bombtool` (`Random` nur bei Ton), Erdrutsch und Fallen §5.8 (Crumble, `Random(3)` je Zeile), Gelände bei voller
   Kraft §5.12. `UI`: Spur (Trail, Inviso), Explosion, Krater, Erdrutsch im `PlayfieldScreen`. Nicht in Runde 2: übrige Waffen,
   Laser, MIRV, Lenkung, Tod/Blitz/Rundenende §5.9, Zugfolge, Computer.
 - **Teile:** 1. Probe nach R2-D7 (Flug `O4:01B7`, Explosion `O6`); 2. Flug, Wände, Ende; 3. Einschlag, Schaden, Krater; 4. Erdrutsch,
-  Fallen; 5. Darstellung; 6. Bildvergleich mit Sitzung 3 (`runde.md` §7 Nr. 4, 5, 7, 11, Nr. 6 nach R2-D8; blockiert bis die Bilder da sind).
+  Fallen; 5. Darstellung; 6. Bildvergleich mit Sitzung 3 (`runde.md` §7 Nr. 4, 5, 7, 11, Nr. 6 mit Baby Missile statt Nuke; blockiert bis die Bilder da sind).
 - **Dateien:** `src/BombRedone.Core/Shot/*` (neu), `src/BombRedone.Core/Numerics/Real48.Trig*.cs` (neu: `Sin`, `Cos` `12CE:12EE`/`1301`,
-  Grad→Bogen `0DBD:00D9`, π; bei R2-D8 A auch `Sqrt` `12CE:128F`), `tests/BombRedone.Core.Tests/Numerics/Real48Trig*` (neu),
+  Grad→Bogen `0DBD:00D9`, π, `Sqrt` `12CE:128F`), `tests/BombRedone.Core.Tests/Numerics/Real48Trig*` (neu),
   `tools/reverse-engineering/real48.py` (nur neue Einsprünge, Hash-Probe wie Welle 1; Review #104 P2-3), `src/BombRedone.Core/Playfield/*` (nur Erweiterungen für Krater/Erdrutsch, nach
   `gelaende`), `src/BombRedone.UI/Screens/Playfield*`, `src/BombRedone.Desktop/*`, `tests/BombRedone.Core.Tests/Shot/*`,
   `tests/BombRedone.UI.Tests/Screens/Playfield*`, `tools/reverse-engineering/feld*` (Erweiterung der Probe), `docs/analyse/feld.md`.
-- **Abnahme:** nach R2-D7; Bahn und Endpunkt je Wandart, Krater nach R2-D8; `Sin`/`Cos`/`Sqrt` bitgleich gegen die Laufzeit (Probe);
+- **Abnahme:** nach R2-D7; Bahn und Endpunkt je Wandart, Krater und Flächenschaden für Baby Missile (R2-D8 = A); `Sin`/`Cos`/`Sqrt` bitgleich gegen die Laufzeit (Probe);
   `RandSeed` nach dem Schuss gleich.
 - **Modell:** Claude Opus 5.5.
 
