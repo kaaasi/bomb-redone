@@ -12,6 +12,8 @@ Usage:
                                                      one shot; writes dumps and result.json
   feld_schuss.py [...] hashes [--only I ...]         fixed shot list -> TSV (analyse/feld/schuss-hashes.tsv); the C#
                                                      tests (tests/BombRedone.Core.Tests/Shot) compare against these
+  feld_schuss.py [...] post [--only I ...]           shot, then all tanks, landslide O7:03C1 and falling O7:0020 like
+                                                     O4:49CB -> analyse/feld/schuss-post-hashes.tsv
 
 What is recorded (all original code runs; the probe only sets the record fields of the shooter):
   - the shot state x, y, vx, vy (DS:4796, 479C, 47A2, 47A8, Real48) at every arrival at the loop head O4:060A, with
@@ -48,6 +50,8 @@ REGIONS = {
     "O6 Einschlag": ("ovl", 6, 0x0000, 0x18CC),
     "0431 Punkte und Erdrutsch": ("seg", 0x0431, 0x03C3, 0x05ED),
     "0CC8 PutPixel/GetPixel": ("seg", 0x0CC8, 0x0BB6, 0x0C1F),
+    "O7 Fallen, Rahmen, Erdrutsch": ("ovl", 7, 0x0000, 0x040C),
+    "O4 nach dem Schuss": ("ovl", 4, 0x4960, 0x4A0B),
 }
 REGION_HASHES = {
     "O4 Schuss 01B7": "2351a60888e61870751f6c9802b0d33eb970d4a9b87dc26fd8256fc29ac26ffd",
@@ -71,7 +75,30 @@ def field_crop(screen):
     return b"".join(screen[y * 320 + 8:y * 320 + 313] for y in range(28, 193))
 
 
-def run_shot(p, case, shot):
+def snapshot(p, m, case, counts, n0, r0):
+    bg_ofs, bg_seg = struct.unpack_from("<HH", m.mem, feld.lin(p.ds(), 0xE5C0))
+    b = feld.lin(bg_seg, bg_ofs)
+    records = []
+    raw = b""
+    for i in range(1, case["players"] + 1):
+        r = feld.RECORD + feld.RECORD_SIZE * i
+        raw += bytes(m.mem[feld.lin(p.ds(), r):feld.lin(p.ds(), r) + feld.RECORD_SIZE])
+        records.append({k: p.rds(m, r + o, n, sg) for k, o, n, sg in FIELDS})
+    return {
+        "screen": bytes(m.mem[0xA0000:0xA0000 + 64000]),
+        "background": bytes(m.mem[b:b + 64000]),
+        "dac_set": b"".join(bytes([i]) + bytes(m.dac[3 * i:3 * i + 3]) for i in sorted(m.dac_written)),
+        "records_raw": raw,
+        "records": records,
+        "randseed": p.rds(m, feld.RANDSEED, 4),
+        "random_n": counts["random_n"] - n0,
+        "random_real": counts["random_real"] - r0,
+    }
+
+
+def run_shot(p, case, shot, post=None):
+    """post: {"crumble": percent} continues like O4:49CB after the weapon: all tanks U431:07BA, Crumble > 0 -> O7:03C1,
+    FallDown -> O7:0020 (runde.md 5.8, 5.9 K11)."""
     out = {}
 
     def after(m, counts, snaps):
@@ -131,26 +158,19 @@ def run_shot(p, case, shot):
         m.traps[feld.lin(p.ovseg[6], O6_IMPACT)] = on_impact
         n0, r0 = counts["random_n"], counts["random_real"]
         m.far_call(p.ovseg[4], O4_SHOT, args=(shot["shooter"],), limit=c.steps + 2_000_000_000)
-        bg_ofs, bg_seg = struct.unpack_from("<HH", m.mem, feld.lin(p.ds(), 0xE5C0))
-        b = feld.lin(bg_seg, bg_ofs)
-        n_players = case["players"]
-        records = []
-        raw = b""
-        for i in range(1, n_players + 1):
-            r = feld.RECORD + feld.RECORD_SIZE * i
-            raw += bytes(m.mem[feld.lin(p.ds(), r):feld.lin(p.ds(), r) + feld.RECORD_SIZE])
-            records.append({k: p.rds(m, r + o, n, sg) for k, o, n, sg in FIELDS})
-        out["after"] = {
-            "screen": bytes(m.mem[0xA0000:0xA0000 + 64000]),
-            "background": bytes(m.mem[b:b + 64000]),
-            "dac_set": b"".join(bytes([i]) + bytes(m.dac[3 * i:3 * i + 3]) for i in sorted(m.dac_written)),
-            "records_raw": raw,
-            "records": records,
-            "randseed": p.rds(m, feld.RANDSEED, 4),
-            "random_n": counts["random_n"] - n0,
-            "random_real": counts["random_real"] - r0,
-        }
+        out["after"] = snapshot(p, m, case, counts, n0, r0)
         out["path"] = {"steps": steps["n"], "sha": path.hexdigest(), "first": steps["first"]}
+        if post is not None:
+            m.dac_written.clear()
+            n1, r1 = counts["random_n"], counts["random_real"]
+            p.wds(m, 0xE8A4, post["crumble"])
+            for i in range(1, case["players"] + 1):
+                m.far_call(load + 0x0431, 0x07BA, args=(i,), limit=c.steps + 50_000_000)
+            if post["crumble"] > 0:
+                m.far_call(p.ovseg[7], 0x03C1, limit=c.steps + 2_000_000_000)
+            if not case["no_fall"]:
+                m.far_call(p.ovseg[7], 0x0020, limit=c.steps + 2_000_000_000)
+            out["post"] = snapshot(p, m, case, counts, n1, r1)
 
     result, snaps = p.run_case(case, after=after)
     return result, out
@@ -237,7 +257,51 @@ SHOTS = [
     (A, (1, 45, 265, 1, None, False, None)),          # 20 Baby Missile close to tank 2: area damage only
     (A, (1, 45, 240, 0, None, False, None, 0)),       # 21 RandSeed 0 before the shot: Random:Real < 0.2, 1 damage
     (A, (1, 45, 265, 1, None, False, None, None, True)),  # 22 Baby Missile with sound: Random(500)/Random(250) per step
+    (A, (1, 88, 943, 1, None, False, 0)),             # 23 power = M through the terrain, explodes at the bottom (y 191)
+    (A, (1, 88, 943, 3, None, False, 0)),             # 24 the same with weapon 3 (radius 30)
 ]
+
+
+# After-shot cases (O4:49CB): shot number from SHOTS, crumble percent, FallDown (False = case option no_fall).
+POST = [
+    (3, 0, True),     # 0 Baby Missile direct hit: crater under tank 2, it falls (Random(3) + 1 per row on inertia)
+    (3, 100, True),   # 1 the same with Crumble 100: landslide first
+    (2, 100, True),   # 2 crater next to tank 2, landslide
+    (18, 50, True),   # 3 four players, Crumble 50 (Random:Real decides)
+    (3, 100, False),  # 4 landslide without falling
+    (13, 100, True),  # 5 trail pixels (90..99) count as air for the landslide
+    (23, 100, True),  # 6 hole below the surface: the landslide moves terrain
+    (24, 100, True),  # 7 large hole: terrain slides, tank 2 falls
+    (24, 0, True),    # 8 the same without landslide
+]
+
+
+def cmd_post(p, args):
+    header = "nr\tshot\tcrumble\tfall\trandseed\trandom_n\trandom_real\tscreen_field\tbackground_buffer\tdac_set\trecords"
+    rows = []
+    print(header)
+    selected = range(len(POST)) if args.only is None else args.only
+    for k in selected:
+        i, crumble, fall = POST[k]
+        case_t, spec = SHOTS[i]
+        (seed, n, wall, bg, mask, windopt, inv, nofall) = case_t
+        case = {"seed": seed, "players": n, "wall": wall, "background": bg, "mask": mask, "wind": windopt,
+                "invisible": inv, "no_fall": not fall}
+        shot = {"shooter": spec[0], "angle": spec[1], "power": spec[2], "weapon": spec[3], "ss": spec[4], "trail": spec[5],
+                "wind_value": spec[6], "randseed": spec[7] if len(spec) > 7 else None,
+                "sound": spec[8] if len(spec) > 8 else False}
+        result, out = run_shot(p, case, shot, post={"crumble": crumble})
+        a = out["post"]
+        recs = " ".join("%d,%d,%d,%d" % (r["energy"], r["inertia"], r["x"], r["y"]) for r in a["records"])
+        row = "%d\t%d\t%d\t%d\t%08X\t%d\t%d\t%s\t%s\t%s\t%s" % (
+            k, i, crumble, 1 if fall else 0, a["randseed"], a["random_n"], a["random_real"], sha(field_crop(a["screen"])),
+            sha(a["background"]), sha(a["dac_set"]), recs)
+        rows.append(row)
+        print(row, flush=True)
+    os.makedirs(args.root_out, exist_ok=True)
+    with open(os.path.join(args.root_out, "schuss-post-hashes.tsv"), "w") as f:
+        f.write(header + "\n" + "\n".join(rows) + "\n")
+    return 0
 
 
 def cmd_hashes(p, args):
@@ -305,13 +369,15 @@ def main():
     r.add_argument("--out")
     h = sub.add_parser("hashes")
     h.add_argument("--only", type=int, nargs="*")
+    q = sub.add_parser("post")
+    q.add_argument("--only", type=int, nargs="*")
     args = ap.parse_args()
     font = None
     if os.path.exists(args.font):
         with open(args.font, "rb") as f:
             font = f.read()
     p = feld.Probe(args.gamedata, font)
-    return {"befunde": cmd_befunde, "run": cmd_run, "hashes": cmd_hashes}[args.cmd](p, args)
+    return {"befunde": cmd_befunde, "run": cmd_run, "hashes": cmd_hashes, "post": cmd_post}[args.cmd](p, args)
 
 
 if __name__ == "__main__":

@@ -161,18 +161,18 @@ Zufallsaufrufe und alle Sätze.
 |---|---|
 | `python3 -I tools/reverse-engineering/feld_schuss.py befunde` | SHA-256 von `O4:01B7–1378`, O6 ganz, `U431:03C3–05EC`, `UCC8:0BB6–0C1E` |
 | `… run --seed <hex> [Fall wie feld.py] --shooter N --angle A --power P [--weapon W] [--ss S] [--trail] [--wind-value V] [--shot-seed HEX] [--sound]` | ein Schuss nach `analyse/feld/schuss-…/` |
-| `… hashes [--only I …]` | feste Liste (23 Schüsse) → `analyse/feld/schuss-hashes.tsv`; daraus `tests/…/Shot/ShotProbeData.cs` |
+| `… hashes [--only I …]` | feste Liste (25 Schüsse) → `analyse/feld/schuss-hashes.tsv`; daraus `tests/…/Shot/ShotProbeData.cs` |
 
 Die Liste deckt ab: Lead Ball auf Gelände und Panzer, Baby Missile auf Gelände (ohne und mit Flächenschaden), Volltreffer, auf den
 Schützen selbst, alle fünf Wandarten, Wand 0 rechts/links mit Wind > 0/< 0, Kraft = M und > M (G2), Spur, unsichtbarer Schuss mit
 Spur, SS = 1 und 20, 4 und 5 Spieler mit Hintergrund 2 und 3, Selbstschaden (`Random:Real` < 0,2 bei `RandSeed` 0), Baby Missile
-mit Ton (209 `Random(n)`: 11 Ringe + 3 · 66 Palettenschritte). Verglichen wird der
+mit Ton (209 `Random(n)`: 11 Ringe + 3 · 66 Palettenschritte), Kraft = M mit Explosion unter dem Gelände (Waffen 1 und 3). Verglichen wird der
 Bildschirm nur in Rahmen und Feld (x 8..312, y 28..192, Spalte `screen_field`), weil Kopfzeile, Waffenleiste und Wandbeschriftung
 BGI-Ausgaben der UI sind (§2).
 
 ### 5.3 Ergebnis (Teile 2 und 3)
 
-`Core/Shot` (`BallisticShot`, `Impact`, `Damage`) ist in allen 23 Schüssen **bitgleich**: jeder Zustand der Flugschleife, Ende,
+`Core/Shot` (`BallisticShot`, `Impact`, `Damage`) ist in allen 25 Schüssen **bitgleich**: jeder Zustand der Flugschleife, Ende,
 `RandSeed`, gesetzte DAC-Einträge, Puffer, Rahmen und Feld, Energie, Punkte, Schild und Treffer aller Sätze (`ShotProbeTests`). Dabei
 aus dem Code gelesen (Ergänzung zu `runde.md` §5):
 
@@ -191,6 +191,25 @@ aus dem Code gelesen (Ergänzung zu `runde.md` §5):
   Kopie aus dem Puffer (`VgaDraw.CopyEllipse`). Danach x + 11, y + 31 (Real48, nicht exakt das alte x) für den Flächenschaden.
 - **Schaden** `O10:0000` setzt die Farbe des Panzers nur neu, wenn die Abwehr negativ wurde; Punkte `O10:018B` als Wort mit
   Vorzeichen (10 je verlorener Energie).
+
+### 5.4 Nach dem Schuss: Erdrutsch und Fallen (Teil 4)
+
+`feld_schuss.py post` setzt einen Schuss der Liste fort wie `O4:49CB`: `U431:07BA` für alle Sätze, Crumble (`E8A4`) > 0 → `O7:03C1`,
+FallDown → `O7:0020`; aufgezeichnet wie in §5.2 (feste Liste mit 9 Fällen → `analyse/feld/schuss-post-hashes.tsv`, dazu die Schüsse
+23 und 24: Kraft = M durch das Gelände, Explosion am Boden unter dem Gelände). `Core/Shot/AfterShot` ist in allen 9 Fällen
+bitgleich (`AfterShotProbeTests`: `RandSeed`, Rahmen und Feld, Puffer, DAC, Energie, Inertia, Lage):
+
+- **Erdrutsch** `U431:0496`: Suchlauf rückwärts ab Adresse 64000 (`repne scasb`, Ende bei di = 0); ein Pixel Farbe 2 mit „Luft“
+  darunter (0 oder 30..99, also auch Spur 90..99) rückt sofort eine Zeile tiefer, die neue Adresse kommt in die Liste. Dann Durchgänge
+  in Listenreihenfolge (unten rechts zuerst), bis alle Einträge 0 sind. Ein Krater an der Oberfläche bewegt nichts (kein Überhang);
+  erst ein Loch unter der Oberfläche (Schüsse 23/24) lässt Gelände rutschen.
+- **Fallen** `O7:0020`: Rohr einmal mit dem Puffer löschen (`UCC8:0AC0`), dann je Zeile Körper zeichnen, Farbe, y + 1, Abgleiten,
+  Prüfung der neun Pixel, `Random(3) + 1` Schaden auf Inertia, alter Körper aus dem Puffer; der fallende Körper ist also nie zu sehen,
+  der Puffer frisst dabei Gelände unter dem alten Körper weg. Zum Schluss jeder Panzer neu (`U431:07BA`). Fall 7: Panzer 2 fällt 28
+  Zeilen, 59 Schaden.
+- **Crumble** `O7:03C1`: Rahmen neu, dann Erdrutsch bei `Random:Real · 100 ≤ Crumble` (auch bei 100 ein `Random:Real`).
+
+### 5.5 Grenzen
 
 Nicht umgesetzt (Runde 2, R2-D1 = A; `NotSupportedException`): Lenkung, Repulser im Feld (Q5, braucht `ArcTan` `12CE:14D8` und die
 Tabelle `0B25`), Einschläge der Waffen außer 0 und {1, 2, 3, 4, 7, 11}; der Bestand (+2Eh) wird noch nicht abgezogen. Ton und

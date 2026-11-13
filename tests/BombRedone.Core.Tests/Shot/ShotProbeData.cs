@@ -6,7 +6,7 @@ namespace BombRedone.Core.Tests.Shot;
 /// </summary>
 internal static class ShotProbeData
 {
-    public static readonly TheoryData<ShotProbeTests.ShotCase> Cases =
+    public static readonly ShotProbeTests.ShotCase[] All =
     [
         new(0, "12345678", 2, 0, 0, 2, false, 1, 45, 270, 0, 10, false, -44, null, false, 733, "17a87bcd03f1926e6c5b8e8ed698b61e405ea901a1ef2c221e694ff23e3668f9", "89d604c02c14", "879a58cda350", "822179f2174b", "8277fe6fbe60", 296, 104, 21, true, "DD9548FA", "ce41d8b95ee50c843a9c2a819320834ef980a15d0ccf8e5a83746b778411b949", "a982dfe689902b26f79a34f9465f451f3393ff14852da380e6e3ee12f3de42f6", "100,50,0,1 95,0,0,0", "ca91e47e14bc2544c5f5eba13a5f34c9e3b784f59b510ae82a5a707a6f66ec21"),
         new(1, "12345678", 2, 0, 0, 2, false, 1, 45, 240, 0, 10, false, -44, null, false, 668, "84da2bb9ac0073f334cc977b422befd826d7242f4936b2d1fee9791454b8b5d5", "88508f7d3177", "873497def55f", "82702ef89933", "82f9dffa4b52", 247, 111, 2, true, "DD9548FA", "ce41d8b95ee50c843a9c2a819320834ef980a15d0ccf8e5a83746b778411b949", "05d44b5de1a6af3e99346199a32352783d3736e5c3044a15615a2d77257e6c96", "100,0,0,0 100,0,0,0", "402810442b215ece8329bad89b1839999c8988af1925e03faf04e0d973cb1d4f"),
@@ -31,5 +31,18 @@ internal static class ShotProbeData
         new(20, "12345678", 2, 0, 0, 2, false, 1, 45, 265, 1, 10, false, -44, null, false, 726, "cb7ddedd44a8c72ef93705bf095e7057dff3a910352b2958fe82fb1d070047ce", "896ae7007f10", "87421bf90b56", "82434e59f646", "824ccb14ca60", 288, 107, 2, true, "DD9548FA", "ce41d8b95ee50c843a9c2a819320834ef980a15d0ccf8e5a83746b778411b949", "66cbd48778b9e78330cd829a632dc205dc1129950f1bc55e0cf4e6cef39af3b4", "100,60,0,0 94,0,0,0", "ce8794bfd054c4436986a0d351d7e1df1e02936770604502860755e99d609dec"),
         new(21, "12345678", 2, 0, 0, 2, false, 1, 45, 240, 0, 10, false, -44, "00000000", false, 668, "84da2bb9ac0073f334cc977b422befd826d7242f4936b2d1fee9791454b8b5d5", "88508f7d3177", "873497def55f", "82702ef89933", "82f9dffa4b52", 247, 111, 2, true, "00000001", "ce41d8b95ee50c843a9c2a819320834ef980a15d0ccf8e5a83746b778411b949", "12b55b582d7d544b644811d575814394eadd5e4be379e6657d4435b117555dc3", "99,0,0,0 100,0,0,0", "402810442b215ece8329bad89b1839999c8988af1925e03faf04e0d973cb1d4f"),
         new(22, "12345678", 2, 0, 0, 2, false, 1, 45, 265, 1, 10, false, -44, null, true, 726, "cb7ddedd44a8c72ef93705bf095e7057dff3a910352b2958fe82fb1d070047ce", "896ae7007f10", "87421bf90b56", "82434e59f646", "824ccb14ca60", 288, 107, 2, true, "78E86653", "ce41d8b95ee50c843a9c2a819320834ef980a15d0ccf8e5a83746b778411b949", "66cbd48778b9e78330cd829a632dc205dc1129950f1bc55e0cf4e6cef39af3b4", "100,60,0,0 94,0,0,0", "ce8794bfd054c4436986a0d351d7e1df1e02936770604502860755e99d609dec"),
+        new(23, "12345678", 2, 0, 0, 2, false, 1, 88, 943, 1, 10, false, 0, null, false, 3812, "9e3af7b4b23a8134f359d2bffc595e05bfbea96092f85df9e8f8cffa4395f8d1", "89a9bfd6200e", "8842333eb83f", "800633178028", "85e06c022c1a", 284, 191, 2, true, "DD9548FA", "ce41d8b95ee50c843a9c2a819320834ef980a15d0ccf8e5a83746b778411b949", "5406b30844a926a9b34ab263313c0694e76557d165a61b1ec02c9556f9098ca5", "100,0,0,0 100,0,0,0", "1192dcfbc884217946232f95340f73774145fa58a0a3ab2ac3b5096e399740ab"),
+        new(24, "12345678", 2, 0, 0, 2, false, 1, 88, 943, 3, 10, false, 0, null, false, 3812, "9e3af7b4b23a8134f359d2bffc595e05bfbea96092f85df9e8f8cffa4395f8d1", "89a9bfd6200e", "8842333eb83f", "800633178028", "85e06c022c1a", 284, 191, 2, true, "DD9548FA", "ce41d8b95ee50c843a9c2a819320834ef980a15d0ccf8e5a83746b778411b949", "39bbbed3e3f38bb479894703a4f3a7e18771579437532258348fe39d80866015", "100,0,0,0 100,0,0,0", "6d28a3067f81e042de2445b91fdc8cf889bd23a6ebdbfa4db3486bd427a17ff1"),
     ];
+
+    public static TheoryData<ShotProbeTests.ShotCase> Cases
+    {
+        get
+        {
+            var data = new TheoryData<ShotProbeTests.ShotCase>();
+            foreach (var c in All)
+                data.Add(c);
+            return data;
+        }
+    }
 }

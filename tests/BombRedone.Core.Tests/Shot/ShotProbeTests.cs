@@ -28,7 +28,23 @@ public sealed class ShotProbeTests
 
     private static string Sha(ReadOnlySpan<byte> bytes) => Convert.ToHexStringLower(SHA256.HashData(bytes));
 
-    private static (Core.Playfield.Playfield Field, ShotResult Result, string Path, uint Seed) Fire(ShotCase c)
+    /// <summary>Playfield and random generator right after the shot of <paramref name="c"/>.</summary>
+    internal static (Core.Playfield.Playfield Field, TurboPascalRandom Random) FireForTest(ShotCase c)
+    {
+        var (field, _, _, random) = Fire(c);
+        return (field, random);
+    }
+
+    /// <summary>SHA-256 of frame and field of the screen (x 8..312, y 28..192), column screen_field of the probe.</summary>
+    internal static string FieldHash(Core.Playfield.Playfield field)
+    {
+        var crop = new byte[305 * 165];
+        for (var y = 28; y <= 192; y++)
+            field.Screen.Pixels.AsSpan(y * 320 + 8, 305).CopyTo(crop.AsSpan((y - 28) * 305));
+        return Sha(crop);
+    }
+
+    private static (Core.Playfield.Playfield Field, ShotResult Result, string Path, TurboPascalRandom Random) Fire(ShotCase c)
     {
         var random = new TurboPascalRandom(Convert.ToUInt32(c.Seed, 16));
         var field = Core.Playfield.Playfield.Build(
@@ -54,7 +70,7 @@ public sealed class ShotProbeTests
             BinaryPrimitives.WriteInt32LittleEndian(record.AsSpan(26), step.Ticks);
             path.AppendData(record);
         });
-        return (field, result, Convert.ToHexStringLower(path.GetHashAndReset()), random.Seed);
+        return (field, result, Convert.ToHexStringLower(path.GetHashAndReset()), random);
     }
 
     [Theory]
@@ -75,9 +91,9 @@ public sealed class ShotProbeTests
     [MemberData(nameof(Cases))]
     public void State_after_the_shot_matches_the_original(ShotCase c)
     {
-        var (field, _, _, seed) = Fire(c);
+        var (field, _, _, random) = Fire(c);
 
-        Assert.Equal(c.SeedAfter, seed.ToString("X8"));
+        Assert.Equal(c.SeedAfter, random.Seed.ToString("X8"));
         Assert.Equal(c.Records, string.Join(" ", field.Tanks.Select(t => $"{t.Energy},{t.Score},{t.Defense[Damage.Shield]},{t.Hits}")));
         Assert.Equal(c.DacSet, Sha(field.Palette.WrittenEntries()));
     }
@@ -89,9 +105,6 @@ public sealed class ShotProbeTests
         var (field, _, _, _) = Fire(c);
 
         Assert.Equal(c.BackgroundBuffer, Sha(field.Background.Pixels));
-        var crop = new byte[305 * 165];
-        for (var y = 28; y <= 192; y++)
-            field.Screen.Pixels.AsSpan(y * 320 + 8, 305).CopyTo(crop.AsSpan((y - 28) * 305));
-        Assert.Equal(c.ScreenField, Sha(crop));
+        Assert.Equal(c.ScreenField, FieldHash(field));
     }
 }
