@@ -129,3 +129,101 @@ ohne BGI-Text (`screen_core`), gesetzte DAC-Einträge; an S Windstufe, Wind, Sta
   und Zustand, nicht den zeitlichen Ablauf (`Delay(FS)` beim Fallen läuft mit, verändert aber nichts).
 - Titel O1 und Hauptmenü sind übersprungen; Sätze kommen aus `O2:0216`. Computer-Spieler (Steuerart 3) prüft die Probe nicht.
 - `Random:Real < 0,5 → 0C79:0428` (Laufrichtung der Rotation) wirkt nur auf den Zustand von `0C79`, nicht auf den DAC an A.
+
+## 5. Schuss (Spur `schuss`, Stand 13.11.2026)
+
+### 5.1 Real48-Trigonometrie (Teil 1)
+
+`tools/reverse-engineering/real48.py` hat drei neue Einsprünge (`sin` `12CE:1301`, `cos` `12CE:12EE`, `sqrt` `12CE:128F`) und die
+Bereiche `12CE:1202–138B` (Hilfen, `Int` `122A`, `Frac` `127B`, Sqrt, Cos, Sin, Koeffiziententabelle `1362`) und `12CE:160D–1674`
+(Polynom) in `befunde`; dafür kann der Emulator zusätzlich `SAR` und `PUSH CS`. `hashes` gibt je 20.000 Fälle und die Zeile `deg`
+(ganze Grad −360..720 über `Rad` `0DBD:00D9`, Sin, Cos). Umsetzung `Core/Numerics/Real48.Trig.cs`, bitgleich (`Real48TrigProbeTests`):
+
+- **Sin:** Exponent < 6Ch → Argument zurück; nur für |x| ≥ 2π `Frac(x / 2π) · 2π`, negativ + 2π; ab π − π und Vorzeichen merken,
+  ab π/2 → π − x; Polynom `12CE:160D`: t = x², s = c₀ · t, s = (s + cₖ) · t (k = 1..6), Ergebnis (s + 1) · x mit den sieben
+  Koeffizienten der Tabelle (Taylor-Reihe ±1/(2k+1)!). **Cos** = Sin(−(x + (−π/2))).
+- **Sqrt:** Newton mit Startwert „Exponent halbiert“, g := (x / g + g) / 2 (Halbieren durch Exponent − 1), Ende, wenn der Exponent
+  der Änderung unter Startexponent − 14h fällt; negativ → Laufzeitfehler 207.
+- **Rad** `0DBD:00D9` = x / 180 · π, **Distanz** `0DBD:008F` = Sqrt(a² + b²) (Sqr `12CE:11C2`).
+- `Playfield.BarrelOffset` rechnet jetzt `Trunc(Cos(Rad(a)) · 8)`, `Trunc(Sin(Rad(a)) · 8)` wie `U431:07BA`; die gemessene Tabelle
+  (`feld.py barrel`) ist Test (`Real48TrigBarrelTests`, alle 181 Winkel gleich).
+
+### 5.2 Probe `feld_schuss.py`
+
+Setzt einen Fall von `feld.py` an **S** (`O4:479A`) fort: Satz des Schützen (+1Dh Winkel, +1Bh Kraft, +24h Waffe, +26h = 0, Bestand
+≥ 1), Ton und Fluggeräusch aus (`E8B3`, `E8B2`), Spur `E8B5`, optional SS `E8CA`, Wind `E8A2` und `RandSeed` direkt vor dem Schuss;
+dann Fernaufruf `O4:01B7(Schütze)`. Aufgezeichnet: der Zustand x, y, vx, vy (`DS:4796`, `479C`, `47A2`, `47A8`) mit Teilschritt
+`DS:4740` und Ticks `[bp−2Eh]` bei jedem Durchlauf von `O4:060A` (SHA-256 „path“), das Ende bei `O4:1343` (Treffer `47DE`,
+Explodieren `4750`), die Argumente von `O6:00E0`, danach Bildschirm, Puffer `DS:E5C0`, gesetzte DAC-Einträge, `RandSeed`, Zahl der
+Zufallsaufrufe und alle Sätze.
+
+| Aufruf | Ergebnis |
+|---|---|
+| `python3 -I tools/reverse-engineering/feld_schuss.py befunde` | SHA-256 von `O4:01B7–1378`, O6 ganz, `U431:03C3–05EC`, `UCC8:0BB6–0C1E` |
+| `… run --seed <hex> [Fall wie feld.py] --shooter N --angle A --power P [--weapon W] [--ss S] [--trail] [--wind-value V] [--shot-seed HEX] [--sound]` | ein Schuss nach `analyse/feld/schuss-…/` |
+| `… hashes [--only I …]` | feste Liste (25 Schüsse) → `analyse/feld/schuss-hashes.tsv`; daraus `tests/…/Shot/ShotProbeData.cs` |
+
+Die Liste deckt ab: Lead Ball auf Gelände und Panzer, Baby Missile auf Gelände (ohne und mit Flächenschaden), Volltreffer, auf den
+Schützen selbst, alle fünf Wandarten, Wand 0 rechts/links mit Wind > 0/< 0, Kraft = M und > M (G2), Spur, unsichtbarer Schuss mit
+Spur, SS = 1 und 20, 4 und 5 Spieler mit Hintergrund 2 und 3, Selbstschaden (`Random:Real` < 0,2 bei `RandSeed` 0), Baby Missile
+mit Ton (209 `Random(n)`: 11 Ringe + 3 · 66 Palettenschritte), Kraft = M mit Explosion unter dem Gelände (Waffen 1 und 3). Verglichen wird der
+Bildschirm nur in Rahmen und Feld (x 8..312, y 28..192, Spalte `screen_field`), weil Kopfzeile, Waffenleiste und Wandbeschriftung
+BGI-Ausgaben der UI sind (§2).
+
+### 5.3 Ergebnis (Teile 2 und 3)
+
+`Core/Shot` (`BallisticShot`, `Impact`, `Damage`) ist in allen 25 Schüssen **bitgleich**: jeder Zustand der Flugschleife, Ende,
+`RandSeed`, gesetzte DAC-Einträge, Puffer, Rahmen und Feld, Energie, Punkte, Schild und Treffer aller Sätze (`ShotProbeTests`). Dabei
+aus dem Code gelesen (Ergänzung zu `runde.md` §5):
+
+- **Teilschritte:** Der Zähler `DS:4740` läuft 0..SS (also SS + 1 Teilschritte je Tick) und beginnt mit dem Rest der Satzschleife
+  davor (= Spielerzahl N); der erste Tick ist daher kürzer. Die Bedingung „letzter Teilschritt“ in G2 ist `DS:4740 = SS`.
+- **Reihenfolge der Operanden** wie im Code (z. B. x := vx / SS + x; x₀ = x_P + r · (cos a · 10); vy₀ = −sin a · (P / 50)), wichtig,
+  weil Real48-Add und -Mul nicht in jedem Fall vertauschbar runden.
+- **Treffertest** liest alle fünf Punkte, auch nach einem Treffer; bei Kraft = M setzt ein Geländepunkt das Ende wieder zurück, auch
+  wenn ein Panzerpunkt davor es gesetzt hat. Treffertest und Wände schließen sich aus: Wände nur, wenn der Punkt außerhalb von
+  11 < ix < 309, 33 < iy < 187 liegt oder der Schuss schon endet.
+- **Zeichnen:** alter Punkt (Kreuz aus fünf Pixeln, `U431:040F`) aus dem Puffer, Spur `U431:056D` in Bildschirm **und** Puffer
+  (Farbe 100 − Schütze, Farben 90..99 = 32 div Farbteiler); neuer Punkt `U431:03C3` in Farbe 19, Marken auf dem Rahmen; am Ende ein
+  schwarzes Rechteck (9, 29)–(311, 191) (`UCC8:0031`) über die Marken. Unsichtbar: weder Punkt noch Marken, die Spur aber schon.
+- **Explosion:** Rampe 130 + j = (R − j) · (63 div R) nur im Rotanteil; Mittelpunkt (Trunc(x − 11), Trunc(y − 31)) im Fenster
+  (11, 31)–(309, 189); drei Palettenläufe enden mit allen Einträgen 130..130 + R auf 0. Krater `UCC8:0687` = Ellipse `UCC8:0351` mit
+  Kopie aus dem Puffer (`VgaDraw.CopyEllipse`). Danach x + 11, y + 31 (Real48, nicht exakt das alte x) für den Flächenschaden.
+- **Schaden** `O10:0000` setzt die Farbe des Panzers nur neu, wenn die Abwehr negativ wurde; Punkte `O10:018B` als Wort mit
+  Vorzeichen (10 je verlorener Energie).
+
+### 5.4 Nach dem Schuss: Erdrutsch und Fallen (Teil 4)
+
+`feld_schuss.py post` setzt einen Schuss der Liste fort wie `O4:49CB`: `U431:07BA` für alle Sätze, Crumble (`E8A4`) > 0 → `O7:03C1`,
+FallDown → `O7:0020`; aufgezeichnet wie in §5.2 (feste Liste mit 9 Fällen → `analyse/feld/schuss-post-hashes.tsv`, dazu die Schüsse
+23 und 24: Kraft = M durch das Gelände, Explosion am Boden unter dem Gelände). `Core/Shot/AfterShot` ist in allen 9 Fällen
+bitgleich (`AfterShotProbeTests`: `RandSeed`, Rahmen und Feld, Puffer, DAC, Energie, Inertia, Lage):
+
+- **Erdrutsch** `U431:0496`: Suchlauf rückwärts ab Adresse 64000 (`repne scasb`, Ende bei di = 0); ein Pixel Farbe 2 mit „Luft“
+  darunter (0 oder 30..99, also auch Spur 90..99) rückt sofort eine Zeile tiefer, die neue Adresse kommt in die Liste. Dann Durchgänge
+  in Listenreihenfolge (unten rechts zuerst), bis alle Einträge 0 sind. Ein Krater an der Oberfläche bewegt nichts (kein Überhang);
+  erst ein Loch unter der Oberfläche (Schüsse 23/24) lässt Gelände rutschen.
+- **Fallen** `O7:0020`: Rohr einmal mit dem Puffer löschen (`UCC8:0AC0`), dann je Zeile Körper zeichnen, Farbe, y + 1, Abgleiten,
+  Prüfung der neun Pixel, `Random(3) + 1` Schaden auf Inertia, alter Körper aus dem Puffer; der fallende Körper ist also nie zu sehen,
+  der Puffer frisst dabei Gelände unter dem alten Körper weg. Zum Schluss jeder Panzer neu (`U431:07BA`). Fall 7: Panzer 2 fällt 28
+  Zeilen, 59 Schaden.
+- **Crumble** `O7:03C1`: Rahmen neu, dann Erdrutsch bei `Random:Real · 100 ≤ Crumble` (auch bei 100 ein `Random:Real`).
+
+### 5.5 Darstellung und Werkzeuge (Teil 5)
+
+- `Core` meldet über `ShotSettings.Frame` jedes Bild, das das Original eine Weile zeigt (Tick des Flugs, Ringe der Explosion, jeder
+  Palettenschritt mit `Delay(ES)`, Krater, Erdrutsch, jede Zeile eines fallenden Panzers mit `Delay(FS)`); die Hooks ändern nichts am
+  Ablauf (die Probe-Tests laufen ohne). `UI/Screens/PlayfieldShotScreen` hält diese Bilder (Rahmen und Feld über
+  `PlayfieldScreen.RefreshField`, DAC) und spielt sie ab; Spur, Explosion, Krater, Erdrutsch und Fallen sind so genau die Pixel von
+  `Core`. `[APPROX]` Der Flug hat im Original keine Verzögerung (Tempo der Maschine), hier 15 ms je Tick. Test: das letzte Bild von
+  Schuss 3 mit Fallen hat den Feld-Hash des Probe-Falls `post` 0.
+- `bombtool render playfield … --shot WINKEL,KRAFT[,WAFFE] [--shooter N]`: nach dem Aufbau Startspieler, ein Schuss (Waffe 0 oder
+  Sprengwaffe) mit SS, Spur, Ton, Crumble und Fallen aus der Konfiguration, dann Erdrutsch und Fallen; PNG zeigt das Feld danach.
+- Desktop: in der Vorschau zielt der Spieler am Zug mit ←/→ und ↑/↓, W wechselt Lead Ball/Baby Missile, Leertaste schießt, Enter
+  baut die nächste Runde (`[APPROX]` Ersatz für den Zug `O7:040C`, ohne Kopfzeile und Bestand; danach der nächste lebende Spieler).
+
+### 5.6 Grenzen
+
+Nicht umgesetzt (Runde 2, R2-D1 = A; `NotSupportedException`): Lenkung, Repulser im Feld (Q5, braucht `ArcTan` `12CE:14D8` und die
+Tabelle `0B25`), Einschläge der Waffen außer 0 und {1, 2, 3, 4, 7, 11}; der Bestand (+2Eh) wird noch nicht abgezogen. Ton und
+Verzögerungen spielen nicht; mit Ton zieht die Explosion die `Random`-Aufrufe wie das Original (Schuss 22).

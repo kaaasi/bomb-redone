@@ -242,7 +242,23 @@ public static class VgaDraw
     /// the rest of the segment (off-screen video memory or, with VideoSeg = a heap buffer, behind it). Only unclipped
     /// ellipses that leave the screen get there; the playfield never draws one.
     /// </remarks>
-    public static void Ellipse(Span<byte> pixels, Viewport viewport, int x, int y, int rx, int ry, byte color)
+    public static void Ellipse(Span<byte> pixels, Viewport viewport, int x, int y, int rx, int ry, byte color) =>
+        EllipseCore(pixels, ReadOnlySpan<byte>.Empty, viewport, x, y, rx, ry, color);
+
+    /// <summary>
+    /// Ellipse like <see cref="Ellipse"/>, but every point is copied from <paramref name="source"/> (the background buffer)
+    /// instead of set to a colour. [ORIGINAL] UCC8:0687 (BOMB.EXE 0x0E9A7): the same midpoint algorithm as UCC8:0351
+    /// with the store routines UCC8:0875 (unclipped) and UCC8:08D4 (clipped, each point checked).
+    /// </summary>
+    public static void CopyEllipse(ReadOnlySpan<byte> source, Span<byte> pixels, Viewport viewport, int x, int y, int rx, int ry)
+    {
+        if (source.Length < IndexBuffer.Size)
+            throw new ArgumentException("The source must hold a whole screen.", nameof(source));
+        EllipseCore(pixels, source, viewport, x, y, rx, ry, 0);
+    }
+
+    private static void EllipseCore(Span<byte> pixels, ReadOnlySpan<byte> source, Viewport viewport, int x, int y, int rx,
+        int ry, byte color)
     {
         var cx = (short)(x + viewport.X1);
         var cy = (short)(y + viewport.Y1);
@@ -270,7 +286,7 @@ public static class VgaDraw
 
         while (dxTerm - dyTerm < 0)
         {
-            Plot(pixels, step);
+            Plot(pixels, source, step);
             step = 1;
             if (error >= 0)
             {
@@ -288,7 +304,7 @@ public static class VgaDraw
         error += ((t >> 1) + t - dxTerm - dyTerm) >> 1;
         do
         {
-            Plot(pixels, step);
+            Plot(pixels, source, step);
             step = 0x100;
             if (error < 0)
             {
@@ -303,7 +319,7 @@ public static class VgaDraw
         }
         while (count >= 0);
 
-        void Plot(Span<byte> target, int stepFlags)
+        void Plot(Span<byte> target, ReadOnlySpan<byte> from, int stepFlags)
         {
             var sx = stepFlags & 1;
             var sy = stepFlags >> 8;
@@ -318,20 +334,20 @@ public static class VgaDraw
 
             bottomRight = (ushort)(bottomRight + sx + rowStep);
             topRight = (ushort)(topRight + sx - rowStep);
-            Store(target, bottomRight, xRight, yBottom);
-            Store(target, topRight, xRight, yTop);
+            Store(target, from, bottomRight, xRight, yBottom);
+            Store(target, from, topRight, xRight, yTop);
             bottomLeft = (ushort)(bottomLeft - sx + rowStep);
             topLeft = (ushort)(topLeft - sx - rowStep);
-            Store(target, bottomLeft, xLeft, yBottom);
-            Store(target, topLeft, xLeft, yTop);
+            Store(target, from, bottomLeft, xLeft, yBottom);
+            Store(target, from, topLeft, xLeft, yTop);
         }
 
-        void Store(Span<byte> target, ushort address, int px, int py)
+        void Store(Span<byte> target, ReadOnlySpan<byte> from, ushort address, int px, int py)
         {
             if (clipped && !viewport.Contains(px, py))
                 return;
             if (address < IndexBuffer.Size)
-                target[address] = color;
+                target[address] = from.IsEmpty ? color : from[address];
         }
     }
 }

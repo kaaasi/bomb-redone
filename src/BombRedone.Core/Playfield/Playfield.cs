@@ -245,6 +245,7 @@ public sealed class Playfield
             tank.Active = true;
             tank.Y = 32;
             tank.Field5E = 0;
+            tank.Team = tank.Number;
             UpdateColor(tank);
 
             // O8:1118: the tank falls (without being drawn at y = 32) until all nine pixels below it are terrain or frame.
@@ -275,7 +276,7 @@ public sealed class Playfield
     /// [ORIGINAL] O10:01AC (BOMB.OVR 0x1F2CF): v = 63 · e div 100; DAC 19 + n = (v div r, v div g, v div b) for e &gt; 0,
     /// otherwise black.
     /// </summary>
-    private void UpdateColor(PlayfieldTank tank)
+    internal void UpdateColor(PlayfieldTank tank)
     {
         var v = (short)(63 * tank.Energy) / 100;
         if (tank.Energy > 0)
@@ -330,43 +331,18 @@ public sealed class Playfield
     }
 
     /// <summary>
-    /// End of the barrel relative to (x, y) for angle 0..180°: (Trunc(8 cos a), Trunc(8 sin a)) as the Real48 runtime
-    /// computes it (0DBD:00D9 degrees to radians, Cos 12CE:12EE, Sin 12CE:1301, Mul, Trunc).
+    /// End of the barrel relative to (x, y) for angle 0..180°: (Trunc(Cos(Rad(a)) · 8), Trunc(Sin(Rad(a)) · 8)).
+    /// [ORIGINAL] U431:07BA (BOMB.EXE 0x0616A): LongInt → Real 12CE:11DC, Rad 0DBD:00D9, Cos 12CE:12EE / Sin 12CE:1301,
+    /// Mul by 8 (12CE:11C8, the trig value as left operand), Trunc 12CE:11E0. The runtime's results differ from exact
+    /// trigonometry (cos 0° gives 7, sin 30° gives 4); the table measured with <c>feld.py barrel</c> is now a test
+    /// (Real48TrigBarrelTests).
     /// </summary>
-    /// <remarks>
-    /// [ORIGINAL] Measured table: <c>python3 -I tools/reverse-engineering/feld.py barrel</c> runs U431:07BA for every
-    /// angle. The runtime's results differ from exact trigonometry (cos 0° gives 7, sin 30° gives 4, cos 60° gives 3);
-    /// spur <c>schuss</c> ports Sin/Cos to Real48 (docs/arbeitspakete.md), after which this table becomes a test.
-    /// </remarks>
     public static (int Dx, int Dy) BarrelOffset(int angle)
     {
-        if ((uint)angle >= (uint)BarrelOffsets.Length)
-            throw new ArgumentOutOfRangeException(nameof(angle));
-        return BarrelOffsets[angle];
+        var radians = Real48.DegreesToRadians(Real48.FromInt32(angle));
+        var eight = Real48.FromInt32(8);
+        return ((Real48.Cos(radians) * eight).Trunc(), (Real48.Sin(radians) * eight).Trunc());
     }
-
-    private static readonly (int Dx, int Dy)[] BarrelOffsets =
-    [
-        (7, 0), (7, 0), (7, 0), (7, 0), (7, 0), (7, 0), (7, 0), (7, 0), (7, 1), (7, 1),
-        (7, 1), (7, 1), (7, 1), (7, 1), (7, 1), (7, 2), (7, 2), (7, 2), (7, 2), (7, 2),
-        (7, 2), (7, 2), (7, 2), (7, 3), (7, 3), (7, 3), (7, 3), (7, 3), (7, 3), (6, 3),
-        (6, 4), (6, 4), (6, 4), (6, 4), (6, 4), (6, 4), (6, 4), (6, 4), (6, 4), (6, 5),
-        (6, 5), (6, 5), (5, 5), (5, 5), (5, 5), (5, 5), (5, 5), (5, 5), (5, 5), (5, 6),
-        (5, 6), (5, 6), (4, 6), (4, 6), (4, 6), (4, 6), (4, 6), (4, 6), (4, 6), (4, 6),
-        (3, 6), (3, 6), (3, 7), (3, 7), (3, 7), (3, 7), (3, 7), (3, 7), (2, 7), (2, 7),
-        (2, 7), (2, 7), (2, 7), (2, 7), (2, 7), (2, 7), (1, 7), (1, 7), (1, 7), (1, 7),
-        (1, 7), (1, 7), (1, 7), (0, 7), (0, 7), (0, 7), (0, 7), (0, 7), (0, 7), (0, 7),
-        (0, 7), (0, 7), (0, 7), (0, 7), (0, 7), (0, 7), (0, 7), (0, 7), (-1, 7), (-1, 7),
-        (-1, 7), (-1, 7), (-1, 7), (-1, 7), (-1, 7), (-2, 7), (-2, 7), (-2, 7), (-2, 7), (-2, 7),
-        (-2, 7), (-2, 7), (-2, 7), (-3, 7), (-3, 7), (-3, 7), (-3, 7), (-3, 7), (-3, 7), (-3, 6),
-        (-4, 6), (-4, 6), (-4, 6), (-4, 6), (-4, 6), (-4, 6), (-4, 6), (-4, 6), (-4, 6), (-5, 6),
-        (-5, 6), (-5, 6), (-5, 5), (-5, 5), (-5, 5), (-5, 5), (-5, 5), (-5, 5), (-5, 5), (-6, 5),
-        (-6, 5), (-6, 5), (-6, 4), (-6, 4), (-6, 4), (-6, 4), (-6, 4), (-6, 4), (-6, 4), (-6, 4),
-        (-6, 4), (-6, 3), (-7, 3), (-7, 3), (-7, 3), (-7, 3), (-7, 3), (-7, 3), (-7, 2), (-7, 2),
-        (-7, 2), (-7, 2), (-7, 2), (-7, 2), (-7, 2), (-7, 2), (-7, 1), (-7, 1), (-7, 1), (-7, 1),
-        (-7, 1), (-7, 1), (-7, 1), (-7, 0), (-7, 0), (-7, 0), (-7, 0), (-7, 0), (-7, 0), (-7, 0),
-        (-7, 0),
-    ];
 
     /// <summary>y of the topmost terrain pixel (colour 2) in column <paramref name="x"/> above the floor, or 190 if none.</summary>
     public static int TerrainTop(Playfield field, int x)
