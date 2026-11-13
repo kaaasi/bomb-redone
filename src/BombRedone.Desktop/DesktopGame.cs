@@ -1,4 +1,5 @@
 using BombRedone.Core.Numerics;
+using BombRedone.Core.Playfield;
 using BombRedone.Core.Setup;
 using BombRedone.Formats;
 using BombRedone.UI;
@@ -114,7 +115,7 @@ public sealed class DesktopGame : Game
     /// <summary>
     /// Main menu after the title. Without the original files (fonts in BOMB.EXE) a placeholder stays. Game Options open
     /// the options screen, START the player selection; Sound Options and loading follow later (the menu stays or a
-    /// placeholder), the game after the player selection is a placeholder.
+    /// placeholder), after the player selection a preview of the round (playfield, a key for the next one).
     /// </summary>
     private static IScreen CreateMenu()
     {
@@ -138,13 +139,31 @@ public sealed class DesktopGame : Game
         var random = TurboPascalRandom.FromClock(DateTime.Now);
         var roster = new PlayerRoster();
         var teams = new PlayerSelectTeams(options, BgiFontLibrary.Load(gameData)[BgiFontLibrary.Tiny]);
+        IScreen Round(GameSetup setup) => RoundPreview(fonts, config, options, random, setup);
         return new MenuScreen(fonts, settings, random.Next, (choice, menu) => choice switch
         {
             MenuChoice.GameOptions => new OptionsScreen(menu, options),
             MenuChoice.SoundOptions => menu,
-            MenuChoice.Start => new PlayerSelectScreen(menu, roster, random.Next, _ => new PlaceholderScreen(), teams),
+            MenuChoice.Start => new PlayerSelectScreen(menu, roster, random.Next, setup => Round(setup), teams),
             _ => new PlaceholderScreen(),
         });
+    }
+
+    /// <summary>
+    /// Preview of a round after the player selection (spur gelaende): shuffle steps (records not swapped, R2-D4), the
+    /// playfield with the game options, wind; a key builds the next round. Turns and shots follow later.
+    /// </summary>
+    private static IScreen RoundPreview(MenuFonts fonts, GameConfig? config, OptionsSettings options, TurboPascalRandom random,
+        GameSetup setup)
+    {
+        var players = setup.Players.Count;
+        SeedSearch.SkipShuffle(random, players);
+        var mask = (config ?? GameConfig.BombCfgDefaults).UserBackgroundMask;
+        var field = Playfield.Build(new PlayfieldOptions(players, (int)options.Walls, options.Background, mask,
+            (int)options.Wind, options.InvisibleShot), random);
+        var wind = Wind.Choose((int)options.Wind, random);
+        return new PlayfieldScreen(fonts, field, wind, setup.Players.Select(p => p.Name).ToArray(),
+            () => RoundPreview(fonts, config, options, random, setup));
     }
 
     private ScreenInput ReadInput(KeyboardState keys)

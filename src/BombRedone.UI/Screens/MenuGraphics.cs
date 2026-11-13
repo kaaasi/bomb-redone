@@ -1,3 +1,4 @@
+using BombRedone.Core.Graphics;
 using BombRedone.Formats;
 
 namespace BombRedone.UI.Screens;
@@ -22,96 +23,25 @@ public static class MenuGraphics
     public const byte FrameWhite = 19;
 
     /// <summary>[ORIGINAL] UCC8:0015 (BOMB.EXE 0x0E335): row length of mode 13h, address = y * 320 + x.</summary>
-    public const int Stride = 320;
+    public const int Stride = VgaDraw.Stride;
 
     /// <summary>
     /// Line from (x1, y1) to (x2, y2) in <paramref name="color"/>, both ends included.
-    /// [ORIGINAL] UCC8:09E4 (BOMB.EXE 0x0ED04): vertical and horizontal lines as runs, otherwise Bresenham with the
-    /// error term 2·minor − major, starting at the left end; no clipping.
+    /// [ORIGINAL] UCC8:09E4 (BOMB.EXE 0x0ED04), implemented in <see cref="VgaDraw.Line"/>.
     /// </summary>
     public static void Line(Surface target, int x1, int y1, int x2, int y2, byte color)
     {
         ArgumentNullException.ThrowIfNull(target);
-        var pixels = target.Pixels;
-        var dx = x2 - x1;
-        if (dx == 0)
-        {
-            // 0x0ED6C: vertical run from the upper end.
-            var top = Math.Min(y1, y2);
-            var count = Math.Abs(y2 - y1) + 1;
-            var address = Address(x1, top);
-            for (var i = 0; i < count; i++, address += Stride)
-                pixels[address] = color;
-            return;
-        }
-
-        if (dx < 0)
-        {
-            dx = -dx;
-            (x1, x2) = (x2, x1);
-            (y1, y2) = (y2, y1);
-        }
-
-        var rowStep = Stride;
-        var dy = y2 - y1;
-        if (dy == 0)
-        {
-            // 0x0ED94: horizontal run (rep stosb).
-            pixels.AsSpan(Address(x1, y1), dx + 1).Fill(color);
-            return;
-        }
-
-        if (dy < 0)
-        {
-            dy = -dy;
-            rowStep = -Stride;
-        }
-
-        var yMajor = dy > dx;
-        var (major, minor) = yMajor ? (dy, dx) : (dx, dy);
-        var straight = 2 * minor;
-        var error = 2 * minor - major;
-        var diagonal = 2 * minor - 2 * major;
-        var di = Address(x1, y1);
-        for (var n = major + 1; n > 0; n--)
-        {
-            pixels[di++] = color;
-            if (yMajor)
-            {
-                // 0x0EDC3: step a row after every pixel; the column advances only on a diagonal step.
-                di += rowStep;
-                if (error < 0)
-                {
-                    error += straight;
-                    di--;
-                }
-                else
-                {
-                    error += diagonal;
-                }
-            }
-            else if (error < 0)
-            {
-                error += straight;
-            }
-            else
-            {
-                error += diagonal;
-                di += rowStep;
-            }
-        }
+        VgaDraw.Line(target.Pixels, x1, y1, x2, y2, color);
     }
 
     /// <summary>
-    /// Outline of a rectangle. [ORIGINAL] UCC8:0031 (BOMB.EXE 0x0E351): four <see cref="Line"/> calls in the order right,
-    /// left, bottom, top; works with swapped corners as well.
+    /// Outline of a rectangle. [ORIGINAL] UCC8:0031 (BOMB.EXE 0x0E351), implemented in <see cref="VgaDraw.Rectangle"/>.
     /// </summary>
     public static void Rectangle(Surface target, int x1, int y1, int x2, int y2, byte color)
     {
-        Line(target, x2, y1, x2, y2, color);
-        Line(target, x1, y1, x1, y2, color);
-        Line(target, x1, y2, x2, y2, color);
-        Line(target, x1, y1, x2, y1, color);
+        ArgumentNullException.ThrowIfNull(target);
+        VgaDraw.Rectangle(target.Pixels, x1, y1, x2, y2, color);
     }
 
     /// <summary>
