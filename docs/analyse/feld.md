@@ -15,7 +15,9 @@ Hintergrundpuffer, DAC und Zustand geprüft. Inhalt des Aufbaus: [runde.md](rund
 | `python3 -I tools/reverse-engineering/feld.py befunde` | SHA-256 der Codebereiche, auf denen die Probe aufsetzt (O8 ganz, O4 `44A7–47A1`, O3 `7847–787A`, O2 `0216–04A1`, Hauptprogramm `00FA–04DF`) |
 | `… cpu` | Gegenprobe des Interpreters gegen die `Cpu` aus `real48.py` (Fälle von Welle 1, je Operation 2.000) |
 | `… run --seed <hex> --players N --wall W --background B [--mask M] [--wind W] [--invisible] [--no-fall]` | ein Fall: `analyse/feld/<fall>/` mit `<punkt>-screen.bin`, `-background.bin`, `-dac.bin`, `-dac_set.bin`, `result.json` |
-| `… hashes [--write]` | feste Fallliste (11 Fälle, alle Wände, Hintergründe 0–10, 2–10 Spieler, RND/USER) → `analyse/feld/hashes.tsv` |
+| `… hashes [--write]` | feste Fallliste (13 Fälle, alle Wände, Hintergründe 0–10, 2–10 Spieler, RND/USER, Wind-Überlauf #98) → `analyse/feld/hashes.tsv`; Spalte `screen_core` = Bildschirm ohne BGI-Text (§2) |
+| `… call [--fill C] [--show] SEG:OFS(args) …` | nach dem Start Routinen fern aufrufen (Pascal-Argumente), SHA-256 des Bildschirms (Einzelvergleich der Zeichenroutinen) |
+| `… barrel` | Rohrende von `U431:07BA` für die Winkel 0..180 (Tabelle `Playfield.BarrelOffset`) |
 
 Laufzeit: ein Fall 1–6 s, `hashes` rund 30 s. Voraussetzung: Python 3, `gamedata/`; für Text mit DefaultFont die
 8 × 8-Schrift aus dem Referenz-Repo (`~/referenz/schriften/dosbox-0.74-3-vga-8x8.bin`, `--font`) im BIOS-Schriftbereich.
@@ -79,6 +81,25 @@ Zufallsaufrufe an A bestätigt [runde.md](runde.md) §3.3–§3.6 und §4 (Beisp
 `Random:Real` an A = 1 (Rotation) + 2 je Innenschritt des Geländes (§3.5). Zwischen A und S: Wind 1 + Wiederholungen `Random(S)`
 und 4 `Random:Real`, Startspieler 1 + Wiederholungen `Random(N)` (§2). Neu gegenüber `runde.md`: **Hintergrund 4 (Spread)** ist
 damit bitgenau prüfbar, obwohl §3.3 ihn als `[APPROX]` „nicht ausgewertet“ führt; die Probe liefert Bildschirm und Puffer.
+
+## 3a. Ergebnisse Teil 2 (`Core/Playfield`, `Core/Graphics`)
+
+`Core/Playfield` (`Playfield.Build`, `Backgrounds`, `Wind`, `StartPlayer`) ist an A und S **bitgleich** zur Probe in allen 13 Fällen
+(`PlayfieldProbeTests`): `RandSeed` und Zahl der Schritte, Wand, gezeichneter Hintergrund, Panzer x/y, Hintergrundpuffer, Bildschirm
+ohne BGI-Text (`screen_core`), gesetzte DAC-Einträge; an S Windstufe, Wind, Startspieler, Durchgang. Dabei aus dem Code gelesen
+(Ergänzung zu `runde.md` §3):
+
+- **Spread (4)** = Strahlen `UCC8:09E4` von (160, 100) zu allen Randpunkten des Felds (oben links→rechts, rechts oben→unten, unten
+  rechts→links, links unten→oben), Strahl k in (k mod 15) · 2 + 30 (`12CE:0AB8` = LongInt div/mod, `12CE:0A9D` = LongMul).
+- **Sky (5)**: DAC 30 + i = (i, 0, 63 − i), i = 0..19; Linien y = 31..190 in (y − 30) div 8 + 30. **Asterisk (8)** von (160, 110),
+  Farben (i mod 30) + 30 bzw. ((j + 70) mod 30) + 30. **Circles (3)**: `UCC8:0351` ist eine Mittelpunkt-Ellipse relativ zum
+  Fenster (11, 31)–(309, 189) mit Prüfung je Punkt, wenn sie das Fenster verlässt (`VgaDraw.Ellipse`, Einzeltest gegen `call`).
+- **Panzerfarbe** `O10:01AC`: v = 63 · Energie div 100, DAC 19 + n = (v div r, v div g, v div b) mit den Farbteilern aus `O2:0216`.
+- **Rohr** `U431:07BA`: (x + Trunc(8 cos a) · d, y − Trunc(8 sin a)) mit der Real48-Laufzeit; deren Werte weichen von exakter
+  Trigonometrie ab (cos 0° · 8 → 7, sin 30° · 8 → 4, cos 60° · 8 → 3, sin 90° · 8 → 7). Bis `schuss` Sin/Cos portiert, nimmt
+  `Core` die gemessene Tabelle (`feld.py barrel`).
+- Nach jedem Panzer `O7:0364`: Rahmen neu und bei Wand ∉ [1, 2, 3] (`O7:0344`) Bodenlinie (11, 189)–(309, 189) Farbe 2.
+- Wind (#98): Fall `00015446` ergibt −548 · 4³ = −35072 → 30464 → 30000, Fall `002B423B` −977 · 4³ → 3008 (Probe bestätigt).
 
 ## 4. Grenzen
 

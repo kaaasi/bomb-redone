@@ -131,4 +131,207 @@ public static class VgaDraw
                 pixels[Address(x + dx, y - 4)] = color;
         }
     }
+    /// <summary>
+    /// Copies the pixels on the line from (x1, y1) to (x2, y2) from <paramref name="source"/> to <paramref name="target"/>
+    /// (same address in both). [ORIGINAL] UCC8:0AC0 (BOMB.EXE 0x0EDE0): the pixel choice of <see cref="Line"/> (runs for
+    /// vertical and horizontal lines, otherwise Bresenham from the left end), source segment as argument, target VideoSeg.
+    /// </summary>
+    public static void CopyLine(ReadOnlySpan<byte> source, Span<byte> target, int x1, int y1, int x2, int y2)
+    {
+        var dx = x2 - x1;
+        if (dx == 0)
+        {
+            var top = Math.Min(y1, y2);
+            var count = Math.Abs(y2 - y1) + 1;
+            var address = Address(x1, top);
+            for (var i = 0; i < count; i++, address += Stride)
+                target[address] = source[address];
+            return;
+        }
+
+        if (dx < 0)
+        {
+            dx = -dx;
+            (x1, x2) = (x2, x1);
+            (y1, y2) = (y2, y1);
+        }
+
+        var dy = y2 - y1;
+        if (dy == 0)
+        {
+            source.Slice(Address(x1, y1), dx + 1).CopyTo(target.Slice(Address(x1, y1)));
+            return;
+        }
+
+        var rowStep = Stride;
+        if (dy < 0)
+        {
+            dy = -dy;
+            rowStep = -Stride;
+        }
+
+        var yMajor = dy > dx;
+        var (major, minor) = yMajor ? (dy, dx) : (dx, dy);
+        var straight = 2 * minor;
+        var error = 2 * minor - major;
+        var diagonal = 2 * minor - 2 * major;
+        var di = Address(x1, y1);
+        for (var n = major + 1; n > 0; n--)
+        {
+            target[di] = source[di];
+            di++;
+            if (yMajor)
+            {
+                // 0x0EE73: a row after every pixel, the column only on a diagonal step.
+                di += rowStep;
+                if (error < 0)
+                {
+                    error += straight;
+                    di--;
+                }
+                else
+                {
+                    error += diagonal;
+                }
+            }
+            else if (error < 0)
+            {
+                error += straight;
+            }
+            else
+            {
+                error += diagonal;
+                di += rowStep;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Restores the pixels of a tank body (mask of <see cref="TankBody"/>) from <paramref name="source"/>.
+    /// [ORIGINAL] U431:0685 (BOMB.EXE 0x06035): 29 byte moves from the save buffer to A000h at fixed offsets.
+    /// </summary>
+    public static void CopyTankBody(ReadOnlySpan<byte> source, Span<byte> target, int x, int y)
+    {
+        for (var dx = -4; dx <= 4; dx++)
+        {
+            Copy(source, target, x + dx, y);
+            if (dx is not (-1 or 1))
+                Copy(source, target, x + dx, y - 1);
+            if (dx is >= -3 and <= 3)
+            {
+                Copy(source, target, x + dx, y - 2);
+                Copy(source, target, x + dx, y - 3);
+            }
+
+            if (dx is >= -1 and <= 1)
+                Copy(source, target, x + dx, y - 4);
+        }
+
+        static void Copy(ReadOnlySpan<byte> source, Span<byte> target, int x, int y) =>
+            target[Address(x, y)] = source[Address(x, y)];
+    }
+
+    /// <summary>
+    /// Ellipse around (x, y) relative to the viewport corner with radii <paramref name="rx"/>, <paramref name="ry"/>.
+    /// [ORIGINAL] UCC8:0351 (BOMB.EXE 0x0E671): midpoint algorithm in 32-bit integers, four points per step from the top
+    /// and bottom apex; with <see cref="Viewport.Clip"/> and an ellipse that leaves the viewport every point is checked
+    /// (UCC8:0595), otherwise none (UCC8:053F). Addresses are 16-bit like the original's offsets.
+    /// </summary>
+    /// <remarks>
+    /// [APPROX] Writes whose 16-bit address lies beyond the 64000 screen bytes are dropped; the original stores them in
+    /// the rest of the segment (off-screen video memory or, with VideoSeg = a heap buffer, behind it). Only unclipped
+    /// ellipses that leave the screen get there; the playfield never draws one.
+    /// </remarks>
+    public static void Ellipse(Span<byte> pixels, Viewport viewport, int x, int y, int rx, int ry, byte color)
+    {
+        var cx = (short)(x + viewport.X1);
+        var cy = (short)(y + viewport.Y1);
+        var clipped = viewport.Clip && !((short)(cx + rx) <= viewport.X2 && (short)(cx - rx) >= viewport.X1
+                                         && (short)(cy + ry) <= viewport.Y2 && (short)(cy - ry) >= viewport.Y1);
+        var a2 = (int)((uint)(ushort)rx * (ushort)rx);
+        var twoA2 = a2 << 1;
+        var b2 = (int)((uint)(ushort)ry * (ushort)ry);
+        var twoB2 = b2 << 1;
+        var row = (ushort)(Stride * ry);
+        var center = (ushort)(cx + (cy << 8) + (cy << 6));
+
+        // Addresses and coordinates of the four points: bottom right, top right, bottom left, top left.
+        var bottomRight = (ushort)(center + row);
+        var bottomLeft = bottomRight;
+        var topRight = (ushort)(center - row);
+        var topLeft = topRight;
+        int xRight = cx, xLeft = cx, yBottom = cy + ry, yTop = cy - ry;
+
+        var dxTerm = 0;
+        var dyTerm = (int)((uint)twoA2 * (ushort)ry);
+        var error = (a2 >> 2) + b2 - (int)((uint)a2 * (ushort)ry);
+        var count = (short)ry;
+        var step = 0;
+
+        while (dxTerm - dyTerm < 0)
+        {
+            Plot(pixels, step);
+            step = 1;
+            if (error >= 0)
+            {
+                step = 0x101;
+                count--;
+                dyTerm -= twoA2;
+                error -= dyTerm;
+            }
+
+            dxTerm += twoB2;
+            error += dxTerm + b2;
+        }
+
+        var t = a2 - b2;
+        error += ((t >> 1) + t - dxTerm - dyTerm) >> 1;
+        do
+        {
+            Plot(pixels, step);
+            step = 0x100;
+            if (error < 0)
+            {
+                step = 0x101;
+                dxTerm += twoB2;
+                error += dxTerm;
+            }
+
+            dyTerm -= twoA2;
+            error -= dyTerm - a2;
+            count--;
+        }
+        while (count >= 0);
+
+        void Plot(Span<byte> target, int stepFlags)
+        {
+            var sx = stepFlags & 1;
+            var sy = stepFlags >> 8;
+            var rowStep = sy != 0 ? -Stride : 0;
+            if (clipped)
+            {
+                xRight += sx;
+                xLeft -= sx;
+                yBottom -= sy;
+                yTop += sy;
+            }
+
+            bottomRight = (ushort)(bottomRight + sx + rowStep);
+            topRight = (ushort)(topRight + sx - rowStep);
+            Store(target, bottomRight, xRight, yBottom);
+            Store(target, topRight, xRight, yTop);
+            bottomLeft = (ushort)(bottomLeft - sx + rowStep);
+            topLeft = (ushort)(topLeft - sx - rowStep);
+            Store(target, bottomLeft, xLeft, yBottom);
+            Store(target, topLeft, xLeft, yTop);
+        }
+
+        void Store(Span<byte> target, ushort address, int px, int py)
+        {
+            if (clipped && !viewport.Contains(px, py))
+                return;
+            if (address < IndexBuffer.Size)
+                target[address] = color;
+        }
+    }
 }

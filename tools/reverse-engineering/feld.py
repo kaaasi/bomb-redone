@@ -255,6 +255,17 @@ def sha(b):
     return hashlib.sha256(b).hexdigest()
 
 
+def core_screen(screen):
+    """Screen without the BGI texts of O8:0984 (feld.md section 2): wall label x 0..6, name bar x 109..211, y 0..7.
+    This is what Core/Playfield draws; the UI adds the texts (compared in full at A by the UI tests)."""
+    b = bytearray(screen)
+    for y in range(200):
+        b[y * 320:y * 320 + 7] = bytes(7)
+    for y in range(8):
+        b[y * 320 + 109:y * 320 + 212] = bytes(103)
+    return bytes(b)
+
+
 def parse_case(args):
     return {"seed": int(args.seed, 16) & 0xFFFFFFFF, "players": args.players, "wall": args.wall,
             "background": args.background, "mask": int(args.mask, 0), "wind": args.wind,
@@ -308,6 +319,35 @@ def cmd_call(p, args):
     return 0
 
 
+def cmd_barrel(p, args):
+    """Barrel ends of U431:07BA for the angles 0..180: record 1 at (160, 100), direction +1, on a cleared screen; the end
+    is the drawn pixel farthest from (160, 100) outside the tank body. Prints 'angle dx dy' (dy upwards)."""
+    m = p.boot()
+    m.far_call(p.ovseg[2], O2_DEFAULT_PLAYER, args=(1,), limit=m.cpu.steps + 2_000_000)
+    r = RECORD + RECORD_SIZE
+    body = set()
+    for dx in range(-4, 5):
+        body.add((dx, 0))
+        if dx not in (-1, 1):
+            body.add((dx, -1))
+        if -3 <= dx <= 3:
+            body.update({(dx, -2), (dx, -3)})
+        if -1 <= dx <= 1:
+            body.add((dx, -4))
+    rows = []
+    for angle in range(181):
+        m.mem[0xA0000:0xA0000 + 64000] = bytes(64000)
+        for ofs, value in ((0x0F, 160), (0x11, 100), (0x1D, angle), (0x1F, 1), (0x21, 100)):
+            p.wds(m, r + ofs, value)
+        p.wds(m, r + 0x23, 1, 1)
+        m.far_call(fm.LOAD_SEG + 0x0431, 0x07BA, args=(1,), limit=m.cpu.steps + 5_000_000)
+        pts = [(i % 320 - 160, i // 320 - 100) for i in range(64000) if m.mem[0xA0000 + i]]
+        far = max((q for q in pts if q not in body), key=lambda q: q[0] * q[0] + q[1] * q[1])
+        rows.append("%d %d %d" % (angle, far[0], -far[1]))
+    print("\n".join(rows))
+    return 0
+
+
 def cmd_cpu(p, args):
     """Cross-check feld_cpu against the Cpu of real48.py on the Real48/Random cases of wave 1."""
     import real48
@@ -352,7 +392,7 @@ def cmd_run(p, args):
     return 0
 
 
-# Fixed cases for the C# comparison: seed (RandSeed after the shuffle), players, wall, background, mask,
+# Fixed cases for the C# comparison (tests/BombRedone.Core.Tests/Playfield/PlayfieldProbeTests.cs): seed (RandSeed after the shuffle), players, wall, background, mask,
 # wind, invisible, no_fall. Chosen to cover every wall label, every background, 2..10 players and the
 # random options (5 = RND for wall/wind, 9 = RND and 10 = USER for the background).
 CASES = [
@@ -367,13 +407,17 @@ CASES = [
     (0x13579BDF, 10, 3, 8, 0xFFFF, 4, False, False),
     (0x2468ACE0, 2, 5, 9, 0xFFFF, 5, False, False),
     (0xFEDCBA98, 3, 5, 10, 0x0124, 5, False, False),
+    # wind 4000 with three hits: -548 * 64 overflows 16 bits to 30464 and is clamped to 30000; -977 * 64 gives 3008 (#98)
+    (0x00015446, 2, 0, 0, 0xFFFF, 4, False, False),
+    (0x002B423B, 2, 0, 0, 0xFFFF, 4, False, False),
 ]
 
 
 def cmd_hashes(p, args):
     rows = []
     header = "seed\tplayers\twall\tbackground\tmask\twind_opt\tinvisible\tno_fall\tsnapshot\trandseed\trandom_n\t" \
-             "random_real\tscreen\tbackground_buffer\tdac_set\tdac_entries\twall_round\tbackground_drawn\twind\tstart_player\ttanks"
+             "random_real\tscreen\tbackground_buffer\tdac_set\tdac_entries\twall_round\tbackground_drawn\twind\tstart_player\ttanks\t" \
+             "screen_core\twind_level\tpass"
     print(header)
     selected = CASES if args.only is None else [CASES[i] for i in args.only]
     for seed, n, wall, bg, mask, wind, inv, nofall in selected:
@@ -384,10 +428,11 @@ def cmd_hashes(p, args):
             write_case(os.path.join(args.root_out, "seed-%08X-n%d-w%d-b%d" % (seed, n, wall, bg)), result, snaps)
         tanks = " ".join("%d,%d" % (t["x"], t["y"]) for t in result["tanks"])
         for name, s in snaps.items():
-            row = "%08X\t%d\t%d\t%d\t%04X\t%d\t%d\t%d\t%s\t%08X\t%d\t%d\t%s\t%s\t%s\t%d\t%d\t%s\t%d\t%d\t%s" % (
+            row = "%08X\t%d\t%d\t%d\t%04X\t%d\t%d\t%d\t%s\t%08X\t%d\t%d\t%s\t%s\t%s\t%d\t%d\t%s\t%d\t%d\t%s\t%s\t%d\t%d" % (
                 seed, n, wall, bg, mask, wind, inv, nofall, name, s["randseed"], s["random_n"], s["random_real"],
                 sha(s["screen"]), sha(s["background"]), sha(s["dac_set"]), len(s["dac_set"]) // 4, result["wall_round"],
-                ",".join(map(str, result["background_drawn"])), result["wind"], result["start_player"], tanks)
+                ",".join(map(str, result["background_drawn"])), result["wind"], result["start_player"], tanks,
+                sha(core_screen(s["screen"])), result["wind_level"], result["pass"])
             rows.append(row)
             print(row, flush=True)
     os.makedirs(args.root_out, exist_ok=True)
@@ -420,6 +465,7 @@ def main():
     a.add_argument("call", nargs="+", help="routine with Pascal arguments, e.g. 0CC8:09E4(10,20,30,40,5) or O8:0000(3)")
     a.add_argument("--fill", type=lambda v: int(v, 0))
     a.add_argument("--show", action="store_true", help="print the changed pixels per row")
+    sub.add_parser("barrel")
     k = sub.add_parser("cpu")
     k.add_argument("--count", type=int, default=2000)
     h = sub.add_parser("hashes")
@@ -435,7 +481,8 @@ def main():
     elif args.cmd not in ("befunde", "cpu"):
         print("Warnung: keine 8x8-Schrift (%s), Text mit DefaultFont bleibt leer" % args.font, file=sys.stderr)
     p = Probe(args.gamedata, font)
-    return {"befunde": cmd_befunde, "run": cmd_run, "hashes": cmd_hashes, "cpu": cmd_cpu, "call": cmd_call}[args.cmd](p, args)
+    return {"befunde": cmd_befunde, "run": cmd_run, "hashes": cmd_hashes, "cpu": cmd_cpu, "call": cmd_call,
+            "barrel": cmd_barrel}[args.cmd](p, args)
 
 
 if __name__ == "__main__":

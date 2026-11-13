@@ -53,4 +53,28 @@ public sealed class VgaDrawTests
         Assert.Equal("....###....", Row(116));
         Assert.Equal("...........", Row(115));
     }
+    /// <summary>
+    /// <c>feld.py call --fill 0 "0E26:0F93(11,31,309,189,1)" "0CC8:0006" "0CC8:0351(149,79,0,0,30)" …
+    /// "0E26:0F93(0,0,319,199,0)" "0CC8:0006" … "0CC8:0351(160,100,3,7,39)"</c> (arguments as below).
+    /// </summary>
+    [Fact]
+    public void Ellipses_match_UCC8_0351_with_and_without_clipping()
+    {
+        var buffer = new IndexBuffer();
+        var clipped = new Viewport(11, 31, 309, 189, true);
+        VgaDraw.Ellipse(buffer.Pixels, clipped, 149, 79, 0, 0, 30);
+        VgaDraw.Ellipse(buffer.Pixels, clipped, 149, 79, 1, 1, 31);
+        VgaDraw.Ellipse(buffer.Pixels, clipped, 149, 79, 5, 5, 32);
+        VgaDraw.Ellipse(buffer.Pixels, clipped, 150, 79, 40, 40, 33);
+        VgaDraw.Ellipse(buffer.Pixels, clipped, 149, 79, 90, 90, 34);
+        VgaDraw.Ellipse(buffer.Pixels, clipped, 149, 79, 170, 170, 35);
+        VgaDraw.Ellipse(buffer.Pixels, clipped, 20, 30, 15, 40, 36);
+        VgaDraw.Ellipse(buffer.Pixels, clipped, 100, 60, 60, 13, 37);
+        var full = new Viewport(0, 0, 319, 199, false);
+        VgaDraw.Ellipse(buffer.Pixels, full, 160, 100, 30, 20, 38);
+        VgaDraw.Ellipse(buffer.Pixels, full, 160, 100, 3, 7, 39);
+
+        Assert.Equal("50daeccfb488579947d1e42281b0fdec716236585bc8f11c18771039078db6f5",
+            Convert.ToHexStringLower(SHA256.HashData(buffer.Pixels)));
+    }
 }
