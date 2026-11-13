@@ -17,7 +17,7 @@ Regeln wie Runde 1: Base aktueller `main` (tatsächlichen SHA in den Draft-PR), 
 `[ORIGINAL]`/`[APPROX]`, höchstens drei Fortsetzungen je Spur, Originalmaterial nur in Schutzordnern (`AGENTS.md` §2.1).
 Erstreview je Spur: Claude Opus 5.5, frische Sitzung; Gesamtreview am Rundenende: ChatGPT (`prozess/anhang.md` C).
 
-### Entscheidungen der Runde (Vorlage Leitstelle; R2-D1…D6 entschieden vom Nutzer 12.11.2026, R2-D7 und R2-D8 am 13.11.2026: alle wie empfohlen)
+### Entscheidungen der Runde (Vorlage Leitstelle; R2-D1…D6 entschieden vom Nutzer 12.11.2026, R2-D7 bis R2-D9 am 13.11.2026: alle wie empfohlen)
 
 **R2-D1 – Umfang der Runde – entschieden: A (Nutzer 12.11.2026).** Problem: „Spielfeld, Gelände, Schuss“ reicht von einem Standbild bis zur spielbaren Runde.
 
@@ -111,6 +111,17 @@ nur 5 Schaden bei Volltreffer. Krater, Explosion und Flächenschaden (§5.6 K1�
 | D: Standardwaffe der Runde ist Baby Missile statt Lead Ball | ein Schuss mit Krater | weicht vom Original ab (Startbestand ist Lead Ball) |
 
 Empfehlung: **A**.
+
+**R2-D9 – `gelaende` ohne Teil 5 mergen? – entschieden: A (Nutzer 13.11.2026).** Problem: Teil 5 (Bildvergleich) ist blockiert, bis
+Sitzung 3 im Referenz-Repo liegt; `schuss` startet erst nach dem Merge von `gelaende`.
+
+| Option | Vorteil | Nachteil |
+|---|---|---|
+| A: Erstreview Teile 1–4 jetzt, Merge, Teil 5 als Restlücke und eigener Folge-PR nach Sitzung 3 | Welle 2 läuft weiter | Bildvergleich nachträglich, eigene Nachprüfung |
+| B: warten bis Sitzung 3, dann Teil 5, Review, Merge | ein Review | `gelaende` und `schuss` stehen still |
+| C: Review jetzt, Merge erst nach Teil 5 | frühe Rückmeldung | Nachprüfung nötig, `schuss` wartet trotzdem |
+
+Empfehlung: **A**. Gilt sinngemäß für Teil 6 von `schuss`.
 
 ### DOSBox-Aufnahme `runde-1`, Sitzungen 2 und 3 (Nutzer, `vorlagen/dosbox-aufnahme.md`)
 
@@ -237,6 +248,12 @@ R2-D6 = B); Stufe 2b `schuss` nach Merge von `gelaende`. Integrationsfolge: `gel
   `RandSeed` nach dem Schuss gleich.
 - **Modell:** Claude Opus 5.5.
 
+### Restlücken Welle 2
+
+- `gelaende` (#107, gemergt 13.11.2026): Teil 5 Bildvergleich mit Sitzung 3 offen (R2-D9 = A) → nach Sitzung 3 Folgeteil auf
+  `paket/gelaende-bilder` (nur Teil 5, Tests und `docs/analyse/feld.md`). `[APPROX]`: Palettenrotation fehlt, Panzerrohr aus gemessener
+  Tabelle (bis `schuss` Real48-`Sin`/`Cos`), BGI-`Circle` nur Radius 1, DAC 0..15 Grundpalette. P3: #109–#112.
+
 ### Zuständigkeit für gemeinsame Dateien (Runde 2)
 
 - `AGENTS.md`, `CLAUDE.md`, `docs/prozess/*`, `docs/vorlagen/*`, `docs/entscheidungen.md`, `tools/pruefen*.sh`,
@@ -275,6 +292,7 @@ R2-D6 = B); Stufe 2b `schuss` nach Merge von `gelaende`. Integrationsfolge: `gel
 
 ### Status gelaende
 
+- 13.11.2026, Leitstelle: Teile 1–4 gemergt (#107, Erstreview #108 ja); Teil 5 Restlücke (R2-D9 = A).
 - 13.11.2026, Claude Code (Opus 5.5), Draft-PR #107, Base `6d91e69`. Teil 1 fertig: Probe `tools/reverse-engineering/feld*.py`
   (Originalcode unverändert im eigenen 8086-Interpreter, 11 feste Fälle bis zum Startspieler), Festlegung des Vergleichs (N4-1) in
   [analyse/feld.md](analyse/feld.md) §2. Teil 2 begonnen: `Core/Graphics` (`IndexBuffer`, `VgaDraw` Line/Rectangle/PutPixel/
