@@ -155,7 +155,8 @@ class Probe:
         a = lin(self.ds(), ofs)
         return int.from_bytes(m.mem[a:a + size], "little", signed=signed)
 
-    def run_case(self, case):
+    def run_case(self, case, after=None):
+        """after(machine, counts, snaps): optional continuation at O4:479A (feld_schuss.py), before the result is read."""
         m = self.boot()
         c = m.cpu
         load = fm.LOAD_SEG
@@ -237,6 +238,10 @@ class Probe:
         m.far_call(load + self.game.overlays[2]["stub"], 0x20, limit=c.steps + 400_000_000)
         if "start" not in snaps:
             raise RuntimeError("O4:479A not reached")
+        if after is not None:
+            for ofs in (O4_AFTER_O8, O4_AFTER_WIND, O4_AFTER_HEADER, O4_START_PLAYER):
+                del m.traps[lin(self.ovseg[4], ofs)]
+            after(m, counts, snaps)
         tanks = []
         for i in range(1, n_players + 1):
             r = RECORD + RECORD_SIZE * i
