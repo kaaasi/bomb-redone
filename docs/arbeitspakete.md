@@ -279,6 +279,10 @@ R2-D6 = B); Stufe 2b `schuss` nach Merge von `gelaende`. Integrationsfolge: `gel
   (Originalcode unverändert im eigenen 8086-Interpreter, 11 feste Fälle bis zum Startspieler), Festlegung des Vergleichs (N4-1) in
   [analyse/feld.md](analyse/feld.md) §2. Teil 2 begonnen: `Core/Graphics` (`IndexBuffer`, `VgaDraw` Line/Rectangle/PutPixel/
   Panzerkörper, bitgleich zur Probe), `MenuGraphics` und `DrawTank` darauf umgestellt. Offen: Rest Teil 2, Teile 3–5.
+- 13.11.2026, Fortsetzung 1: Teile 2–4 fertig. `Core/Graphics` (Ellipse, CopyLine, BGI-Linie, `LineRasterizer` umgestellt),
+  `Core/Playfield` (Wand, neun Hintergründe, Gelände, Panzer, Fallen, Wind #98, Startspieler) und `UI/Screens/PlayfieldScreen`
+  (Wandbeschriftung, Kopfzeile, Waffenleiste) bitgleich zur Probe an A, K und S in 13 Fällen; `bombtool render playfield`,
+  `bombtool seed` (Suchwerkzeug), Desktop-Vorschau. Teil 5 blockiert, bis die Bilder von Sitzung 3 im Referenz-Repo gemergt sind.
 
 ### Status tws-leser
 
