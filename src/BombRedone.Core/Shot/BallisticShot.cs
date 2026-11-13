@@ -9,7 +9,33 @@ namespace BombRedone.Core.Shot;
 /// <param name="Wind">Wind of the round, DS:E8A2 (Core/Playfield/Wind).</param>
 /// <param name="Trail">Trail, DS:E8B5.</param>
 /// <param name="Sound">Sound effects, DS:E8B3: only the explosion picture draws Random numbers for its tones.</param>
-public sealed record ShotSettings(int SubSteps, int Wind, bool Trail = false, bool Sound = false);
+/// <param name="Frame">
+/// Optional: called whenever the screen shows a picture the original would show for a while (for an animation in the UI);
+/// it must not change the playfield.
+/// </param>
+public sealed record ShotSettings(int SubSteps, int Wind, bool Trail = false, bool Sound = false, Action<ShotFrame>? Frame = null);
+
+/// <summary>Kind of picture passed to <see cref="ShotSettings.Frame"/>.</summary>
+public enum ShotFrame
+{
+    /// <summary>Start of a tick of the flight (no delay in the original: the speed of the machine).</summary>
+    Flight,
+
+    /// <summary>Rings of the explosion drawn (O6:035E).</summary>
+    Explosion,
+
+    /// <summary>One step of the palette runs, followed by Delay(ES) in the original.</summary>
+    Palette,
+
+    /// <summary>Crater copied from the background buffer.</summary>
+    Crater,
+
+    /// <summary>Landslide done (U431:0496).</summary>
+    Landslide,
+
+    /// <summary>One row of a falling tank, followed by Delay(FS) in the original.</summary>
+    Fall,
+}
 
 /// <summary>State at the head of the flight loop (O4:060A): position, speed, sub-step DS:4740, ticks [bp-2Eh].</summary>
 public readonly record struct ShotStep(Real48 X, Real48 Y, Real48 Vx, Real48 Vy, int SubStep, int Ticks);
@@ -100,6 +126,8 @@ public static class BallisticShot
         while (true)
         {
             onStep?.Invoke(new ShotStep(x, y, vx, vy, subStep, ticks));
+            if (subStep == subSteps)
+                settings.Frame?.Invoke(ShotFrame.Flight);
             steps++;
 
             // O4:060A: sub-step 0..SS, then the next tick.

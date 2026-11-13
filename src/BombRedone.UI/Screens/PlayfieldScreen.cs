@@ -95,6 +95,30 @@ public sealed class PlayfieldScreen : IScreen
         return [.. result];
     }
 
+    /// <summary>
+    /// Takes frame and field of the playfield (x 8..312, y 28..192: everything a shot, a landslide or a falling tank draws,
+    /// docs/analyse/feld.md section 5) and every DAC entry the round has written into this screen; header, weapon bar and
+    /// wall label stay. Called after <see cref="Field"/> changed (spur schuss).
+    /// </summary>
+    public void RefreshField()
+    {
+        for (var y = FieldTop; y <= FieldBottom; y++)
+            Field.Screen.Pixels.AsSpan(y * Surface.OriginalWidth + FieldLeft, FieldRight - FieldLeft + 1)
+                .CopyTo(_screen.Pixels.AsSpan(y * Surface.OriginalWidth + FieldLeft));
+        for (var i = 0; i < Surface.PaletteSize; i++)
+        {
+            if (!Field.Palette.IsWritten(i))
+                continue;
+            _dacWritten[i] = true;
+            Field.Palette.Rgb.Slice(3 * i, 3).CopyTo(_dac.AsSpan(3 * i));
+        }
+
+        MenuGraphics.ApplyDac(_dac, _screen);
+    }
+
+    /// <summary>Area that <see cref="RefreshField"/> takes from the playfield.</summary>
+    public const int FieldLeft = 8, FieldTop = 28, FieldRight = 312, FieldBottom = 192;
+
     public IScreen? Update(TimeSpan elapsed, ScreenInput input) =>
         _next is not null && input.KeyPressed ? _next() : this;
 

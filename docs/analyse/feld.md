@@ -209,7 +209,20 @@ bitgleich (`AfterShotProbeTests`: `RandSeed`, Rahmen und Feld, Puffer, DAC, Ener
   Zeilen, 59 Schaden.
 - **Crumble** `O7:03C1`: Rahmen neu, dann Erdrutsch bei `Random:Real · 100 ≤ Crumble` (auch bei 100 ein `Random:Real`).
 
-### 5.5 Grenzen
+### 5.5 Darstellung und Werkzeuge (Teil 5)
+
+- `Core` meldet über `ShotSettings.Frame` jedes Bild, das das Original eine Weile zeigt (Tick des Flugs, Ringe der Explosion, jeder
+  Palettenschritt mit `Delay(ES)`, Krater, Erdrutsch, jede Zeile eines fallenden Panzers mit `Delay(FS)`); die Hooks ändern nichts am
+  Ablauf (die Probe-Tests laufen ohne). `UI/Screens/PlayfieldShotScreen` hält diese Bilder (Rahmen und Feld über
+  `PlayfieldScreen.RefreshField`, DAC) und spielt sie ab; Spur, Explosion, Krater, Erdrutsch und Fallen sind so genau die Pixel von
+  `Core`. `[APPROX]` Der Flug hat im Original keine Verzögerung (Tempo der Maschine), hier 15 ms je Tick. Test: das letzte Bild von
+  Schuss 3 mit Fallen hat den Feld-Hash des Probe-Falls `post` 0.
+- `bombtool render playfield … --shot WINKEL,KRAFT[,WAFFE] [--shooter N]`: nach dem Aufbau Startspieler, ein Schuss (Waffe 0 oder
+  Sprengwaffe) mit SS, Spur, Ton, Crumble und Fallen aus der Konfiguration, dann Erdrutsch und Fallen; PNG zeigt das Feld danach.
+- Desktop: in der Vorschau zielt der Spieler am Zug mit ←/→ und ↑/↓, W wechselt Lead Ball/Baby Missile, Leertaste schießt, Enter
+  baut die nächste Runde (`[APPROX]` Ersatz für den Zug `O7:040C`, ohne Kopfzeile und Bestand; danach der nächste lebende Spieler).
+
+### 5.6 Grenzen
 
 Nicht umgesetzt (Runde 2, R2-D1 = A; `NotSupportedException`): Lenkung, Repulser im Feld (Q5, braucht `ArcTan` `12CE:14D8` und die
 Tabelle `0B25`), Einschläge der Waffen außer 0 und {1, 2, 3, 4, 7, 11}; der Bestand (+2Eh) wird noch nicht abgezogen. Ton und

@@ -151,7 +151,8 @@ public sealed class DesktopGame : Game
 
     /// <summary>
     /// Preview of a round after the player selection (spur gelaende): shuffle steps (records not swapped, R2-D4), the
-    /// playfield with the game options, wind; a key builds the next round. Turns and shots follow later.
+    /// playfield with the game options, wind, start player; then shots (spur schuss, <see cref="RoundPreviewScreen"/>),
+    /// Enter builds the next round. The turns of the original follow later.
     /// </summary>
     private static IScreen RoundPreview(MenuFonts fonts, GameConfig? config, OptionsSettings options, TurboPascalRandom random,
         GameSetup setup)
@@ -162,8 +163,12 @@ public sealed class DesktopGame : Game
         var field = Playfield.Build(new PlayfieldOptions(players, (int)options.Walls, options.Background, mask,
             (int)options.Wind, options.InvisibleShot), random);
         var wind = Wind.Choose((int)options.Wind, random);
-        return new PlayfieldScreen(fonts, field, wind, setup.Players.Select(p => p.Name).ToArray(),
-            () => RoundPreview(fonts, config, options, random, setup));
+        var start = StartPlayer.Choose(new int[players], Enumerable.Repeat(true, players).ToArray(), random);
+        var screen = new PlayfieldScreen(fonts, field, wind, setup.Players.Select(p => p.Name).ToArray());
+        var cfg = config ?? GameConfig.BombCfgDefaults;
+        var settings = new Core.Shot.ShotSettings(cfg.ShotSpeed, wind.Value, options.TrailVisible, cfg.SoundEffects);
+        return new RoundPreviewScreen(screen, start.Player, settings, options.CrumblePercent, options.TanksFall, random,
+            ShotTiming.FromOptions(cfg.ExplosionSpeed, cfg.FallSpeed), () => RoundPreview(fonts, config, options, random, setup));
     }
 
     private ScreenInput ReadInput(KeyboardState keys)

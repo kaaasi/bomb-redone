@@ -308,4 +308,8 @@ R2-D6 = B); Stufe 2b `schuss` nach Merge von `gelaende`. Integrationsfolge: `gel
 
 ### Status schuss
 
-- 13.11.2026, Claude Code (Opus 5.5), Draft-PR `paket/schuss`, Base `090bf9e`. Teil 1 begonnen.
+- 13.11.2026, Claude Code (Opus 5.5), PR #115, Base `090bf9e`. Teile 1–5 fertig in einem Lauf: Real48 `Sin`/`Cos`/`Sqrt`/`Rad`
+  bitgleich (Panzerrohr ohne gemessene Tabelle), Probe `feld_schuss.py` (25 Schüsse, 9 Fälle danach), `Core/Shot` (Flug, Wände,
+  Einschlag, Krater, Schaden, Erdrutsch, Fallen) bitgleich, `PlayfieldShotScreen`, `bombtool render playfield --shot`, Desktop-Vorschau
+  mit Schüssen. Teil 6 blockiert, bis die Bilder von Sitzung 3 im Referenz-Repo gemergt sind (wie R2-D9 = A). Bericht
+  [analyse/feld.md](analyse/feld.md) §5.

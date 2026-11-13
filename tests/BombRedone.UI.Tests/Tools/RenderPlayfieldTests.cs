@@ -48,6 +48,42 @@ public sealed class RenderPlayfieldTests
     }
 
     [Fact]
+    public void Render_rejects_bad_shots()
+    {
+        Assert.Equal(2, Capture(() => RenderCommand.Run(["playfield", "--shot", "45"])).Code);
+        Assert.Equal(2, Capture(() => RenderCommand.Run(["playfield", "--shot", "181,300"])).Code);
+        Assert.Equal(2, Capture(() => RenderCommand.Run(["playfield", "--shot", "45,300,5"])).Code);
+        Assert.Equal(2, Capture(() => RenderCommand.Run(["playfield", "--shooter", "1"])).Code);
+        Assert.Equal(2, Capture(() => RenderCommand.Run(["playfield", "--shot", "45,300", "--shooter", "3"])).Code);
+    }
+
+    [GameDataFact]
+    public void Render_with_a_shot_fires_like_the_core_and_shows_the_field_afterwards()
+    {
+        var config = GameConfig.BombCfgDefaults;
+        var screen = RenderCommand.RenderPlayfield(TestGameData.Load(), config, 0x12345678, 2, out var report, [45, 270, 1], 1);
+
+        // The same round and shot with Core alone (shot 3 of feld_schuss.py, here with the options of BOMBCFG.EXE).
+        var random = new TurboPascalRandom(0x12345678);
+        var field = Playfield.Build(PlayfieldOptions.FromConfig(config, 2), random);
+        var wind = Wind.Choose((int)config.Wind, random);
+        StartPlayer.Choose(new int[2], [true, true], random);
+        field.Tanks[0].Aim(45, 270);
+        field.Tanks[0].Weapon = 1;
+        Core.Shot.BallisticShot.Fire(field, field.Tanks[0], new Core.Shot.ShotSettings(config.ShotSpeed, wind.Value,
+            config.ShotTrail, config.SoundEffects), random);
+        Core.Shot.AfterShot.Run(field, config.CrumblePercent, config.TanksFall, random);
+
+        Assert.Contains("RandSeed " + random.Seed.ToString("X8"), report[3]);
+        Assert.Equal(field.Tanks[1].Energy, screen.Field.Tanks[1].Energy);
+        for (var y = 28; y <= 192; y++)
+        {
+            for (var x = 8; x <= 312; x++)
+                Assert.Equal(field.Screen[x, y], screen.Screen[x, y]);
+        }
+    }
+
+    [Fact]
     public void Seed_search_finds_a_round_from_the_tank_positions()
     {
         // Randomize at 12:34:56.78, 25 menu steps, then the shuffle and the round with the defaults of BOMBCFG.EXE.

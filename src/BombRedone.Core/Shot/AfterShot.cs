@@ -17,28 +17,32 @@ public static class AfterShot
     /// [ORIGINAL] O4:49CB (BOMB.OVR 0x156D0): U431:07BA for every record, Crumble (DS:E8A4) &gt; 0 → O7:03C1, FallDown
     /// (DS:E8B8) → O7:0020. The shot protocol and the death loop that follow belong to the turn (round 3).
     /// </summary>
-    public static void Run(Playfield.Playfield field, int crumble, bool fallDown, TurboPascalRandom random)
+    public static void Run(Playfield.Playfield field, int crumble, bool fallDown, TurboPascalRandom random,
+        Action<ShotFrame>? frame = null)
     {
         ArgumentNullException.ThrowIfNull(field);
         ArgumentNullException.ThrowIfNull(random);
         foreach (var tank in field.Tanks)
             field.DrawTank(tank);
         if (crumble > 0)
-            Crumble(field, crumble, random);
+            Crumble(field, crumble, random, frame);
         if (fallDown)
-            Fall(field, random);
+            Fall(field, random, frame);
     }
 
     /// <summary>
     /// [ORIGINAL] O7:03C1 (BOMB.OVR 0x1AD57): frames anew (O7:0364), then Random:Real · 100 ≤ Crumble → landslide.
     /// </summary>
-    public static void Crumble(Playfield.Playfield field, int crumble, TurboPascalRandom random)
+    public static void Crumble(Playfield.Playfield field, int crumble, TurboPascalRandom random, Action<ShotFrame>? frame = null)
     {
         ArgumentNullException.ThrowIfNull(field);
         ArgumentNullException.ThrowIfNull(random);
         field.RedrawFrame();
         if (Real48.Compare(random.NextReal() * Hundred, Real48.FromInt32(crumble)) <= 0)
+        {
             Landslide(field.Screen.Pixels, field.Background.Pixels);
+            frame?.Invoke(ShotFrame.Landslide);
+        }
     }
 
     /// <summary>
@@ -110,7 +114,7 @@ public static class AfterShot
     /// y + 1, slide away from a solid (x ± 4, y + 1), done when all nine pixels below are solid, Random(3) + 1 damage on
     /// inertia (O10:0000 with defence 1), Delay(FS), old body from the buffer. Every tank is drawn anew (U431:07BA).
     /// </summary>
-    public static void Fall(Playfield.Playfield field, TurboPascalRandom random)
+    public static void Fall(Playfield.Playfield field, TurboPascalRandom random, Action<ShotFrame>? frame = null)
     {
         ArgumentNullException.ThrowIfNull(field);
         ArgumentNullException.ThrowIfNull(random);
@@ -151,6 +155,7 @@ public static class AfterShot
                     }
 
                     Damage.Apply(field, tank, random.Next(3) + 1, Damage.Inertia, random);
+                    frame?.Invoke(ShotFrame.Fall);
                     VgaDraw.CopyTankBody(background, screen, ox, oy);
                 }
                 while (!landed);

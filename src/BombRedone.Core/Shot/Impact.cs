@@ -60,11 +60,11 @@ public static class Impact
         var radius = ExplosionRadius(shooter.Weapon);
         if (radius == 0)
             throw new NotSupportedException($"Impact of weapon {shooter.Weapon} is not ported.");
-        Explode(field, shooter, color, x, y, radius, settings.Sound, random);
+        Explode(field, shooter, color, x, y, radius, settings.Sound, random, settings.Frame);
     }
 
     private static void Explode(Playfield.Playfield field, PlayfieldTank shooter, int color, Real48 x, Real48 y,
-        int radius, bool sound, TurboPascalRandom random)
+        int radius, bool sound, TurboPascalRandom random, Action<ShotFrame>? frame)
     {
         var screen = field.Screen.Pixels.AsSpan();
         var step = 63 / radius;
@@ -90,6 +90,8 @@ public static class Impact
             VgaDraw.Ellipse(screen, Field, cx, cy, i, i, c);
         }
 
+        frame?.Invoke(ShotFrame.Explosion);
+
         // O6:035E–051B: three runs over the ramp (each step SetPal and Delay(ES), tones only with sound).
         for (var i = 0; i <= radius; i++)
         {
@@ -101,6 +103,7 @@ public static class Impact
             }
 
             SetPal(field, ramp);
+            frame?.Invoke(ShotFrame.Palette);
         }
 
         for (var i = 0; i <= radius; i++)
@@ -113,6 +116,7 @@ public static class Impact
             }
 
             SetPal(field, ramp);
+            frame?.Invoke(ShotFrame.Palette);
         }
 
         for (var i = 0; i <= radius; i++)
@@ -125,6 +129,7 @@ public static class Impact
             }
 
             SetPal(field, ramp);
+            frame?.Invoke(ShotFrame.Palette);
         }
 
         // O6:0522–058C (K2): crater, the same rings copied from the background buffer.
@@ -135,6 +140,8 @@ public static class Impact
             VgaDraw.CopyEllipse(background, screen, Field, cx - 1, cy, i, i);
             VgaDraw.CopyEllipse(background, screen, Field, cx, cy, i, i);
         }
+
+        frame?.Invoke(ShotFrame.Crater);
 
         // O6:058E–05FC (K3): direct hit.
         if (color is >= 20 and <= 29)

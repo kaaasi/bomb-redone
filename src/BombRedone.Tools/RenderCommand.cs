@@ -123,17 +123,20 @@ internal static class RenderCommand
     }
 
     private const string PlayfieldUsage =
-        "Usage: bombtool render playfield [gamedata] [out.png] [--seed HEX] [--players N] [--cfg BOMB.CFG]";
+        "Usage: bombtool render playfield [gamedata] [out.png] [--seed HEX] [--players N] [--cfg BOMB.CFG] " +
+        "[--shot ANGLE,POWER[,WEAPON]] [--shooter N]";
 
     /// <summary>
     /// Playfield of a round: <c>--seed</c> is RandSeed after the shuffle (hex, default 12345678), <c>--players</c> 2..10
     /// (default 2), options from <c>--cfg</c> or the defaults of BOMBCFG.EXE; prints RandSeed, wall, background, wind and
-    /// tanks, writes the screen at the start of the round as PNG.
+    /// tanks, writes the screen at the start of the round as PNG. With <c>--shot</c> the player <c>--shooter</c> (default:
+    /// the start player) fires once (weapon 0 Lead Ball or an explosive, 1 = Baby Missile; R2-D8) with the options of the
+    /// configuration (SS, Trail, Sound, Crumble, FallDown), and the PNG shows the field afterwards (spur schuss).
     /// </summary>
     private static int RunPlayfield(string[] args)
     {
         if (!TryParseOptions(args, out var positional, out var options) || positional.Count > 2
-            || options.Keys.Any(k => k is not ("seed" or "players" or "cfg")))
+            || options.Keys.Any(k => k is not ("seed" or "players" or "cfg" or "shot" or "shooter")))
         {
             Console.Error.WriteLine(PlayfieldUsage);
             return 2;
@@ -143,8 +146,14 @@ internal static class RenderCommand
         GameConfig config;
         uint seed;
         int players;
+        int[]? shot = null;
+        int? shooter = null;
         try
         {
+            if (options.TryGetValue("shot", out var shotText))
+                shot = shotText.Split(',').Select(v => int.Parse(v, CultureInfo.InvariantCulture)).ToArray();
+            if (options.TryGetValue("shooter", out var shooterText))
+                shooter = int.Parse(shooterText, CultureInfo.InvariantCulture);
             data = GameData.Locate(positional.ElementAtOrDefault(0));
             config = options.TryGetValue("cfg", out var cfg) ? GameConfig.Load(cfg) : GameConfig.BombCfgDefaults;
             seed = uint.Parse(options.GetValueOrDefault("seed", "12345678"), NumberStyles.HexNumber, CultureInfo.InvariantCulture);
@@ -157,13 +166,15 @@ internal static class RenderCommand
             return 1;
         }
 
-        if (!Core.GameLimits.IsValidPlayerCount(players))
+        if (!Core.GameLimits.IsValidPlayerCount(players) || shot is not (null or { Length: 2 or 3 })
+            || shot is not null && (shot[0] is < 0 or > 180 || !Core.Shot.Impact.IsSupported(shot.ElementAtOrDefault(2)))
+            || shooter is not null && (shot is null || shooter < 1 || shooter > players))
         {
             Console.Error.WriteLine(PlayfieldUsage);
             return 2;
         }
 
-        var screen = RenderPlayfield(data, config, seed, players, out var report);
+        var screen = RenderPlayfield(data, config, seed, players, out var report, shot, shooter);
         var output = positional.ElementAtOrDefault(1) ?? "playfield.png";
         File.WriteAllBytes(output, ExportPng.Encode(new RawImage(screen.Screen.Pixels, Palette.FromBytes(screen.Dac.ToArray()))));
         foreach (var line in report)
@@ -174,7 +185,7 @@ internal static class RenderCommand
 
     /// <summary>Builds the round from <paramref name="seed"/> (RandSeed after the shuffle) and draws it.</summary>
     internal static PlayfieldScreen RenderPlayfield(GameData data, GameConfig config, uint seed, int players,
-        out IReadOnlyList<string> report)
+        out IReadOnlyList<string> report, int[]? shot = null, int? shooter = null)
     {
         var random = new TurboPascalRandom(seed);
         var field = Playfield.Build(PlayfieldOptions.FromConfig(config, players), random);
@@ -182,14 +193,31 @@ internal static class RenderCommand
         var wind = Wind.Choose((int)config.Wind, random);
         var fonts = MenuFonts.Load(data, BitmapFontSource.Load().Font);
         var names = Enumerable.Range(1, players).Select(PlayerSlotName).ToArray();
-        report =
-        [
+        var lines = new List<string>
+        {
             $"seed {seed:X8}, after set-up {afterSetup:X8}, after wind {random.Seed:X8}",
             $"wall {field.Wall}, background {field.BackgroundNumber} ({Backgrounds.Names[field.BackgroundNumber]}), " +
             $"wind {wind.Value} (level {wind.Level})",
             "tanks " + string.Join(" ", field.Tanks.Select(t => $"{t.X},{t.Y}")),
-        ];
-        return new PlayfieldScreen(fonts, field, wind, names);
+        };
+        report = lines;
+        var screen = new PlayfieldScreen(fonts, field, wind, names);
+        if (shot is null)
+            return screen;
+
+        // O4:479A: start player, then one shot like the turn of that player (spur schuss).
+        var start = StartPlayer.Choose(new int[players], Enumerable.Repeat(true, players).ToArray(), random);
+        var tank = field.Tanks[(shooter ?? start.Player) - 1];
+        tank.Aim(shot[0], shot[1]);
+        tank.Weapon = shot.ElementAtOrDefault(2);
+        var settings = new Core.Shot.ShotSettings(config.ShotSpeed, wind.Value, config.ShotTrail, config.SoundEffects);
+        var result = Core.Shot.BallisticShot.Fire(field, tank, settings, random);
+        Core.Shot.AfterShot.Run(field, config.CrumblePercent, config.TanksFall, random);
+        screen.RefreshField();
+        lines.Add($"shot player {tank.Number}: angle {shot[0]}, power {shot[1]}, weapon {tank.Weapon}; end {result.Ix},{result.Iy}, " +
+                  $"hit {result.Hit}, {(result.Exploded ? "impact" : "no impact")}, steps {result.Steps}, RandSeed {random.Seed:X8}");
+        lines.Add("after: " + string.Join(" ", field.Tanks.Select(t => $"{t.X},{t.Y} energy {t.Energy} points {t.Score}")));
+        return screen;
 
         static string PlayerSlotName(int n) => Core.Setup.PlayerSlot.DefaultName(n);
     }
