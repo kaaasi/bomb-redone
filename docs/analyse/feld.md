@@ -272,3 +272,45 @@ DAC (`PlayfieldScreenSessionTests`, `[GameDataFact]`, Bild aus `~/referenz/bilde
   beim Mischen mit; `Core` mischt die Sätze erst in Runde 3 mit (R2-D4 = A) und nimmt die Teiler nach Satznummer. Indizes gleich.
 
 Keine Abweichung im Spielfeldaufbau, also kein Fix an `Core/Playfield` nötig.
+
+## 7. Schüsse der Sitzung 3 (Spur `schuss-bilder`, Stand 15.11.2026)
+
+Runde 1 aus §6 (Startwert, `RandSeed` nach dem Mischen `D2E3BA6E`, Wind −92), danach Startspieler `Random(2)` → Satz 2 („Player 1“),
+dann je Schuss wie `O4:44A7`: Waffe `O4:01B7`, Erdrutsch (Crumble 75), Fallen. Optionen aus `ablauf1-GAME1.TWS` = Voreinstellungen
+(SS 10, Spur, Ton). Waffe beider Spieler: Baby Missile (rotes Feld 1 der Waffenleiste; Lead Ball weicht schon im Krater von Schuss 1
+ab). Test: `PlayfieldShotSessionTests` (`[GameDataFact]`, Bilder aus `~/referenz/bilder/runde-1`).
+
+### 7.1 Schussparameter (Teil 1)
+
+Die Kopfzeile zeigt den Spieler am Zug mit seinen letzten Werten, nicht den letzten Schuss (Review #123 P3-3). Gesucht wurde je
+Schuss über Winkel × Kraft mit dem Maß „Pixel der Spurfarbe 100 − Satz, die in Bild und Rechnung verschieden sind“ (Rahmen und
+Feld), nach den vorigen Schüssen; jeweils genau ein Treffer mit 0:
+
+| Schuss | Satz (Name) | Winkel, Richtung | Kraft | Suchraum | Bild | Ende (x, y) |
+|---|---|---|---|---|---|---|
+| 1 | 2 („Player 1“) | 75, ← | 200 | Werte der Kopfzeile von `s3_02` | `s3_03` | 134, 144 |
+| 2 | 1 („Player 2“) | 75, → | 272 | 60..90 × 150..400 (Schritt 5), dann 70..80 × 255..290 | `s3_04` | 73, 135 |
+| 3 | 2 („Player 1“) | 38, ← | 241 | 10..89 × 150..600 (Schritt 10), dann 30..46 × 200..320 | `s3_05` | 12, 135 |
+| 4 | 1 („Player 2“) | 30, → | 272 | Werte der Kopfzeile von `s3_06` | `s3_06`, `s3_07` | 276, 140 |
+
+Stimmig mit den Kopfzeilen: `s3_05` zeigt für „Player 2“ Kraft 272 (Schuss 2), `s3_06` Winkel 30 und Kraft 272 (Schuss 4).
+Je ein Schritt in Winkel oder Kraft ändert die Spur (Test `Neighbouring_angles_and_powers_do_not_match`).
+
+### 7.2 Vergleich (Teil 2)
+
+- **Schüsse 1–3 (`s3_03`–`s3_05`):** Rahmen und Feld (x 8..312, y 28..192) **pixelgleich**: Spur, Krater, Erdrutsch, Panzer. DAC aller
+  Feldfarben gleich (Hintergrund 30..59 ohne sichtbaren Rotationsschritt), außer 20/21 und 98/99: Rot und Grün vertauscht, Wert
+  gleich – die Farbteiler wandern beim Mischen mit dem Satz (R2-D4 = A, wie §6.2). Die Helligkeit der Panzerfarben folgt der
+  Energie: in `s3_05` Farbe 20 = 59 (Satz 1, Energie 95 nach dem Einschlag von Schuss 3 am linken Rand; Kopfzeile „Men 95“),
+  Farbe 21 = 62 (Satz 2, Energie 99, Selbstschaden `Random:Real` < 0,2 bei Schuss 3).
+- **Zug (erklärt, `[APPROX]` im Test):** Ohne Zug bleibt beim Winkelwechsel von Schuss 3 das alte Rohr (75°) stehen: 3 Pixel Farbe 21
+  bei (279..280, 133..135). Das Original löscht es im Zug `O7:040C` (Befehl 1/2: Rohr aus dem Puffer, neu zeichnen; `runde.md` §6.2).
+  Der Test bildet nur diesen Schritt nach (`VgaDraw.CopyLine` aus dem Puffer, `DrawTank`); die Zwischenschritte der Drehung hinterlassen
+  nichts (Bild gleich). Der Zug selbst kommt in Runde 3.
+- **Schuss 4 (`s3_06`, `s3_07`):** trifft Satz 2 (Energie 0). Flug, Spur, Krater und Fallen (Panzer nach (277, 150)) gleich. Alle
+  Abweichungen (371 bzw. 1371 Pixel, x 211..309, y 141..189) zeigen im Bild Hintergrund, wo wir Gelände (2) oder die unterste
+  Körperzeile (21) haben: die **Todesexplosion** `O5` (§5.9, Runde 3). Nach dem Schuss gibt unser `RandSeed` `7C99828F` für
+  `Random(7)` den Wert 0 (`O5[0]`) – Hinweis für den Bildvergleich der Todesexplosionen, nicht geprüft.
+- Kopfzeile und Waffenleiste nicht verglichen (Zug, Teil 3 von `runde.md`, nicht umgesetzt).
+
+Kein Befund in `Core/Shot` oder `Core/Playfield`, also kein Fix.
