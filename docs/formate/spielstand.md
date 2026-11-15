@@ -1,7 +1,8 @@
 # `*.TWS` – Spielstände (Release 3.2)
 
 Spur `tws-format`, Runde 1 (GR1-1 = C: nur Analyse und Doku, R1-D3 = A: Ziel ist Lesen). Stand 11.11.2026, Claude Opus 5.5.
-Kein Leser in `src/` (folgt in Runde 2); kein Originalspielstand im Referenz-Repo – alles hier stammt aus dem Maschinencode.
+Leser: `BombRedone.Formats.SavedGame` (Spur `tws-leser`, Runde 2), Ausgabe `bombtool tws <datei>`. Abgleich mit den vier
+Originalständen von Sitzung 3: Abschnitt „Abgleich mit Originalständen“ unten.
 
 **Beleg für jede Aussage:** `python3 tools/reverse-engineering/tws.py befunde` leitet den Aufbau aus der Schreib- und der
 Leseroutine ab und prüft die Befunde T1–T7 gegen `gamedata/` (Ergebnis zum Head: **29 von 29 bestätigt**). Die Nummer steht hinter
@@ -154,16 +155,48 @@ Bezug zu #71: Die Wertung sortiert die Sätze dauerhaft um (`O3:0000`). Das Auto
 - **Nicht gespeichert:** `RandSeed`, die Geschwindigkeits- und Anzeigeoptionen aus `BOMB.CFG` (TS, FS, ES, SS, LS, Maus,
   Palette, Video, Boss-Speicher), Sätze und Steuerarten über der Spielerzahl, Laufwerte der Runde außer den globalen Werten oben.
 
-## Für den Leser in Runde 2
+## Leser (Runde 2)
 
-Folge aus T2/T3 (Vorschlag, `[APPROX]` bis ein Originalstand vorliegt): Kopf exakt vergleichen, dann die 26 globalen Werte, je
-Spieler Satz + Steuerart und bei Steuerart 3 die 7 Byte der Intelligenz; Länge nach der Formel prüfen. Satzfelder nur übernehmen,
-soweit oben belegt; den Rest roh behalten (R1-D3 B später: bytegleiches Schreiben).
+`SavedGame.Read` vergleicht den Kopf exakt, liest die 26 globalen Werte, je Spieler Satz und Steuerart, bei Steuerart 3 die 7 Byte
+der Intelligenz, dann die Teamtabelle; Byte dahinter bleiben als `TrailingBytes` erhalten (das Original liest sie nicht). Jeder Teil
+behält seine Rohbytes, `ToBytes()` setzt sie bytegleich zusammen. Typisiert sind nur die oben belegten Felder, alles andere bleibt
+roh. Abweichungen vom Original, je `[APPROX]` im Code: zu kurze Datei und Spielerzahl außerhalb 1..10 werden abgelehnt (das Original
+prüft beides nicht); ein Längenbyte über der Kapazität eines `String[13]` wird gekürzt; `RandSeed`-Verbrauch des Ladens (T5c) ist
+nicht nachgebildet.
+
+## Abgleich mit Originalständen (Sitzung 3, R2-D10 = A)
+
+Vier Stände im Referenz-Repo (`original/spielstaende/`), alle 2 Menschen ohne Team Play, 890 Byte, Länge nach der Formel, keine Byte
+hinter der Teamtabelle; Rundreise bytegleich (`SavedGameOriginalTests`). Werte gegen die Bilder `bilder/runde-1/`:
+
+| Stand | Bild | Übereinstimmung |
+|---|---|---|
+| `ablauf1-GAME1` | `s3_08`, `s3_20` | `DS:47E2` = 1 („1 Game Played out of 10“), `DS:E8A6` = 10; Satz 1 „Player 2“, +6Ah = 1, +13h = 4490; Satz 2 „Player 1“, 0, 50 |
+| `ablauf1-GAME1` | `s3_09` | Geld (+13h − +17h) 4490, Incinerator (Waffe 1) 28 |
+| `ablauf1-GAME1` | `s3_02`, `s3_05` | `DS:E8A2` = −92 zu „Wind: 92 ←“; +1Fh = 1 zu „Direction (→)“ (Player 2), −1 zu „(←)“ (Player 1) |
+| `ablauf1-GAME2` | `s3_12` | `DS:47E2` = 2; „Player 2“ 1 Sieg, 4830; „Player 1“ 1 Sieg, 4540 |
+| `ablauf1-GAME2` | `s3_10`, `s3_17` | „Player 2“ +17h = 4000 und Ball 'O' Dirt (Waffe 13) = 10; „Player 1“ Geld 4540, Incinerator 25 |
+
+Die Optionen ab `DS:E8A4` entsprechen in allen vier Ständen den Voreinstellungen von `BOMBCFG.EXE`; Wind- und Wandwert der Runde
+gleich der Option (Normal, keine Wand).
+
+**Beobachtungen (nicht typisiert, ohne Codebeleg):**
+
+- **Satzreihenfolge (#71):** In allen vier Ständen steht „Player 2“ (höhere Punkte) vorn. Satz +00h ist dabei die Position in der
+  Datei (1, 2), nicht die Nummer im Namen; Teamwort +66h (Anfangswert Spielernummer n, `spielerauswahl.md` §6) und Farbteiler +60h..+64h
+  sind mit dem Spieler mitgewandert. Die Wertung tauscht die Sätze also, +00h wird danach neu gesetzt oder nicht mitgetauscht – unbelegt.
+- **+1Bh** = 272 bei „Player 2“ in `ablauf1-GAME1` gleich „Power: 272“ in `s3_05` (Kandidat: Schusskraft).
+- **+23h** ist nach dem Spiel beim Sieger ≠ 0 (`ablauf1-GAME1`: „Player 2“ 1, „Player 1“ 0; `ablauf1-GAME2` umgekehrt, passend zu den
+  Siegen in `s3_12`).
+- **Fremdtext:** In `ablauf1-*` stehen nicht nur in der Teamtabelle (ab Offset 307) Speicherreste eines anderen Programms, sondern
+  auch in `DS:47E6`/`DS:47E8` (Offset 38–41, Text statt Zahl); diese beiden Variablen wurden in der Schlacht also nicht beschrieben.
+  In `frisch-*` sind sie 0, die Teamtabelle ist dort ganz 0.
+- `DS:47D8` = 10 in drei Ständen, 2 in `frisch-GAME2`; Bedeutung weiter unbelegt.
 
 ## Benötigte Originalstände (DOSBox-Aufnahme)
 
-Noch kein `*.TWS` im Referenz-Repo (`original/spielstaende/`). Für den Abgleich (`tws.py lesen`) und Tests des Lesers – je Stand
-die Einstellungen und den Spielverlauf notieren (`docs/vorlagen/dosbox-aufnahme.md`):
+Vorhanden: vier Stände von Sitzung 3 (oben), sie decken Nr. 1 ab. **Restlücke (R2-D10 = A): Nr. 2–8 fehlen**, Abgleich mit
+Sitzung 4 (Runde 3). Je Stand die Einstellungen und den Spielverlauf notieren (`docs/vorlagen/dosbox-aufnahme.md`):
 
 1. **Zwei Menschen, kein Team Play**, Voreinstellungen, nach Spiel 1 mit dem Dialog gesichert (Name merken) – Grundfall, Länge 890.
 2. **Derselbe Spielverlauf mit Autosave** – Vergleich Autosave (vor der Wertung) und Dialog (danach): Satzreihenfolge (#71).
