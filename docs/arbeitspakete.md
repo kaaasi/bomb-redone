@@ -186,7 +186,8 @@ Integrationsfolge: `waffen` → `zug` → `spielfolge`. Gemeinsame Dateien: Absc
 - 15.11.2026: Teil 1 (Probe) fertig: `tools/reverse-engineering/zug.py` (40 Züge, 5 Zugfolgen), [analyse/zug.md](analyse/zug.md);
   Korrektur `runde.md` §6.3 (Alt umgekehrt, Schummeltaste nur Ziffernblock).
 - 15.11.2026: Teil 2 (`Core/Turn`) fertig: 40 Züge und 5 Zugfolgen bitgleich zur Probe.
-- 15.11.2026: Teil 3 (UI) fertig: Bildschirm an jeder Abfragestelle aller 40 Züge gleich der Probe. Teil 4 begonnen.
+- 15.11.2026: Teil 3 (UI) fertig: Bildschirm an jeder Abfragestelle aller 40 Züge gleich der Probe.
+- 15.11.2026: Teil 4 (Desktop) fertig: `PlayfieldTurnScreen` statt Vorschau. Spur fertig – Review.
 
 ### Status spielfolge
 

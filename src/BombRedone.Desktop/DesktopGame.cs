@@ -1,6 +1,7 @@
 using BombRedone.Core.Numerics;
 using BombRedone.Core.Playfield;
 using BombRedone.Core.Setup;
+using BombRedone.Core.Turn;
 using BombRedone.Formats;
 using BombRedone.UI;
 using BombRedone.UI.Screens;
@@ -157,22 +158,85 @@ public sealed class DesktopGame : Game
     }
 
     /// <summary>
-    /// Preview of a round after the player selection (spur gelaende): the next round of <paramref name="rounds"/> (shuffle
-    /// steps with records not swapped, R2-D4; playfield with the game options, wind, start player with the counters of the
-    /// battle, issue #111); then shots (spur schuss, <see cref="RoundPreviewScreen"/>), Enter builds the next round. The turns
-    /// of the original follow later.
+    /// A round after the player selection: the next round of <paramref name="rounds"/> (shuffle steps with records not
+    /// swapped, R2-D4; playfield with the game options, wind, start player with the counters of the battle, issue #111);
+    /// then the turns (spur zug, <see cref="PlayfieldTurnScreen"/>); F2 builds the next round until spur runde ends rounds.
     /// </summary>
     private static IScreen RoundPreview(MenuFonts fonts, GameConfig? config, OptionsSettings options, TurboPascalRandom random,
         GameSetup setup, RoundSequence rounds)
     {
         var round = rounds.NextRound();
         var screen = new PlayfieldScreen(fonts, round.Field, round.Wind, setup.Players.Select(p => p.Name).ToArray());
+        var view = new PlayfieldTurnView(screen, fonts, round.Wind);
+        var players = round.Field.Tanks.Select(t => new TurnPlayer(t, setup.Players[t.Number - 1].Name)).ToList();
+        foreach (var p in players)
+            p.SetDefaultStocks();
         var cfg = config ?? GameConfig.BombCfgDefaults;
         var settings = new Core.Shot.ShotSettings(cfg.ShotSpeed, round.Wind.Value, options.TrailVisible, cfg.SoundEffects);
-        return new RoundPreviewScreen(screen, round.Start.Player, settings, options.CrumblePercent, options.TanksFall, random,
+        return new PlayfieldTurnScreen(screen, view, players, setup.Players.Select(p => p.Control).ToArray(), round.Start.Player,
+            round.Start.Pass, HeldScancodes, settings, options.CrumblePercent, options.TanksFall, random,
             ShotTiming.FromOptions(cfg.ExplosionSpeed, cfg.FallSpeed),
             () => RoundPreview(fonts, config, options, random, setup, rounds));
     }
+
+    /// <summary>
+    /// The held-key table DS:452A of the keyboard handler U0C48:0008 from the keyboard state (scancodes, E0 keys + 100h).
+    /// [APPROX] The window layer does not tell the keypad Enter from Enter; the keypad keys count as keypad keys (52h, 53h:
+    /// cheat key Ins + Del) whatever NumLock says.
+    /// </summary>
+    private static bool[] HeldScancodes()
+    {
+        var held = new bool[Scancode.Count];
+        var state = Keyboard.GetState();
+        foreach (var key in state.GetPressedKeys())
+        {
+            var code = ToScancode(key);
+            if (code > 0)
+                held[code] = true;
+        }
+
+        return held;
+    }
+
+    private static int ToScancode(Keys key) => key switch
+    {
+        Keys.Escape => Scancode.Esc,
+        >= Keys.D1 and <= Keys.D9 => Scancode.Digit1 + (key - Keys.D1),
+        Keys.D0 => Scancode.Digit0,
+        Keys.Tab => Scancode.Tab,
+        Keys.W => Scancode.W,
+        Keys.I => Scancode.I,
+        Keys.Enter => Scancode.Enter,
+        Keys.LeftControl => 0x1D,
+        Keys.D => Scancode.D,
+        Keys.G => Scancode.G,
+        Keys.H => Scancode.H,
+        Keys.LeftShift => Scancode.LeftShift,
+        Keys.C => Scancode.C,
+        Keys.V => Scancode.V,
+        Keys.RightShift => Scancode.RightShift,
+        Keys.LeftAlt => Scancode.Alt,
+        Keys.RightAlt => Scancode.RightAlt,
+        Keys.Space => Scancode.Space,
+        Keys.F2 => PlayfieldTurnScreen.NextRoundKey,
+        Keys.NumPad8 => Scancode.PadUp,
+        Keys.NumPad9 => Scancode.PadPageUp,
+        Keys.NumPad4 => Scancode.PadLeft,
+        Keys.NumPad6 => Scancode.PadRight,
+        Keys.NumPad2 => Scancode.PadDown,
+        Keys.NumPad3 => Scancode.PadPageDown,
+        Keys.NumPad0 => Scancode.PadInsert,
+        Keys.Decimal => Scancode.PadDelete,
+        Keys.Up => Scancode.Up,
+        Keys.PageUp => Scancode.PageUp,
+        Keys.Left => Scancode.Left,
+        Keys.Right => Scancode.Right,
+        Keys.Down => Scancode.Down,
+        Keys.PageDown => Scancode.PageDown,
+        Keys.Insert => Scancode.Insert,
+        Keys.Delete => Scancode.Delete,
+        _ => 0,
+    };
 
     private ScreenInput ReadInput(KeyboardState keys)
     {

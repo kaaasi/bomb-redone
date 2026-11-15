@@ -122,4 +122,18 @@ Aus Code und Probe dazu: In der Panzerinfo trägt die gewählte Waffe auch ihre 
 Zelle nicht ganz in y 0..199 liegt, ganz weg. Beim Öffnen setzt O9 die Farbe 19 + n auf volle Helligkeit (`O10:01AC(100, …)`), beim
 Schließen wieder nach der Energie.
 
-Offen für Teil 4: keine Frage an den Nutzer; Bildvergleich in `bilder-s4` (R3-D2).
+## 7. Ergebnis Teil 4 (Desktop)
+
+`PlayfieldTurnScreen` (UI, ohne MonoGame testbar) ersetzt die Vorschau `RoundPreviewScreen`: Z1 und Zug aus Core mit Tastatur und
+Maus, MIRV-Dialog bei Waffe 7, dann der Schuss über `PlayfieldShotScreen`/`Core/Shot` und der nächste Spieler nach R5. Je Bild läuft
+die Koroutine bis zur nächsten Abfrage ohne vorherige Verzögerung; die Verzögerungen TS des Zugs werden von der Bildzeit abgezogen
+(gehaltener Pfeil ≈ 125 Schritte/s wie im Original bei TS = 8). Von Core losgelassene Tasten bleiben gesperrt, bis der Spieler sie
+loslässt (das Original wartet in der Schleife). `DesktopGame` liefert die Tabelle `DS:452A` aus dem Tastaturzustand (F2: nächste
+Runde). Restlücke R2 „Desktop-Zug ohne Kopfzeile“ damit erledigt.
+
+`[APPROX]` bis zur Spur `runde` bzw. Runde 4: kein Tod und kein Rundenende (Energie 0 zählt als ausgeschieden, unter zwei Panzern
+folgt die nächste Runde), Waffen ohne Core-Schuss (Laser, Roller, Sonic, MIRV-Teilung, Repulser im Feld) überspringen den Schuss,
+der Bestand sinkt je Schuss hier um 1 (später `O4:01B7` in Core/Shot – beim Integrieren mit `waffen` nicht doppelt zählen),
+Computer schießen sofort, Bestände wie ein neuer Satz, kein Ton, keine Typematic-Wiederholung.
+
+Offen: keine Frage an den Nutzer; Bildvergleich in `bilder-s4` (R3-D2).
