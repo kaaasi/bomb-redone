@@ -185,5 +185,6 @@ Integrationsfolge: `waffen` → `zug` → `spielfolge`. Gemeinsame Dateien: Absc
 
 - 15.11.2026: begonnen (Claude Code, geplanter Lauf), Branch `paket/spielfolge`, Base `26f0ae1`, PR #149.
 - Teil 1 fertig: Probe `tools/reverse-engineering/folge.py` (Tausch, Mischen, Wertung, Teamwertung, Bonus, Einkauf, Schlacht mit Testdouble der Runde).
+- Teil 2 fertig: `Core/Battle` (`BattleRecords`: Tausch, Mischen, Wertungssortierung, Siegerbonus, Einkaufsfolge), `RoundSequence` mischt die Sätze (#71); Teamwertung gegen die Probe geprüft.
 
 ### Status runde

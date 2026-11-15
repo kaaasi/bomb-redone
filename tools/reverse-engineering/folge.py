@@ -10,12 +10,13 @@ Usage:
   folge.py [--gamedata DIR] befunde [--print]     check the code regions the probe relies on
   folge.py [...] cases [--only I ...]             fixed case list -> analyse/folge/cases.json and one line per case
                                                   on stdout; the C# tests compare against these values
+  folge.py [...] csharp                           C# test data (BattleProbeData.cs) from cases.json on stdout
 
 Case kinds (every case starts from a fresh boot, O2:0216(n) for n = 1..10 and the inputs of the case):
   swap      far call O3:0000(a, b)                                    (S4)
   shuffle   RandSeed := seed, far call O3:2417                        (S3)
   rating    far call O3:5AEF (S5; screen hash at the key wait)
-  team      far call O3:6696 with Team Play (team rating; screen hash at the key wait)
+  team      far call O3:6696 with Team Play (team rating; sorted slots [bp-126h] and screen hash at the key wait)
   bonus     O3:7847 entered at O3:7885 with DS:47E0 = winner team, stopped at O3:796B   (S2)
   shop      far call O3:0E1F (order of the shops, record at every key wait, random calls)
   battle    far call O3:7847 over all games; the round O4[0] is a test double that only sets the result of
@@ -50,6 +51,7 @@ INTEL_SEG = 0xE800
 O3_SWAP, O3_SHUFFLE, O3_SHOP, O3_RATING, O3_TEAM, O3_SEQUENCE = 0x0000, 0x2417, 0x0E1F, 0x5AEF, 0x6696, 0x7847
 O3_SEQ_SHUFFLE, O3_SEQ_BONUS, O3_SEQ_AFTER_BONUS, O3_SEQ_END = 0x7872, 0x7885, 0x796B, 0x7A0D
 O3_SHOP_FRAME = 0x0E22   # after mov bp,sp of O3:0E1F; the player loop counter is [bp-0Ch]
+O3_TEAM_FRAME = 0x6699   # after mov bp,sp of O3:6696; team slots in sorted order [bp-126h + 2i], i = 1..10
 O4_ROUND = 0x44A7
 KEY_ENTER, KEY_ESC, KEY_SPACE = 0x1C0D, 0x011B, 0x3920
 DEFAULT_KEYS = {"rating": KEY_ENTER, "team": KEY_ENTER, "shop": KEY_ESC}
@@ -184,6 +186,12 @@ class Folge:
 
         m.traps[feld.lin(p.ovseg[3], O3_SHOP_FRAME)] = shop_frame
 
+        def team_frame(mm):
+            state["team_bp"] = mm.cpu.R[BP]
+            return False
+
+        m.traps[feld.lin(p.ovseg[3], O3_TEAM_FRAME)] = team_frame
+
         def int16(mm):
             ah = c.R[AX] >> 8
             if ah not in (0x00, 0x01, 0x10, 0x11):
@@ -196,6 +204,10 @@ class Folge:
                 if state["proc"] == "shop" and state["shop_bp"] is not None:
                     ev["record"] = c.rw(c.S[SS], (state["shop_bp"] - 0x0C) & 0xFFFF)
                     ev["name"] = self.name(mm, ev["record"])
+                if state["proc"] == "team" and state.get("team_bp") is not None:
+                    bp = state["team_bp"]
+                    ev["team_order"] = [c.rw(c.S[SS], (bp - 0x126 + 2 * i) & 0xFFFF) for i in range(1, 11)]
+                    ev["team_counted"] = c.rw(c.S[SS], (bp - 0x128) & 0xFFFF)
                 events.append(ev)
                 if isinstance(keys, dict):
                     state["key"] = keys[state["proc"]]
@@ -330,6 +342,8 @@ CASES = [
      "score": [1000, 200, 300, 0, 900, 300], "wins": [1, 0, 1, 0, 1, 1]},
     {"kind": "team", "players": 7, "teams": [2, 2, 5, 5, 5, 7, 7],
      "score": [100, 100, 0, 50, 50, 300, -100], "wins": [1, 0, 0, 1, 1, 1, 0]},
+    {"kind": "team", "players": 9, "teams": [3, 1, 3, 1, 2, 2, 3, 2, 1],
+     "score": [10, 20, 30, 40, 50, 60, 70, 80, 90], "wins": [1, 1, 0, 1, 2, 0, 1, 1, 0]},
     {"kind": "bonus", "players": 3, "winner": 2, "alive": [0, 1, 0], "score": [100, 200, 300], "wins": [0, 0, 0]},
     {"kind": "bonus", "players": 6, "winner": 3, "teams": [1, 3, 2, 3, 3, 1], "alive": [0, 1, 0, 0, 1, 1],
      "score": [0, 0, 0, 0, 0, 0], "wins": [0, 0, 0, 0, 0, 0]},
@@ -395,6 +409,54 @@ def cmd_cases(p, args):
     return 0
 
 
+def csv(values):
+    return ",".join(str(v) for v in values)
+
+
+def cmd_csharp(p, args):
+    """C# test data of the record cases (swap, shuffle, rating, bonus) and of the team ratings from
+    analyse/folge/cases.json, on stdout."""
+    with open(os.path.join(args.root_out, "cases.json"), encoding="utf-8") as fh:
+        results = json.load(fh)
+    print("namespace BombRedone.Core.Tests.Battle;")
+    print()
+    print("/// <summary>")
+    print("/// Generated from analyse/folge/cases.json (<c>python3 -I tools/reverse-engineering/folge.py cases</c>, then")
+    print("/// <c>folge.py csharp</c>); the cases are listed in CASES of that script. Values only, no bytes of the originals.")
+    print("/// </summary>")
+    print("internal static class BattleProbeData")
+    print("{")
+    print("    public static readonly BattleRecordsProbeTests.RecordCase[] All =")
+    print("    [")
+    for r in results:
+        c = r["case"]
+        if c["kind"] not in ("swap", "shuffle", "rating", "bonus"):
+            continue
+        n = c["players"]
+        recs = r["records"]
+        print('        new(%d, "%s", %d, %d, %d, "%08X", "%s", "%s", "%s", "%s", "%s", %d, "%s", "%s", "%s", "%s", "%s", "%s"),' % (
+            r["index"], c["kind"], n, c.get("a", 0), c.get("b", 0), c.get("seed", 0), csv(c.get("controls") or [1] * n),
+            csv(c.get("score") or [0] * n), csv(c.get("wins") or [0] * n), csv(c.get("teams") or range(1, n + 1)),
+            csv(c.get("alive") or [0] * n), c.get("winner", 0), csv(int(x["name"].split()[1]) for x in recs),
+            csv(x["control"] for x in recs), csv(x["intel"] for x in recs), csv(x["score"] for x in recs),
+            csv(x["wins"] for x in recs), r["randseed"]))
+    print("    ];")
+    print()
+    print("    public static readonly BattleRecordsProbeTests.TeamCase[] Teams =")
+    print("    [")
+    for r in results:
+        c = r["case"]
+        if c["kind"] != "team":
+            continue
+        ev = next(e for e in r["events"] if "team_order" in e)
+        order = [t if t in c["teams"] else 0 for t in ev["team_order"]]
+        print('        new(%d, "%s", "%s", "%s", "%s", %d),' % (
+            r["index"], csv(c["teams"]), csv(c["score"]), csv(c["wins"]), csv(order), ev["team_counted"]))
+    print("    ];")
+    print("}")
+    return 0
+
+
 def main():
     root = os.path.normpath(os.path.join(HERE, "..", ".."))
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -407,6 +469,7 @@ def main():
     b.add_argument("--print", action="store_true")
     k = sub.add_parser("cases")
     k.add_argument("--only", type=int, nargs="*", help="indices into the case list")
+    sub.add_parser("csharp")
     args = ap.parse_args()
     font = None
     if os.path.exists(args.font):
@@ -414,10 +477,10 @@ def main():
             font = fh.read()
         if len(font) != 2048:
             sys.exit("font must have 2048 bytes")
-    elif args.cmd != "befunde":
+    elif args.cmd not in ("befunde", "csharp"):
         print("Warnung: keine 8x8-Schrift (%s), Text mit DefaultFont bleibt leer" % args.font, file=sys.stderr)
     p = feld.Probe(args.gamedata, font)
-    return {"befunde": cmd_befunde, "cases": cmd_cases}[args.cmd](p, args)
+    return {"befunde": cmd_befunde, "cases": cmd_cases, "csharp": cmd_csharp}[args.cmd](p, args)
 
 
 if __name__ == "__main__":
