@@ -377,4 +377,6 @@ R2-D6 = B); Stufe 2b `schuss` nach Merge von `gelaende`. Integrationsfolge: `gel
 
 ### Status schuss-bilder
 
-- noch nicht begonnen (nach Merge von `gelaende-bilder`).
+- 15.11.2026, Claude Opus 5.5 (geplanter Lauf), PR #133, Base `204a8d0`: Teile 1 und 2 fertig – Schüsse 75/200, 75/272, 38/241,
+  30/272 (Baby Missile); `s3_03`–`s3_05` im Feld pixelgleich, `s3_06`/`s3_07` bis auf die Todesexplosion (Runde 3); DAC bis auf R2-D4
+  gleich; Rohrwechsel des Zugs im Test nachgebildet (`analyse/feld.md` §7). Kein Fix nötig.
