@@ -331,7 +331,7 @@ ersten Schuss (§4).
 
 ### 5.10 Laser `O4:3426` (L1–L3)
 
-Vorab ein Aufladebild mit Verzögerung `LS` (`DS:E8CC`) und den Farben 130.. (`[APPROX]` nicht im Einzelnen ausgewertet). Dann (L1):
+**Bestand als Energie** (Spur `waffen`, Probe 15.11.2026): `O4:3426` bricht bei Kraft 0 ab, begrenzt die Kraft +1Bh auf den Laserbestand +38h (+2Eh + 2 · 5) und zieht sie davon ab (`O4:3456–34AE`, `BOMB.OVR 0x1415B`), danach `O10:014A` und `O10:021C` für den Schützen. Vorab ein Aufladebild mit Verzögerung `LS` (`DS:E8CC`) und den Farben 130.. (`[APPROX]` nicht im Einzelnen ausgewertet). Dann (L1):
 Energie E = 10 · Kraft (+1Bh); Richtung b = a bei r > 0, sonst 180 − a; **`Random:Real` < 0,2 → 1 Schaden am Schützen** (wie §5.1);
 Start (x_P + cos a · 7 · r, y_P − sin a · 7), Schritt (cos b, −sin b) je Takt, keine Schwerkraft, kein Wind.
 
