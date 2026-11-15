@@ -63,7 +63,9 @@ Integrationsfolge: `waffen` → `zug` → `spielfolge`. Gemeinsame Dateien: Absc
   Radien §5.5 (Baby Missile vorhanden), CRI, Sonic Blaster, Dirt, Xplosive Dirt §5.7 (dafür BGI-`Circle` `0E26:11EA` vollständig
   statt nur Radius 1), Laser §5.10 samt Aufladebild, MIRV §5.11 (Muster und Detonation als Eingabe; Dialog in `zug`, Vorzeichen bei
   Muster 3/4 per Probe klären, §5.13), Lenkung Herb/Vick §5.12 G1 (Ziel als Eingabe), Abwehr Schild/Inertia/Repulser in `O10:0000`
-  (Q11) vollständig. `bombtool render playfield --shot` mit Waffe, Muster, Detonation, Lenkung, Ziel.
+  (Q11) vollständig. **Bestand** (Review #145 P2-1): `waffen` legt Bestand, Lenk- und Abwehrwerte im Panzer (`PlayfieldTank`) an, samt
+  Übertrag aus dem Konto beim Rundenbeginn und zurück beim Rundenende über die vorhandene öffentliche API von `PlayerAccount`
+  (unverändert) und Lesezugriff; `zug` und `spielfolge` nutzen nur diese API. `bombtool render playfield --shot` mit Waffe, Muster, Detonation, Lenkung, Ziel.
 - **Probe:** `feld_schuss.py` um Waffe, Muster, Lenkung, Ziel und Abwehr erweitern (Originalcode `O4:01B7`, `O4:3426`, `O4:13D4`,
   `O6`, `O10:0000`); `0E26`-Graph mit emuliert wie in Runde 2.
 - **Teile:** 1. Probe für alle Waffen; 2. Sprengwaffen, Dirt, Xplosive Dirt, `Circle`; 3. CRI, Sonic, Abwehr; 4. Laser; 5. MIRV,
@@ -147,7 +149,8 @@ Integrationsfolge: `waffen` → `zug` → `spielfolge`. Gemeinsame Dateien: Absc
   umsetzen statt `[APPROX]` –, 10 Spieler, Wandarten, Rückstoß, Krater, Erdrutsch, Tod und Blitz, Laser, MIRV, volle Kraft) und der
   Zugbilder (Panzerinfo, Zielwahl, MIRV-Dialog); `TIME` (R2-D3) und `PV`/IRQ2 (#39, `re-grundlagen.md` §8 Nr. 2) nachtragen. Bei
   vielen Themen mehrere Spuren.
-- **`p3-runde-3`** (letzter Lauf): #140, #141 und die P3 der Runde.
+- **`p3-runde-3`** (letzter Lauf): #140, #141 und die P3 der Runde; Verweis in `Core/Graphics/IndexBuffer.cs` Z. 6 auf das Archiv
+  Runde 2 richten (Review #145 P3-3).
 
 ### Restlücken aus Runde 2 (übernommen)
 
@@ -166,6 +169,11 @@ Integrationsfolge: `waffen` → `zug` → `spielfolge`. Gemeinsame Dateien: Absc
   `tools/reverse-engineering/feld*`, `real48.py`, `docs/analyse/feld.md`: Welle 1 nur `waffen`, Welle 2 nur `runde`.
 - `Core/Economy/*`, `Core/Setup/*`, `RoundSequence.cs`, Score-/Shop-Bildschirme: Welle 1 nur `spielfolge`.
 - `src/BombRedone.Tools/Program.cs`: je Spur höchstens eine Registrierungszeile.
+- **Aufrufer in fremden Dateien** (Review #145 P2-2): Ändert eine Spur eine Signatur, zieht sie die Aufrufer in fremden Dateien
+  minimal mit (`AGENTS.md` §2.5, Begründung im PR) – bekannt: `RenderCommand.cs` (Score-/Shop-/Status-Bildschirme, `PlayfieldScreen`),
+  `Desktop/DesktopGame.cs` (`RoundSequence`), `Desktop/RoundPreviewScreen.cs` (`PlayfieldShotScreen.Fire`). Kollidiert das beim
+  Integrieren, passt die spätere Spur der Integrationsfolge nach dem Rebase an (Fixlauf ohne Befund).
+- `tests/BombRedone.UI.Tests/Screens/PlayfieldSession*` (gemeinsamer Testhelfer): Welle 1 nur `waffen`; `zug` legt eigene Helfer an.
 - `docs/analyse/runde.md`: je Spur nur ihr Abschnitt (§5 `waffen`, §6 `zug`, §1 `spielfolge`, §5.9 `runde`), nur Korrekturen mit Beleg.
 - `docs/arbeitspakete.md`: jede Spur nur ihr eigener Statusabschnitt (unten angelegt).
 

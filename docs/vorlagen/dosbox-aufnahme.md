@@ -73,7 +73,7 @@ Leertaste zurück – im Notizfeld vermerken. Reihenfolge = Wichtigkeit; abbrech
 1. **Optionen:** `PV` (Palettenrotation über IRQ2) an – läuft die Palette? (#39). Bild der Game Options.
 2. **Hintergründe:** je Hintergrund (Auswahl „USER“) ein Bild vor dem ersten Schuss; einen Hintergrund zweimal kurz nacheinander
    (Rotation, §7 Nr. 1–2).
-3. **Rundenbeginn mit 10 Spielern** (Menschen), Bild vor dem ersten Schuss (§7 Nr. 3).
+3. **Rundenbeginn mit 2 und mit 10 Spielern** (Menschen), je Bild vor dem ersten Schuss, Uhrzeit notieren (§7 Nr. 3).
 4. **Wandarten:** je Wand STICK, ELASTIC, ACCEL, WARP ein Lead-Ball-Schuss mit Spur an gegen die Wand, Bild danach; dazu Wand NO
    mit Schuss nach links bei Wind < 0 (§7 Nr. 4).
 5. **Zug und Panzerinfo:** Kopfzeile während des Zielens (Winkel über 90° gedreht, Kraft mit BildAuf), Panzerinfo (Taste 1) vor und
@@ -86,6 +86,6 @@ Leertaste zurück – im Notizfeld vermerken. Reihenfolge = Wichtigkeit; abbrech
 9. **Laser:** Schuss durch Gelände, gegen einen Panzer ohne und mit Schild; Bild von Strahl und Funken (§7 Nr. 9).
 10. **MIRV:** Bild des Dialogs „MIRV Setup“; je Muster ein Schuss mit Spur an, einmal je Detonation (§7 Nr. 10).
 11. **Lenkung:** Herb, Vick und beide; Bild der Zielwahlleiste (Tastatur und Maus), Schuss mit Spur an.
-12. **Tod, Blitz, Rundenende:** mehrere Tode als Video (Todesarten); eine lange Runde ohne Treffer bis über Durchgang 11 (Blitz,
+12. **Tod, Blitz, Rundenende:** je Todesart (sieben) ein Tod als Video – so viele Tode, bis jede vorkam; eine lange Runde ohne Treffer bis über Durchgang 11 (Blitz,
     Video); Wertung nach einer Runde mit Toten (Punkte) und Einkauf danach (Reihenfolge der Spieler).
 13. **Spielstände Nr. 2–8** nach `formate/spielstand.md` „Benötigte Originalstände“, je mit Notiz; Nr. 8 je Stand laden und das erste Bild.
