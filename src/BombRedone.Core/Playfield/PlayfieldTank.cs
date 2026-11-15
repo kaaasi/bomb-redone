@@ -56,6 +56,24 @@ public sealed class PlayfieldTank
     /// <summary>Weapon chosen for the shot (+24h, index into ItemCatalog.WeaponTable).</summary>
     public int Weapon { get; set; }
 
+    /// <summary>Guidance of the shot (+26h): 0 none, 1 Herb, 2 Vick, 3 both (docs/analyse/runde.md section 5.12).</summary>
+    public int Guidance { get; set; }
+
+    /// <summary>Target player of the guidance (+28h, 1..10).</summary>
+    public int GuidanceTarget { get; set; }
+
+    /// <summary>Herbs in stock (+2Ah, word).</summary>
+    public int Herbs { get; set; }
+
+    /// <summary>Vicks in stock (+2Ch, word).</summary>
+    public int Vicks { get; set; }
+
+    /// <summary>
+    /// Stock per weapon (+2Eh + 2 · weapon, word; ItemCatalog.WeaponTable). The laser (5) holds energy: its power is
+    /// capped at the stock and taken from it (docs/analyse/runde.md section 5.10).
+    /// </summary>
+    public int[] Stock { get; } = new int[18];
+
     /// <summary>Sets the barrel and the power for the next shot (the turn input of O7:040C, Teil 3 of runde.md).</summary>
     public void Aim(int angle, int power)
     {

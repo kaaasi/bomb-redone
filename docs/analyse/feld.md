@@ -392,3 +392,16 @@ Ergebnis (Spiegelung ohne Faktor, `runde.md` §5.10 L3).
   `DS:E5BC` hergestellt und bleibt nicht sichtbar.
 - Abnahme: `WeaponProbeTests` für alle Waffen von `O4:01B7` (ohne Laser und MIRV) mit allen Abwehrarten, ohne Lenkung (132 Fälle,
   davon 2 mit Erdrutsch und Fallen), `Real48TrigProbeTests` (`arctan`), `Real48DegreeTableTests`.
+
+### 8.4 Laser (Teil 4)
+
+`LaserShot` nach `O4:3426`, über `WeaponShot.Fire` (Auswahl wie `O4:4977`): Kraft 0 → nichts; Kraft ≤ Laserbestand +38h, der
+Bestand verliert sie; Farbe 254 = Farbe des Schützen (`O10:021C` ohne Prüfung Energie > 0), Rohr in 254, Panzerkörper;
+**Aufladebild:** Verlauf DS:E5C4 + 3i = Trunc(c + i · (63 − c) / 100) (Blau gegen 0) für i = 1..100, zweimal auf- und abwärts mit
+`Delay(LS div k)`, einmal aufwärts – kein Zufall. Dann E = 10 · Kraft, Richtung a bzw. 180 − a, `Random:Real` < 0,2 → 1 Schaden am
+Schützen, Start 7 Pixel entlang des Rohrs, Spurfarben 100 − i. **Strahl:** je Schritt Farbe 254 = (g, g, 0); Gelände → 15 Funken
+(x − Random(20) · vx, y − Random(20) · vy) aus dem Hintergrund, außer auf 254 und Panzerpixeln; Panzer mit Energie > 0 → erster
+Kontakt +1 Treffer (auch gleiches Team, nicht der Schütze), E − 10, ohne Schild 15 Funken in der Panzerfarbe (neu gewürfelt, bis
+das Pixel kein anderer Panzer und nicht 254 ist; je `Delay(LS)`), wieder aus dem Hintergrund, 3 Schaden, ein Schritt zurück; keine
+Punkte. Wände wie L3; Spitze in 254. Am Ende Farbe 254 schwarz und alle Pixel der Farbe 254 (Strahl **und Rohr**) aus dem
+Hintergrund (`U431:0594`, Adressen 64000..1, also nicht Pixel 0). Abnahme: alle 18 Laserfälle der Liste bitgleich.

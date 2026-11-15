@@ -335,7 +335,7 @@ ersten Schuss (§4).
 Energie E = 10 · Kraft (+1Bh); Richtung b = a bei r > 0, sonst 180 − a; **`Random:Real` < 0,2 → 1 Schaden am Schützen** (wie §5.1);
 Start (x_P + cos a · 7 · r, y_P − sin a · 7), Schritt (cos b, −sin b) je Takt, keine Schwerkraft, kein Wind.
 
-Je Schritt (L2): Position + Schritt, E − 10, Farbe 254 = Grau Trunc(E · 53 / (10 · Kraft) + 10). Pixel an der Spitze:
+Je Schritt (L2): Position + Schritt, E − 10, Farbe 254 = (g, g, 0) mit g = Trunc(E · 53 / (10 · Kraft) + 10) (Korrektur Spur `waffen`: gelb, nicht grau, `O4:3C3C`). Pixel an der Spitze:
 
 - **Gelände (2):** 15 Funken bei (x − Random(20) · cos b, y − Random(20) · (−sin b)) – im Fenster und nicht Farbe 254 oder Panzer:
   Pixel aus dem Hintergrund; bei Ton `Random(500 · k) + 500`. Der Strahl brennt sich so durch das Gelände.

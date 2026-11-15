@@ -88,9 +88,14 @@ public static class BallisticShot
         var wall = field.Wall;
         var wallFactor = field.WallFactor;
 
-        // O4:01BD–0350: hit colour, M = 3 · energy + 643 (G2); stock and guidance (not kept); Q2.
+        // O4:01BD–0350: hit colour, M = 3 · energy + 643 (G2); stock − 1, Herb / Vick − 1 for the guidance (Q1); Q2.
         var hit = 0;
         var throughPower = unchecked((short)(3 * shooter.Energy + 643));
+        shooter.Stock[shooter.Weapon] = unchecked((short)(shooter.Stock[shooter.Weapon] - 1));
+        if (shooter.Guidance is 1 or 3)
+            shooter.Herbs = unchecked((short)(shooter.Herbs - 1));
+        if (shooter.Guidance is 2 or 3)
+            shooter.Vicks = unchecked((short)(shooter.Vicks - 1));
         if (Real48.Compare(random.NextReal(), SelfDamageChance) < 0)
             Damage.Apply(field, shooter, 1, Damage.Shield, random);
 

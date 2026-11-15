@@ -26,10 +26,9 @@ public sealed class WeaponProbeTests
     }
 
     /// <summary>
-    /// Whether the case only needs what is ported: every weapon of O4:01B7 (all but laser 5 and MIRV 7) with all
-    /// defences, without guidance and stock.
+    /// Whether the case only needs what is ported: every weapon but the MIRV (7) with all defences, without guidance.
     /// </summary>
-    public static bool IsPorted(WeaponCase c) => c.Weapon is not (5 or 7) && c.Guidance == 0 && c.Stock is null;
+    public static bool IsPorted(WeaponCase c) => c.Weapon != 7 && c.Guidance == 0;
 
     /// <summary>The ported cases that continue like O4:49CB (all of them with Crumble 0 in weapon_shots()).</summary>
     public static TheoryData<WeaponCase> PostCases
@@ -81,6 +80,7 @@ public sealed class WeaponProbeTests
         var shooter = field.Tanks[c.Shooter - 1];
         shooter.Aim(c.Angle, c.Power);
         shooter.Weapon = c.Weapon;
+        shooter.Stock[c.Weapon] = c.Stock ?? (c.Weapon == 5 ? c.Power : Math.Max(1, shooter.Stock[c.Weapon]));
         foreach (var (player, shield, inertia, repulser) in ParseDefense(c.Defense))
         {
             var tank = field.Tanks[player - 1];
@@ -90,8 +90,7 @@ public sealed class WeaponProbeTests
         }
 
         field.Palette.ClearWritten();
-        BallisticShot.Fire(field, shooter, new ShotSettings(c.SubSteps, c.Wind, Sound: c.Sound, Crumble: c.Crumble),
-            random);
+        WeaponShot.Fire(field, shooter, new ShotSettings(c.SubSteps, c.Wind, Sound: c.Sound, Crumble: c.Crumble), random);
         return (field, random, seedBefore);
     }
 
