@@ -358,7 +358,7 @@ R2-D6 = B); Stufe 2b `schuss` nach Merge von `gelaende`. Integrationsfolge: `gel
 
 ### Status tws-leser
 
-- noch nicht begonnen (Start nach R2-D10 = A).
+- 15.11.2026, Claude Opus 5.5 (geplanter Lauf): begonnen auf `paket/tws-leser`, Base `8202e50`.
 
 ### Status gelaende-bilder
 
