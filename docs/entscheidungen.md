@@ -46,6 +46,13 @@ und Nachteilen, Empfehlung); hier steht nur das Ergebnis mit der gewählten Opti
 | R2-D9 | `gelaende` ohne Bildvergleich mergen | **A** (13.11.2026): Erstreview der Teile 1–4, Merge; Bildvergleich mit Sitzung 3 als Folge-PR (sinngemäß auch für `schuss`). |
 | R2-D10 | Weiter mit den vorhandenen Aufnahmen (Sitzungen 2, 3) | **A** (15.11.2026): `tws-leser` mit den vier Ständen, Bildvergleich `gelaende`/`schuss` als Folgespuren gegen `s3_02`–`s3_07`; Fehlendes (Hintergründe, Wandarten, Baby Missile, Crumble, Stände Nr. 2–8, `TIME`, `PV`) in Sitzung 4 (Runde 3). |
 
+## Runde 3 (15.11.2026)
+
+| Nr. | Frage | Entscheidung |
+|---|---|---|
+| R3-D1 | Umfang der Runde | **A:** Partie Mensch gegen Mensch vom Titel bis zum Endergebnis: Zug mit Tastatur und Maus, alle Waffen samt Laser, MIRV, Lenkung und Abwehr, Tod, Blitz, Rundenende, Spielfolge mit Wertung, Einkauf und #71. Computer, Speichern und Laden in Runde 4. |
+| R3-D2 | Abnahme, solange DOSBox-Sitzung 4 fehlt | **A:** Spuren nach Go sofort, Abnahme bitgleich gegen die Probe (8086-Emulator mit Graph und Treiber); Bildvergleich und Abgleich der Stände Nr. 2–8 als Folgespuren nach Sitzung 4. |
+
 Arbeitsweise (Nutzer 11.11.2026): `main` nur über Branch und PR; Deutsch in Doku und Commits, Quelltext und Kommentare englisch;
 knappe Antworten; je Aufgabe ein Claude-Modell; ChatGPT nur für Reviews; Spuren erst nach Go; Entscheidungen gesammelt.
 

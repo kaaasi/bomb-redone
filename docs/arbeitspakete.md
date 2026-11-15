@@ -7,7 +7,7 @@ Den Status pflegt jede Spur nur in ihrem eigenen Abschnitt. Abgeschlossene Runde
 **Koordination:** Die Leitstelle verteilt Pakete, prüft und mergt Pull Requests und pflegt Plan und Doku
 (Rollen: [prozess/zusammenarbeit.md](prozess/zusammenarbeit.md)). **Spuren starten erst nach dem Go des Nutzers.**
 
-## Aktuelle Runde: Runde 3 – spielbare Partie (Plan 15.11.2026, Vorlage Leitstelle; Entscheidungen offen, noch kein Go)
+## Aktuelle Runde: Runde 3 – spielbare Partie (Plan 15.11.2026, R3-D1/D2 entschieden 15.11.2026, noch kein Go)
 
 Runde 2 abgeschlossen: [archiv/runde-2.md](archiv/runde-2.md). Grundlagen: [analyse/runde.md](analyse/runde.md) (Spielfolge §1,
 Rundenbeginn §2, Waffen §5, Zug und Eingaben §6), [analyse/feld.md](analyse/feld.md) (Probe, Bildvergleich),
@@ -20,9 +20,9 @@ Pascal-`=` auf Real48 nur über `Real48.PascalEquals` (#96); Abnahme ist die Pro
 `runde.py befunde` allein (#102). Zufall nur über die eine `TurboPascalRandom`-Instanz, Aufrufreihenfolge wie im Original.
 Erstreview je Spur: Claude Opus 5.5, frische Sitzung; Gesamtreview am Rundenende: ChatGPT/Codex (`prozess/anhang.md` C).
 
-### Entscheidungen der Runde (Vorlage Leitstelle 15.11.2026, offen)
+### Entscheidungen der Runde (Vorlage Leitstelle; R3-D1, R3-D2 entschieden vom Nutzer 15.11.2026: wie empfohlen)
 
-**R3-D1 – Umfang der Runde.** Problem: R2-D1 hat „spielbare Runde und Waffen“ nach Runde 3 gelegt; dazu gehören Zug, 18 Waffen samt
+**R3-D1 – Umfang der Runde – entschieden: A (Nutzer 15.11.2026).** Problem: R2-D1 hat „spielbare Runde und Waffen“ nach Runde 3 gelegt; dazu gehören Zug, 18 Waffen samt
 Lenkung, Tod und Rundenende, die Spielfolge mit Wertung und Einkauf, sieben Computerarten (`runde.md` §6.5) und Speichern/Laden.
 
 | Option | Vorteil | Nachteil |
@@ -34,7 +34,7 @@ Lenkung, Tod und Rundenende, die Spielfolge mit Wertung und Einkauf, sieben Comp
 
 Empfehlung: **A**; Computer, Speichern und Laden in Runde 4.
 
-**R3-D2 – Abnahme, solange Sitzung 4 fehlt.** Problem: Für Hintergründe, Wandarten, Waffen, Tod, Laser, MIRV und die Stände Nr. 2–8
+**R3-D2 – Abnahme, solange Sitzung 4 fehlt – entschieden: A (Nutzer 15.11.2026).** Problem: Für Hintergründe, Wandarten, Waffen, Tod, Laser, MIRV und die Stände Nr. 2–8
 gibt es noch keine Bilder; Sitzung 4 macht der Nutzer.
 
 | Option | Vorteil | Nachteil |
