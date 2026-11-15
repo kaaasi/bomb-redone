@@ -48,9 +48,11 @@ public sealed record ShotResult(Real48 X, Real48 Y, Real48 Vx, Real48 Vy, int Ix
 /// docs/analyse/feld.md section 5; bit-identical to the probe <c>feld_schuss.py</c> (ShotProbeTests).
 /// </summary>
 /// <remarks>
-/// Not in round 2 (R2-D1 = A), rejected with <see cref="NotSupportedException"/>: guidance (+26h), repulsers in the field
-/// (+5Ah, Q5) and the weapons whose impact is not ported (only 0 Lead Ball and the explosives {1, 2, 3, 4, 7, 11}).
-/// The stock of the weapon (+2Eh) is not kept by the playfield yet and is not decremented. Tones are not played.
+/// Not in round 2 (R2-D1 = A), rejected with <see cref="NotSupportedException"/>: repulsers in the field (+5Ah, Q5) and
+/// the weapons whose impact is not ported (only 0 Lead Ball and the explosives {1, 2, 3, 4, 7, 11}). Guidance (+26h) is
+/// not modelled: the playfield records have no such field, so the flight always runs as without guidance (no check, no
+/// exception; review #116 P3-3). The stock of the weapon (+2Eh) is not kept by the playfield yet and is not decremented.
+/// Tones are not played.
 /// </remarks>
 public static class BallisticShot
 {

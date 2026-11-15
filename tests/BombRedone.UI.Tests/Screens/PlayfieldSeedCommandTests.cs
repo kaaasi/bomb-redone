@@ -43,9 +43,10 @@ public sealed class PlayfieldSeedCommandTests
         var tanks = string.Join(",", field.Tanks.Select(t => t.X));
         var terrain = string.Join(",", new[] { 30, 150, 290 }.Select(x => $"{x}:{Playfield.TerrainTop(field, x)}"));
 
+        // The hit lies in the last second of the window, which ends at the hit (review #128 P3-2).
         var (code, output, _) = Capture(() => RenderCommand.RunSeedSearch(
         [
-            "--time-from", "08:15:29.00", "--time-to", "08:15:31.99", "--players", "2", "--max-steps", "5",
+            "--time-from", "08:15:29.00", "--time-to", "08:15:30.40", "--players", "2", "--max-steps", "5",
             "--tanks", tanks, "--terrain", terrain, "--background", field.BackgroundNumber.ToString(),
             "--wind", wind.ToString(System.Globalization.CultureInfo.InvariantCulture),
         ]));
@@ -60,7 +61,8 @@ public sealed class PlayfieldSeedCommandTests
         var filter = RenderCommand.BuildPrefilter(2, [25, 281], [(20, 136), (70, 136), (71, 150), (100, 132)], 8, -92);
 
         Assert.Equal(new PlayfieldPrefilter(8, 54, 25, 281, -92), filter);
-        Assert.Null(RenderCommand.BuildPrefilter(3, null, [(64, 189), (65, 120)], null, null).MarginHeight);
+        // 3 players: the margin ends before x = 64; a point on y = 189 (height 0 or 1) inside it gives no margin height.
+        Assert.Null(RenderCommand.BuildPrefilter(3, null, [(63, 189), (65, 120)], null, null).MarginHeight);
         Assert.Throws<ArgumentException>(() => RenderCommand.BuildPrefilter(2, null, [(20, 136), (30, 137)], null, null));
         Assert.Throws<ArgumentException>(() => RenderCommand.BuildPrefilter(2, [25], null, null, null));
     }

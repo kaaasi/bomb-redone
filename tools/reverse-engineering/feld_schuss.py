@@ -58,6 +58,8 @@ REGION_HASHES = {
     "O6 Einschlag": "d58b9aecd1635788f76a91d32cff5b0cd2d8e8be2be5f163d0ea508211f6d6fb",
     "0431 Punkte und Erdrutsch": "ccad557dbf333b6b505f99e89b8ba528e8f70abb8f06507e65571496cff621e0",
     "0CC8 PutPixel/GetPixel": "a4a9bcc22bfa4ca3ca362ee7f3e41b32f74fac3595909c20b110d9d988161b84",
+    "O7 Fallen, Rahmen, Erdrutsch": "55fc0dfa00df9a64ee3436241519c124de7dc5397cac54ac65f09815508d12bf",
+    "O4 nach dem Schuss": "a32d2990cddcea807769594c4076fa03c7f3b16f95a20f97053da861a1f4e585",
 }
 
 FIELDS = (("energy", 0x21, 2, True), ("score", 0x13, 4, True), ("shield", 0x52, 4, True),
@@ -259,6 +261,15 @@ SHOTS = [
     (A, (1, 45, 265, 1, None, False, None, None, True)),  # 22 Baby Missile with sound: Random(500)/Random(250) per step
     (A, (1, 88, 943, 1, None, False, 0)),             # 23 power = M through the terrain, explodes at the bottom (y 191)
     (A, (1, 88, 943, 3, None, False, 0)),             # 24 the same with weapon 3 (radius 30)
+    # Review #116 P3-2 (issue #118): the left wall for every wall kind, the wall 0 rules with wind 0, the tick limit.
+    (wall(1), (1, 135, 400, 0, None, False, None)),   # 25 Sticky, left wall
+    (wall(2), (1, 135, 400, 0, None, False, None)),   # 26 Elastic, left wall
+    (wall(3), (1, 135, 400, 1, None, False, None)),   # 27 Accelerate, left wall, Baby Missile
+    (wall(4), (1, 135, 400, 0, None, False, None)),   # 28 Warp, left wall
+    (A, (1, 135, 400, 0, None, False, 0)),            # 29 wall 0 left with wind 0: no y := 300
+    (A, (1, 135, 400, 0, None, False, -100)),         # 30 wall 0 left with wind < 0: y := 300
+    (A, (1, 45, 400, 0, None, False, 0)),             # 31 wall 0 right with wind 0: no y := 300
+    (wall(2), (2, 15, 943, 0, None, False, 0)),       # 32 Elastic, power = M: bounces until the tick limit (ticks > 1000)
 ]
 
 

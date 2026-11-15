@@ -139,7 +139,14 @@ public sealed class DesktopGame : Game
         var random = TurboPascalRandom.FromClock(DateTime.Now);
         var roster = new PlayerRoster();
         var teams = new PlayerSelectTeams(options, BgiFontLibrary.Load(gameData)[BgiFontLibrary.Tiny]);
-        IScreen Round(GameSetup setup) => RoundPreview(fonts, config, options, random, setup);
+        IScreen Round(GameSetup setup)
+        {
+            var mask = (config ?? GameConfig.BombCfgDefaults).UserBackgroundMask;
+            var rounds = new RoundSequence(new PlayfieldOptions(setup.Players.Count, (int)options.Walls, options.Background, mask,
+                (int)options.Wind, options.InvisibleShot), random);
+            return RoundPreview(fonts, config, options, random, setup, rounds);
+        }
+
         return new MenuScreen(fonts, settings, random.Next, (choice, menu) => choice switch
         {
             MenuChoice.GameOptions => new OptionsScreen(menu, options),
@@ -150,25 +157,21 @@ public sealed class DesktopGame : Game
     }
 
     /// <summary>
-    /// Preview of a round after the player selection (spur gelaende): shuffle steps (records not swapped, R2-D4), the
-    /// playfield with the game options, wind, start player; then shots (spur schuss, <see cref="RoundPreviewScreen"/>),
-    /// Enter builds the next round. The turns of the original follow later.
+    /// Preview of a round after the player selection (spur gelaende): the next round of <paramref name="rounds"/> (shuffle
+    /// steps with records not swapped, R2-D4; playfield with the game options, wind, start player with the counters of the
+    /// battle, issue #111); then shots (spur schuss, <see cref="RoundPreviewScreen"/>), Enter builds the next round. The turns
+    /// of the original follow later.
     /// </summary>
     private static IScreen RoundPreview(MenuFonts fonts, GameConfig? config, OptionsSettings options, TurboPascalRandom random,
-        GameSetup setup)
+        GameSetup setup, RoundSequence rounds)
     {
-        var players = setup.Players.Count;
-        SeedSearch.SkipShuffle(random, players);
-        var mask = (config ?? GameConfig.BombCfgDefaults).UserBackgroundMask;
-        var field = Playfield.Build(new PlayfieldOptions(players, (int)options.Walls, options.Background, mask,
-            (int)options.Wind, options.InvisibleShot), random);
-        var wind = Wind.Choose((int)options.Wind, random);
-        var start = StartPlayer.Choose(new int[players], Enumerable.Repeat(true, players).ToArray(), random);
-        var screen = new PlayfieldScreen(fonts, field, wind, setup.Players.Select(p => p.Name).ToArray());
+        var round = rounds.NextRound();
+        var screen = new PlayfieldScreen(fonts, round.Field, round.Wind, setup.Players.Select(p => p.Name).ToArray());
         var cfg = config ?? GameConfig.BombCfgDefaults;
-        var settings = new Core.Shot.ShotSettings(cfg.ShotSpeed, wind.Value, options.TrailVisible, cfg.SoundEffects);
-        return new RoundPreviewScreen(screen, start.Player, settings, options.CrumblePercent, options.TanksFall, random,
-            ShotTiming.FromOptions(cfg.ExplosionSpeed, cfg.FallSpeed), () => RoundPreview(fonts, config, options, random, setup));
+        var settings = new Core.Shot.ShotSettings(cfg.ShotSpeed, round.Wind.Value, options.TrailVisible, cfg.SoundEffects);
+        return new RoundPreviewScreen(screen, round.Start.Player, settings, options.CrumblePercent, options.TanksFall, random,
+            ShotTiming.FromOptions(cfg.ExplosionSpeed, cfg.FallSpeed),
+            () => RoundPreview(fonts, config, options, random, setup, rounds));
     }
 
     private ScreenInput ReadInput(KeyboardState keys)
