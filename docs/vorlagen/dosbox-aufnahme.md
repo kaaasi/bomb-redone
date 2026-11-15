@@ -62,3 +62,30 @@ genannte Bild; Beobachtungen (Ton, Geschwindigkeit, Animationen) als Notiz.
 3. Im Statusbildschirm „SAVE“: Menü fotografieren, als **GAME1** sichern, Datei `GAME1.TWS` hochladen. Eine Runde
    weiterspielen, als **GAME2** sichern und hochladen.
 4. Neu starten, „LOAD“: Menü fotografieren, GAME1 laden, erstes Bild danach fotografieren.
+
+### Sitzung 4 – Runde 3 (Plan Leitstelle 15.11.2026; Rest aus Sitzungen 2/3, `analyse/runde.md` §7, `formate/spielstand.md`)
+
+Bilder `s4_<nn>_<inhalt>.png` in `bilder/runde-1/`. Vor dem Start die Uhrzeit notieren; zuerst prüfen, ob `TIME` in `autoexec`
+unter 0.74-3 wirkt (R2-D3), und die Dateizeiten der Bilder mit ablegen. Je Schuss Winkel, Kraft, Wind, Waffe und `SS` notieren.
+Waffen, Lenkung und Abwehr ohne Einkauf: Schummeltaste Einfg + Entf, dann **W** (alle Waffen), **G** (Herb/Vick), **D** (Abwehr),
+Leertaste zurück – im Notizfeld vermerken. Reihenfolge = Wichtigkeit; abbrechen ist jederzeit möglich, der Rest folgt später.
+
+1. **Optionen:** `PV` (Palettenrotation über IRQ2) an – läuft die Palette? (#39). Bild der Game Options.
+2. **Hintergründe:** je Hintergrund (Auswahl „USER“) ein Bild vor dem ersten Schuss; einen Hintergrund zweimal kurz nacheinander
+   (Rotation, §7 Nr. 1–2).
+3. **Rundenbeginn mit 2 und mit 10 Spielern** (Menschen), je Bild vor dem ersten Schuss, Uhrzeit notieren (§7 Nr. 3).
+4. **Wandarten:** je Wand STICK, ELASTIC, ACCEL, WARP ein Lead-Ball-Schuss mit Spur an gegen die Wand, Bild danach; dazu Wand NO
+   mit Schuss nach links bei Wind < 0 (§7 Nr. 4).
+5. **Zug und Panzerinfo:** Kopfzeile während des Zielens (Winkel über 90° gedreht, Kraft mit BildAuf), Panzerinfo (Taste 1) vor und
+   nach drei Schüssen (Rückstoß, §7 Nr. 5); Panzerinfo nach dem Schummeln (alle Bestände sichtbar).
+6. **Krater:** Baby Missile und 20 Kiloton Nuke je neben einen Panzer, Bild danach, Energie vorher/nachher; einmal mit Hintergrund
+   Spread oder Static (§7 Nr. 6).
+7. **Erdrutsch:** Crumble 100 % und „Fall down“, Schuss unter einen Panzer als Video, Energie vorher/nachher (§7 Nr. 7); Schuss mit
+   höchster Kraft in einen Hügel (§7 Nr. 11).
+8. **Übrige Waffen:** je Waffe 2–17 außer Laser und MIRV ein Schuss mit Spur an, Bild nach dem Einschlag (CRI, Sonic als Video).
+9. **Laser:** Schuss durch Gelände, gegen einen Panzer ohne und mit Schild; Bild von Strahl und Funken (§7 Nr. 9).
+10. **MIRV:** Bild des Dialogs „MIRV Setup“; je Muster ein Schuss mit Spur an, einmal je Detonation (§7 Nr. 10).
+11. **Lenkung:** Herb, Vick und beide; Bild der Zielwahlleiste (Tastatur und Maus), Schuss mit Spur an.
+12. **Tod, Blitz, Rundenende:** je Todesart (sieben) ein Tod als Video – so viele Tode, bis jede vorkam; eine lange Runde ohne Treffer bis über Durchgang 11 (Blitz,
+    Video); Wertung nach einer Runde mit Toten (Punkte) und Einkauf danach (Reihenfolge der Spieler).
+13. **Spielstände Nr. 2–8** nach `formate/spielstand.md` „Benötigte Originalstände“, je mit Notiz; Nr. 8 je Stand laden und das erste Bild.

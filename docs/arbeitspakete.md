@@ -7,406 +7,180 @@ Den Status pflegt jede Spur nur in ihrem eigenen Abschnitt. Abgeschlossene Runde
 **Koordination:** Die Leitstelle verteilt Pakete, prüft und mergt Pull Requests und pflegt Plan und Doku
 (Rollen: [prozess/zusammenarbeit.md](prozess/zusammenarbeit.md)). **Spuren starten erst nach dem Go des Nutzers.**
 
-## Aktuelle Runde: Runde 2 – Spielfeld, Gelände, Schuss, Leser `*.TWS` (Plan 12.11.2026, Welle 1 gemergt 12.11.2026, Welle 2: Go 13.11.2026)
+## Aktuelle Runde: Runde 3 – spielbare Partie (Plan 15.11.2026, R3-D1/D2 entschieden 15.11.2026, noch kein Go)
 
-Runde 1 abgeschlossen: [archiv/runde-1.md](archiv/runde-1.md). Grundlagen: [analyse/re-grundlagen.md](analyse/re-grundlagen.md)
-(Overlays O3–O9, Real48, Zufall), [formate/spielstand.md](formate/spielstand.md), [anforderungen/bildschirme.md](anforderungen/bildschirme.md)
-B4. Übernommen: #78 (Leser `*.TWS`), #71 (Satzreihenfolge), #39 (IRQ2), DOSBox-Sitzungen 2 und 3 (#89).
+Runde 2 abgeschlossen: [archiv/runde-2.md](archiv/runde-2.md). Grundlagen: [analyse/runde.md](analyse/runde.md) (Spielfolge §1,
+Rundenbeginn §2, Waffen §5, Zug und Eingaben §6), [analyse/feld.md](analyse/feld.md) (Probe, Bildvergleich),
+[anforderungen/wertung-einkauf.md](anforderungen/wertung-einkauf.md). Übernommen: #71 (R2-D4 = A), #39, #102 (Hinweis), #140, #141,
+Sitzung 4 und Restlücken (unten).
 
-Regeln wie Runde 1: Base aktueller `main` (tatsächlichen SHA in den Draft-PR), reproduzieren → roter Test → grün,
-`[ORIGINAL]`/`[APPROX]`, höchstens drei Fortsetzungen je Spur, Originalmaterial nur in Schutzordnern (`AGENTS.md` §2.1).
-Erstreview je Spur: Claude Opus 5.5, frische Sitzung; Gesamtreview am Rundenende: ChatGPT (`prozess/anhang.md` C).
+Regeln wie Runde 2: Base aktueller `main` (bei Planung `aec025a`; tatsächlichen SHA in den Draft-PR), reproduzieren → roter Test →
+grün, `[ORIGINAL]`/`[APPROX]`, höchstens drei Fortsetzungen je Spur, Originalmaterial nur in Schutzordnern (`AGENTS.md` §2.1).
+Pascal-`=` auf Real48 nur über `Real48.PascalEquals` (#96); Abnahme ist die Probe gegen den Originalcode bzw. das Bild, nicht
+`runde.py befunde` allein (#102). Zufall nur über die eine `TurboPascalRandom`-Instanz, Aufrufreihenfolge wie im Original.
+Erstreview je Spur: Claude Opus 5.5, frische Sitzung; Gesamtreview am Rundenende: ChatGPT/Codex (`prozess/anhang.md` C).
 
-### Entscheidungen der Runde (Vorlage Leitstelle; R2-D1…D6 entschieden vom Nutzer 12.11.2026, R2-D7 bis R2-D9 am 13.11.2026, R2-D10 am 15.11.2026: alle wie empfohlen)
+### Entscheidungen der Runde (Vorlage Leitstelle; R3-D1, R3-D2 entschieden vom Nutzer 15.11.2026: wie empfohlen)
 
-**R2-D1 – Umfang der Runde – entschieden: A (Nutzer 12.11.2026).** Problem: „Spielfeld, Gelände, Schuss“ reicht von einem Standbild bis zur spielbaren Runde.
-
-| Option | Vorteil | Nachteil |
-|---|---|---|
-| A: Spielfeld (Aufbau, Hintergründe, Gelände, Panzer, Kopfzeile, Waffenleiste) und Schuss der Standardwaffe mit Wind, Wänden, Krater, Erdrutsch; Vorschau per `bombtool`/Desktop, noch keine Zugfolge | klein, jeder Baustein einzeln gegen das Original prüfbar | noch nicht spielbar |
-| B: A + spielbare Runde (Zugfolge, Treffer, Schaden, Rundenende, Übergang zur Wertung) | erste spielbare Fassung | Spielfolge O3/O4 hängt an fast allem; großes Erstreview |
-| C: B + alle Waffen, Lenksysteme, Abwehr | inhaltlich nah am Ziel | zu groß für eine Runde, Rückkopplung kommt spät |
-| D: nur Analyse, Real48 und Leser `*.TWS`; Umsetzung in Runde 3 | sichere Grundlage | kein sichtbarer Fortschritt |
-
-Empfehlung: **A**; B und die Waffen in Runde 3.
-
-**R2-D2 – Zahlentyp der Physik – entschieden: A (Nutzer 12.11.2026).** Problem: Das Original rechnet mit Real48 in Software (`re-grundlagen` §3); `double` weicht in
-Rundung und Wertebereich ab, Flugbahnen laufen dann auseinander.
+**R3-D1 – Umfang der Runde – entschieden: A (Nutzer 15.11.2026).** Problem: R2-D1 hat „spielbare Runde und Waffen“ nach Runde 3 gelegt; dazu gehören Zug, 18 Waffen samt
+Lenkung, Tod und Rundenende, die Spielfolge mit Wertung und Einkauf, sieben Computerarten (`runde.md` §6.5) und Speichern/Laden.
 
 | Option | Vorteil | Nachteil |
 |---|---|---|
-| A: eigener Typ `Real48`, Operationen bitgenau nach der TP-6-Laufzeit (`12CE:11B6`–`11E8`, `11DC`) | Ziel E3 A erreichbar, Abgleich Schuss für Schuss | Aufwand, langsamer als `double` (unkritisch bei 320 × 200) |
-| B: `double`, alles `[APPROX]` | schnell umgesetzt | E3 A ausgeschlossen, Abweichungen schwer zu deuten |
-| C: erst `double`, Real48 später austauschbar | früher sichtbar | doppelte Arbeit, Tests müssen neu |
-| D: Festkomma | schnell, deterministisch | weder Original noch einfach |
+| A: Partie Mensch gegen Mensch vom Titel bis zum Endergebnis: Zug mit Tastatur und Maus, alle Waffen samt Laser, MIRV, Lenkung und Abwehr, Tod, Blitz, Rundenende, Spielfolge mit Wertung, Einkauf und #71; Computer und Speichern/Laden in Runde 4 | erste vollständig spielbare Fassung, jeder Baustein per Probe prüfbar | Computer fehlen noch; vier Spuren |
+| B: A + alle Computerarten | Partie wie im Original | Computer hängen an Schussprotokoll und Sichtlinien (§6.6 offen); zu groß für eine Runde |
+| C: A ohne Laser, MIRV und Lenkung (nur ballistische Waffen) | kleinere Spur `waffen` | Zug und Zielwahl müssten in Runde 4 erneut angefasst werden |
+| D: A + Speichern (Autosave, Dialog `O3:46DE`) und Laden | Spielstände im Kreis prüfbar (R1-D3: Schreiben „später“) | Stände Nr. 2–8 fehlen noch (Sitzung 4); größerer Spielfolge-Teil |
 
-Empfehlung: **A**, eigene Spur `real48` in Welle 1.
+Empfehlung: **A**; Computer, Speichern und Laden in Runde 4.
 
-**R2-D3 – Startwert des Zufalls für den Abgleich mit DOSBox – entschieden: C mit A, Rückfall D (Nutzer 12.11.2026).** Problem: `Randomize` setzt `RandSeed` aus der DOS-Uhrzeit;
-ohne bekannten Startwert lässt sich ein Gelände nicht bitgleich mit einem DOSBox-Bild vergleichen.
-
-| Option | Vorteil | Nachteil |
-|---|---|---|
-| A: Startwert aus dem Bild zurückrechnen (Suche über alle Uhrzeiten, rund 8,6 Mio. Werte) | keine Änderung an DOSBox | setzt bekannte Aufruffolge von `Random` vor dem Gelände voraus |
-| B: DOSBox-Debugger (Debug-Fassung 0.74-3) liest `DS:3AD6` nach dem Start | Wert direkt belegt | anderes Programm, Handarbeit des Nutzers |
-| C: Uhrzeit vor dem Start fest setzen (`TIME` in `autoexec`, falls 0.74-3 das erlaubt – in Sitzung 2 prüfen), dann A in kleinem Suchraum | Suche trivial, Aufnahmen wiederholbar | unklar, ob 0.74-3 `TIME` setzen kann |
-| D: kein bitgleicher Abgleich in Runde 2, Gelände nach Lage, Form, Statistik (`[APPROX]`) | ohne Zusatzarbeit | E3 A für Gelände offen |
-
-Empfehlung: **C mit A**, Rückfall **D**; die Spur `gelaende` liefert das Suchwerkzeug.
-
-**R2-D4 – Satzreihenfolge nach der Wertung (#71) – entschieden: A (Nutzer 12.11.2026).** Problem: `O3:0000` sortiert die Spielersätze dauerhaft um; das betrifft
-Einkauf, Zugfolge und `*.TWS`.
+**R3-D2 – Abnahme, solange Sitzung 4 fehlt – entschieden: A (Nutzer 15.11.2026).** Problem: Für Hintergründe, Wandarten, Waffen, Tod, Laser, MIRV und die Stände Nr. 2–8
+gibt es noch keine Bilder; Sitzung 4 macht der Nutzer.
 
 | Option | Vorteil | Nachteil |
 |---|---|---|
-| A: in `re-runde` beschreiben, Umsetzung mit der Spielfolge (Runde 3) | an der richtigen Stelle, ein Review | bleibt bis Runde 3 offen |
-| B: jetzt in `Core/Economy` umsetzen | früh erledigt | ohne Spielfolge kaum prüfbar |
-| C: zurückstellen ohne Beschreibung | kein Aufwand | Wissen geht verloren |
+| A: wie R2-D7/D9/D10 – Spuren sofort nach Go, Abnahme bitgleich gegen die Probe (8086-Emulator mit Graph und Treiber); Bildvergleich und Abgleich der Stände als Folgespuren nach Sitzung 4 | Runde läuft unabhängig von der Aufnahme, in Runde 2 bewährt | Bilder bestätigen erst nachträglich; Folgespuren |
+| B: erst Sitzung 4, dann alle Spuren | gleich gegen Bilder prüfbar | Runde wartet auf den Nutzer |
+| C: Spuren ohne Probe nach `runde.md`, Bildbezogenes `[APPROX]` | schnell | Lesefehler der Analyse bleiben unentdeckt (#102) |
 
 Empfehlung: **A**.
 
-**R2-D5 – Listings der Spur `re-runde` – entschieden: A (Nutzer 12.11.2026).** Problem: R1-D4 erlaubte nur `re-grundlagen` den Schreibweg ins Referenz-Repo.
+### DOSBox-Aufnahme `runde-1`, Sitzung 4 (Nutzer, parallel zu Welle 1)
 
-| Option | Vorteil | Nachteil |
-|---|---|---|
-| A: wie R1-D4: `re-runde` öffnet selbst einen PR im Referenz-Repo (`daten/listings-re-runde`, nur `analyse/`), merged nicht | ein Schritt, Anmerkungen bleiben | zweite Ausnahme von „Spuren lesen nur“ |
-| B: nur Skript, die Leitstelle erzeugt und legt ab | Regel ohne Ausnahme | Anmerkungen gehen verloren |
-| C: keine Listings, nur Beschreibung mit Offsets | einfach | Nachprüfung aufwendiger |
+Schrittliste in [vorlagen/dosbox-aufnahme.md](vorlagen/dosbox-aufnahme.md) „Sitzung 4“ – übernommen aus „Restlücken Welle 2“ (Archiv
+Runde 2), `analyse/runde.md` §7 Nr. 1–11 (Nr. 8–10 jetzt fällig) und `formate/spielstand.md` „Benötigte Originalstände“ Nr. 2–8,
+ergänzt um Zug, Panzerinfo, Zielwahl, MIRV-Dialog, Wertung nach Toten. Kurzaufruf (Modell Claude Sonnet 5.5):
 
-Empfehlung: **A**.
+> Repo kaaasi/bomb-redone. Arbeite nach `docs/vorlagen/dosbox-aufnahme.md`. Aufnahme: `runde-1`, Sitzung 4.
 
-**R2-D6 – Zeitpunkt des Lesers `*.TWS` (#78) – entschieden: B (Nutzer 12.11.2026).** Problem: Es gibt noch keinen Originalstand (Sitzung 3 offen); GR1-1 sieht den
-Leser „nach der DOSBox-Aufnahme mit Beispielständen“ vor.
+### Welle 1 (parallel, eigenes Go)
 
-| Option | Vorteil | Nachteil |
-|---|---|---|
-| A: sofort (Welle 1) mit synthetischen Daten, Abgleich mit Originalständen als eigener Teil | früh fertig | Teil 2 blockiert bis Sitzung 3, Format ungeprüft |
-| B: Stufe 2a, Voraussetzung Sitzung 3 im Referenz-Repo gemergt | gleich gegen Originale prüfbar | wartet auf den Nutzer |
-| C: Runde 3 | Runde 2 kleiner | #78 bleibt länger offen |
+Integrationsfolge: `waffen` → `zug` → `spielfolge`. Gemeinsame Dateien: Abschnitt „Zuständigkeit“ unten.
 
-Empfehlung: **B**.
+#### Spur `waffen` – alle Waffen, Lenkung, Abwehr (R3-D1 = A)
 
-**R2-D7 – Abnahme von `gelaende` und `schuss`, solange Sitzung 3 fehlt – entschieden: A (Nutzer 13.11.2026).** Problem: Die
-Abnahme verlangt den Pixelvergleich mit Bildern aus Sitzung 3 (R2-D3); Sitzungen 2 und 3 sind noch nicht aufgenommen, `TIME` in
-0.74-3 ist ungeprüft. `runde.md` beschreibt Gelände und Schuss Befehl für Befehl; offen sind Bilddetails (§5.13, §7).
-
-| Option | Vorteil | Nachteil |
-|---|---|---|
-| A: jetzt starten; Probe führt die Originalroutinen (`O8:0984` mit Hintergrund und Gelände, später `O4:01B7`/`O6`) im 8086-Emulator von `real48.py` aus, Grafikaufrufe (`0E26`, `0CC8`) abgefangen in einen 320 × 200-Puffer; Vergleich Pixel und `RandSeed` für viele Startwerte und Optionen; Bildvergleich mit Sitzung 3 als letzter Teil | bitgleich gegen das Original ohne DOSBox, Startwert direkt vorgegeben (R2-D3 entschärft), Bilder bestätigen nur noch | Probe ist eigene Arbeit (Overlay laden, Graph-Aufrufe nachbilden); Graph-Routinen selbst nur `[APPROX]` |
-| B: `gelaende` und `schuss` erst nach Sitzung 3 (wie R2-D6 = B) | gleich gegen Bilder prüfbar | Welle 2 wartet auf den Nutzer, nur `tws-leser` kann danach starten |
-| C: jetzt starten ohne Probe, Umsetzung nur nach `runde.md`, alles Bildbezogene `[APPROX]` bis Sitzung 3 | schnell sichtbar | Lesefehler der Analyse bleiben bis Sitzung 3 unentdeckt (#102), Nacharbeit wahrscheinlich |
-| D: zuerst eigene Spur `feld-probe` (nur Probe), danach `gelaende` | Probe einzeln geprüft | eine Welle mehr, Probe ohne Verbraucher schwer abzunehmen |
-
-Empfehlung: **A**. Präzisiert im Zuschnitt `gelaende` (Abschnitt „Probe“): Graph und Treiber werden mit emuliert statt abgefangen. Gelingt die Probe für einen Baustein nicht, bleibt dieser Teil blockiert (`spur-wartet`, `AGENTS.md` §2.10).
-
-**R2-D8 – Krater in `schuss`, obwohl Lead Ball keinen hat – entschieden: A (Nutzer 13.11.2026; Vorlage Leitstelle, Review #104 P2-1).** Problem: R2-D1 A
-nennt „Schuss der Standardwaffe mit … Krater“; laut `runde.md` §5.5 (Q10) macht Lead Ball (Waffe 0) aber weder Explosion noch Krater,
-nur 5 Schaden bei Volltreffer. Krater, Explosion und Flächenschaden (§5.6 K1–K4) gibt es nur für die Sprengwaffen {1, 2, 3, 4, 7, 11}.
-
-| Option | Vorteil | Nachteil |
-|---|---|---|
-| A: Lead Ball wie geplant, dazu Explosion, Krater und Flächenschaden §5.6 für **eine** Sprengwaffe (Baby Missile, Waffe 1, Radius 10), wählbar in Vorschau und `bombtool`; Abnahme Krater nur für diese Waffe | Krater-Mechanik (Puffer, `0CC8:0687`, `Sqrt`) in Runde 2 geprüft, Rest der Waffen ist danach nur Radius/Sonderfall | Waffe ohne Einkauf und Bestand; eine Waffe mehr im Erstreview |
-| B: wie A, aber alle Sprengwaffen mit gleichem Flug (1–4, Radien 10/15/30/60) | Radius-Tabelle gleich mit erledigt | etwas mehr Prüfaufwand; 7 und 11 bleiben trotzdem für Runde 3 |
-| C: Krater streichen, `schuss` nur Lead Ball ohne Krater; §5.6 und `runde.md` §7 Nr. 6 in Runde 3 | kleinste Spur, R2-D1 wörtlich auf die Standardwaffe beschränkt | Erdrutsch K9 ohne Krater kaum sichtbar zu prüfen; sichtbarer Fortschritt kleiner |
-| D: Standardwaffe der Runde ist Baby Missile statt Lead Ball | ein Schuss mit Krater | weicht vom Original ab (Startbestand ist Lead Ball) |
-
-Empfehlung: **A**.
-
-**R2-D9 – `gelaende` ohne Teil 5 mergen? – entschieden: A (Nutzer 13.11.2026).** Problem: Teil 5 (Bildvergleich) ist blockiert, bis
-Sitzung 3 im Referenz-Repo liegt; `schuss` startet erst nach dem Merge von `gelaende`.
-
-| Option | Vorteil | Nachteil |
-|---|---|---|
-| A: Erstreview Teile 1–4 jetzt, Merge, Teil 5 als Restlücke und eigener Folge-PR nach Sitzung 3 | Welle 2 läuft weiter | Bildvergleich nachträglich, eigene Nachprüfung |
-| B: warten bis Sitzung 3, dann Teil 5, Review, Merge | ein Review | `gelaende` und `schuss` stehen still |
-| C: Review jetzt, Merge erst nach Teil 5 | frühe Rückmeldung | Nachprüfung nötig, `schuss` wartet trotzdem |
-
-Empfehlung: **A**. Gilt sinngemäß für Teil 6 von `schuss`.
-
-**R2-D10 – Weiter mit den vorhandenen Aufnahmen? – entschieden: A (Nutzer 15.11.2026).** Problem: Sitzungen 2 und 3 sind gemergt
-(bomb-referenz #12, #11), decken die ergänzte Liste aber nur zum Teil ab: ein Spiel (`s3_01`–`s3_20`, ein Hintergrund, Lead Ball),
-vier Spielstände (`ablauf1-GAME1/2.TWS` mit Fremdtext, `frisch-GAME1/2.TWS`) statt Nr. 1–8; `TIME` (R2-D3) und `PV`/IRQ2 (#39) nicht notiert.
-
-| Option | Vorteil | Nachteil |
-|---|---|---|
-| A: `tws-leser` mit den vier Ständen starten (Nr. 2–8 Restlücke); Bildvergleich `gelaende`/`schuss` als Folgespuren gegen `s3_02`–`s3_07` mit Startwertsuche; Fehlendes als Liste für Sitzung 4 (Runde 3) | Runde 2 mit echten Belegen fertig | Bildvergleich nur Lead Ball, eine Wandart, ein Hintergrund |
-| B: erst Sitzung 4, dann alles | vollständiger | Runde wartet wieder |
-| C: Runde 2 jetzt abschließen, Rest in Runde 3 | schnell | Aufnahmen ungenutzt |
-| D: wie A, `tws-leser` erst nach Sitzung 4 | Leser gleich vollständig geprüft | Runde länger |
-
-Empfehlung: **A**.
-
-### DOSBox-Aufnahme `runde-1`, Sitzungen 2 und 3 (Nutzer, `vorlagen/dosbox-aufnahme.md`)
-
-- **Sitzung 2:** Hauptmenü, Sound und Game Options, Spielerauswahl, Teams; Option `PV` (Rotation über IRQ2) unter 0.74-3 – läuft die
-  Palette? (#39); `TIME` vor dem Start setzbar? (R2-D3).
-- **Sitzung 3:** Runden mit Voreinstellungen und mit jedem Wandmodus und mehreren Hintergründen (je Rundenbeginn ein Bild vor
-  dem ersten Schuss, dann nach dem ersten Schuss der Standardwaffe mit notiertem Winkel, Stärke, Wind), Einkauf, Wertung;
-  Spielstände nach `formate/spielstand.md` „Benötigte Originalstände“ (Nr. 1–8). Uhrzeit beim Start notieren (R2-D3).
-  Ergänzt nach Welle 1 (`analyse/runde.md` §7): je Hintergrund ein Bild vor dem ersten Schuss, zwei Bilder desselben Hintergrunds
-  kurz nacheinander (Rotation); Rundenbeginn mit 2 und 10 Spielern; je Wandart ein Schuss mit Spur an (Winkel, Kraft, Wind, `SS`
-  notieren), dazu Wand 0 nach links bei Wind < 0; Energie in der Panzerinfo vor und nach Schüssen (Rückstoß); Schuss mit Baby Missile
-  (vorher einkaufen) neben einen Panzer (Krater, Energie vorher/nachher); Crumble 100 % mit „Fall down“, Schuss unter einen Panzer (Video); Schuss mit höchster Kraft
-  in einen Hügel. Nr. 8–10 (Tod, Laser, MIRV) erst für Runde 3.
-
-### Welle 1 (parallel) – gemergt 12.11.2026 (#93, #94)
-
-Integrationsfolge: `real48` → `re-runde` (keine gemeinsamen Dateien).
-
-#### Spur `real48` – Real48-Arithmetik und Zufall im Spielkern (R2-D2 = A)
-
-- **Inhalt:** `Real48` (6 Byte, TP 6) mit Wandlung LongInt → Real (`12CE:11DC`), Add, Sub, Mul, Div, Cmp, Trunc, Round
-  (`12CE:11B6`–`11E8`), Wandlung nach `double` nur für die Anzeige; Laufzeitfehler 200/205/207 als eigene Ausnahme;
-  Konstanten aus dem Datensegment lesbar (6-Byte-Muster). `TurboPascalRandom` von `Desktop` nach `Core` verschieben und um
-  `Random` als Real (`12CE:168B`) ergänzen; Desktop nutzt die Core-Fassung. Fundstellen je Operation, Rundung wie die Laufzeit.
-- **Teile:** 1. Darstellung, Wandlung, Add/Sub, Cmp; 2. Mul, Div, Trunc, Round, Fehler; 3. Zufall nach Core, Random Real.
-- **Dateien:** `src/BombRedone.Core/Numerics/*` (neu), `src/BombRedone.Desktop/TurboPascalRandom.cs` (entfernen, Aufrufer in
-  `src/BombRedone.Desktop/*` anpassen), `tests/BombRedone.Core.Tests/Numerics/*` (neu), `tools/reverse-engineering/real48*` (neu,
-  Probe gegen die Originalroutinen, Ausgabe nur in Schutzordner), `docs/analyse/real48.md` (neu).
-- **Abnahme:** je Operation Sollwerte mit Beleg – bevorzugt eine Probe, die die Originalroutine aus `BOMB.EXE` ausführt (z. B.
-  kleiner 8086-Emulator im Werkzeugordner) und mit dem Remake vergleicht (Zufallseingaben, Randfälle: 0, Vorzeichen,
-  Unter-/Überlauf, Rundung bei ,5); ohne Probe je Randfall `[APPROX]`. Vor dem Umzug ein
-  Charakterisierungstest der bisherigen Folge (`RandSeed := RandSeed × 08088405h + 1`, `Random(n)`) mit festem Startwert, der nach
-  dem Umzug unverändert grün bleibt (bisher gibt es keinen Test von `TurboPascalRandom`).
+- **Inhalt:** `Core/Shot` nach `runde.md` §5: Abschuss §5.1 (Bestand − 1, Herb/Vick − 1), Sprengwaffen {1, 2, 3, 4, 7, 11} mit
+  Radien §5.5 (Baby Missile vorhanden), CRI, Sonic Blaster, Dirt, Xplosive Dirt §5.7 (dafür BGI-`Circle` `0E26:11EA` vollständig
+  statt nur Radius 1), Laser §5.10 samt Aufladebild, MIRV §5.11 (Muster und Detonation als Eingabe; Dialog in `zug`, Vorzeichen bei
+  Muster 3/4 per Probe klären, §5.13), Lenkung Herb/Vick §5.12 G1 (Ziel als Eingabe), Abwehr Schild/Inertia/Repulser in `O10:0000`
+  (Q11) vollständig. **Bestand** (Review #145 P2-1): `waffen` legt Bestand, Lenk- und Abwehrwerte im Panzer (`PlayfieldTank`) an, samt
+  Übertrag aus dem Konto beim Rundenbeginn und zurück beim Rundenende über die vorhandene öffentliche API von `PlayerAccount`
+  (unverändert) und Lesezugriff; `zug` und `spielfolge` nutzen nur diese API. `bombtool render playfield --shot` mit Waffe, Muster, Detonation, Lenkung, Ziel.
+- **Probe:** `feld_schuss.py` um Waffe, Muster, Lenkung, Ziel und Abwehr erweitern (Originalcode `O4:01B7`, `O4:3426`, `O4:13D4`,
+  `O6`, `O10:0000`); `0E26`-Graph mit emuliert wie in Runde 2.
+- **Teile:** 1. Probe für alle Waffen; 2. Sprengwaffen, Dirt, Xplosive Dirt, `Circle`; 3. CRI, Sonic, Abwehr; 4. Laser; 5. MIRV,
+  Lenkung; 6. Darstellung (`PlayfieldShotScreen`) und `bombtool`.
+- **Dateien:** `src/BombRedone.Core/Shot/*`, `src/BombRedone.Core/Playfield/*` (außer `RoundSequence.cs`), `src/BombRedone.Core/Graphics/*`,
+  `src/BombRedone.Core/Numerics/*` (nur neue Einsprünge), `tests/BombRedone.Core.Tests/{Shot,Graphics,Numerics}/*`,
+  `tests/BombRedone.Core.Tests/Playfield/*` (außer `RoundSequence*`), `src/BombRedone.UI/Screens/PlayfieldShot*`,
+  `tests/BombRedone.UI.Tests/Screens/PlayfieldShot*`, `src/BombRedone.Tools/RenderCommand.cs`, `tests/BombRedone.UI.Tests/Tools/Render*`,
+  `tools/reverse-engineering/feld*`, `tools/reverse-engineering/real48.py` (nur neue Einsprünge), `docs/analyse/feld.md`,
+  `docs/analyse/runde.md` (nur §5, Korrekturen mit Beleg).
+- **Abnahme:** je Waffe 0..17 bitgleich zur Probe (Feld, Hintergrund, DAC, Sätze, `RandSeed`) in festen Fällen je Wandart, mit und ohne
+  Ton; Laser durch Gelände und gegen Panzer mit und ohne Schild; MIRV je Muster und Detonation; Herb, Vick, beide; Abwehr bis zum
+  Verbrauch; alle bisherigen Probe-Hashes unverändert; ohne Beleg je Punkt `[APPROX]`.
 - **Modell:** Claude Opus 5.5.
 
-#### Spur `re-runde` – Runde und Spielfolge erschließen (Analyse, kein Produktcode)
+#### Spur `zug` – Zug, Eingaben, Panzerinfo, Zielwahl
 
-- **Inhalt:** O3[0] Spielfolge (Zugfolge, Rundenende, Übergänge, Umsortieren der Sätze #71, R2-D4), O4 Runde (Kopfzeile
-  `O4:44A7`, Waffenleiste, Zielen, Eingaben), O8 Spielfeldaufbau (Rahmen, Wandbeschriftung `O8:0984`, Gelände, Panzer setzen,
-  Crumble, Tank Cliffs), Hintergründe (`re-grundlagen` §8 Nr. 4: welche Prozedur welchen zeichnet), O5–O7 Schuss (Start aus
-  Winkel und Stärke, Schrittweite `SS`/`LS`, Schwerkraft, Wind, Wandarten, Einschlag, Krater, Erdrutsch, Fallen `TS`/`FS`), O9
-  Panzerinfo. Je Baustein: Prozedur, Ablauf, Konstanten (Real48-Muster), **Reihenfolge der `Random`-Aufrufe** ab `Randomize`
-  bis zum ersten Schuss (für R2-D3). #39: §8 Nr. 2 in `re-grundlagen.md` anpassen, sobald Sitzung 2 ein Ergebnis hat.
-- **Dateien:** `docs/analyse/runde.md` (neu), `tools/reverse-engineering/runde*` (neu) und Erweiterungen von `bombre.py` (nur neue
-  Unterbefehle), `docs/analyse/re-grundlagen.md` (nur §8 und Verweise). Listings nach R2-D5 = A: PR im Referenz-Repo vom Branch `daten/listings-re-runde` (nur `analyse/`), nicht mergen.
-- **Abnahme:** jede Aussage mit Offset und ausführbarem Beleg (`befunde` zählt alle grün); Liste „nicht entscheidbar ohne DOSBox“
-  mit den nötigen Bildern für Sitzung 3.
+- **Inhalt:** `Core/Turn` (neu) nach `runde.md` §6: Zugbeginn Z1 (Panzer neu, +5Eh/+70h, Waffenwechsel ohne Bestand, Kraft ≤ 10 ·
+  Energie), Waffenleistenfarben `O4:0000` Z2, Zug `O7:040C` Z3 (Befehle 1–10, Laser-Grenze +38h, Lenkbits), Eingaben `O7:0EF7` Z4/Z5
+  als abstrakte Eingabe (gehaltene Tasten, Alt-Wiederholung, BildAuf/BildAb, Maus x/y/Tasten, `Delay(TS)` als Takt) samt
+  Schummeltaste, Zugfolge `O4:4770` R5 (Durchgang `DS:47EA`, Tote überspringen), Panzerinfo `O9:0040` I1, Zielwahl `O9:092E` I2
+  (Tastatur, Maus), MIRV-Setup-Dialog (`O4:13D4`, liefert Muster und Detonation). `UI`: Felder Winkel/Kraft/Richtung/Energie, Rohr
+  löschen und neu, Panzerinfo-Fenster, Zielwahlleiste, MIRV-Dialog. Desktop: Vorschau → echter Zug mit Tastatur und Maus (Schuss über
+  `Core/Shot`), noch ohne Tod und Rundenende (→ `runde`). Restlücke R2 „Desktop-Zug ohne Kopfzeile“ damit erledigt.
+- **Probe:** `tools/reverse-engineering/zug*` (neu) auf `feld_machine` (nur Import; Änderungen an `feld*` gehören `waffen`, sonst im PR
+  anfordern) führt `O7:040C`, `O9:0040`, `O9:092E` und den MIRV-Dialog mit eingespeisten Tasten- und Mauszuständen aus.
+- **Teile:** 1. Probe; 2. `Core/Turn` (Befehle, Eingaben, Zugfolge); 3. `UI` (Kopfzeile, Panzerinfo, Zielwahl, MIRV-Dialog); 4. Desktop.
+- **Dateien:** `src/BombRedone.Core/Turn/*` (neu), `tests/BombRedone.Core.Tests/Turn/*` (neu), `src/BombRedone.UI/Screens/Playfield*`
+  (außer `PlayfieldShot*`), `src/BombRedone.UI/Screens/{TankInfo,TargetSelect,MirvSetup}*` (neu),
+  `tests/BombRedone.UI.Tests/Screens/` zu diesen Namen, `src/BombRedone.Desktop/*`, `tools/reverse-engineering/zug*` (neu),
+  `docs/analyse/zug.md` (neu), `docs/analyse/runde.md` (nur §6, Korrekturen mit Beleg).
+- **Abnahme:** je Befehl und Eingabeart bitgleich zur Probe (feste Eingabefolgen: Pfeile mit und ohne Alt, BildAuf/BildAb, jedes
+  Mausfeld, Schummeltaste C/W/G/D, Winkel über 90°, Waffenwechsel ohne Bestand); Zugfolge mit Toten und Durchgangswechsel; Fenster,
+  Leiste und Dialog pixelgleich zur Probe; Bildvergleich in `bilder-s4`.
 - **Modell:** Claude Opus 5.5.
 
-### Welle 2 – Zuschnitt 13.11.2026 (Leitstelle), eigenes Go
+#### Spur `spielfolge` – Schlacht, Satzreihenfolge, Wertung, Einkauf (`Fixes #71`)
 
-Welle 1 gemergt (12.11.2026): `real48` #93, `re-runde` #94. Grundlage: [analyse/runde.md](analyse/runde.md), [analyse/real48.md](analyse/real48.md).
-Base: aktueller `main` beim Start (bei Zuschnitt `401b15c`). Stufe 2a `gelaende` (sofort nach Go), `tws-leser` (nach Sitzung 3,
-R2-D6 = B); Stufe 2b `schuss` nach Merge von `gelaende`. Integrationsfolge: `gelaende` → `tws-leser` → `schuss`; nach R2-D10 = A: `tws-leser` und `gelaende-bilder` parallel,
-`schuss-bilder` nach Merge von `gelaende-bilder`.
-
-**Für alle Spuren der Welle:** Pascal-`=`/`<>` auf Real48 ist `Real48.Compare(a, b) == 0`, nicht `==` (#96). Die Befunde von
-`runde.py` prüfen Befehlsmuster, teils ohne Sprungbedingung (#102): Abnahme ist die Probe gegen den Originalcode bzw. das Bild, nicht
-`befunde` allein. Zufall nur über `TurboPascalRandom` aus `Core` (eine Instanz, Aufrufreihenfolge wie `runde.md` §4).
-
-#### Spur `gelaende` – Spielfeld aus Startwert und Optionen (Stufe 2a)
-
-- **Inhalt:** `Core/Playfield`: Wandart (RND `Random(5)`), Hintergrundwahl (RND/USER), Gelände nach `runde.md` §3.5 (Real48-Vergleiche,
-  Schranken als Real48-Muster), Panzerplätze und Anfangswerte der Sätze §3.6 (P11, P12), Fallen auf das Gelände (P13), Wind §2
-  (16-Bit-Überlauf, #98), Startspieler; Eingabe ist `RandSeed` **nach dem Mischen** (§4 Nr. 2–7), Ausgabe Zustand plus Stand von
-  `RandSeed`. **Pixelzustand im Spielkern** (Review #104 P2-2): Die Regeln des Originals lesen den Bildschirm (Fallen P13 über
-  `0CC8:0BFF`, später Treffer Q9, Erdrutsch K9, Krater K2 aus dem Hintergrundpuffer `DS:E5C0`). Deshalb hält `Core/Playfield` einen
-  Bildschirm- und einen Hintergrundpuffer (320 × 200 Palettenindizes) samt Palette und zeichnet dort selbst: Rahmen Farbe 13,
-  die neun Hintergründe §3.3 samt Palette 30..59, Gelände Farbe 2, Panzerbild (`0431:05ED`/`0685`, `[ORIGINAL]`); Regeln lesen nur
-  diese Puffer. **Zeichenroutinen** (Nachprüfung #104 N2-1): `gelaende` legt `Core/Graphics` an (Indexpuffer, Line, Rectangle, Bar,
-  Circle/Ellipse, Panzer) und stellt die vorhandenen UI-Fassungen darauf um (`UI/Screens/MenuGraphics.cs`, `UI/Text/LineRasterizer.cs`,
-  `DrawTank` in `UI/Screens/PlayerSelectTeamScreen.cs`; bestehende UI-Tests sind die Gegenprobe), statt sie zu verdoppeln. `UI`:
-  `PlayfieldScreen` kopiert die Puffer in `Surface` und ergänzt die Wandbeschriftung `O8:0984` (links außerhalb des Rahmens, von
-  keiner Regel gelesen; BGI-Text bleibt in `UI`), Kopfzeile und Waffenleiste (`runde.md` §6.1 Z1, Z2: `O4:0000` setzt die Farben 100..119, `O4:44A7`, `O8:1268`); Desktop-Vorschau;
-  `bombtool render playfield --seed <n> [--cfg …]`; Suchwerkzeug für den Startwert (R2-D3, `runde.md` §4 „Vorschlag“).
-- **Probe (R2-D7 = A, Review #104 P3-1, P3-2):** Die Spur baut die Probe selbst nach dem Ansatz im Review #104 (`Cpu` aus `real48.py`
-  mit Fernaufrufen, Segmentregistern, Zeichenkettenbefehlen, Overlays mit Fixups); das Skript des Reviews liegt nicht im Zugriff der Spur. Graph `0E26` und der gelinkte Treiber VGA256 2.00 (`BOMB.EXE 0x7EB7`) werden **mit emuliert** (nur INT 10h
-  und Ports abgefangen), ebenso `0CC8` (schreibt direkt nach A000h); DAC-Modell für `SetRGB` über `DS:E8F6` und das Lesen der DAC
-  (Stars, `0CC8:0C20`). Umfang: `O8:0984` vollständig und `O4:44A7` bis vor die Kopfzeile (Wind, Startspieler). Was die Probe nicht
-  abdeckt, bekommt `[ORIGINAL]` mit Test nach `runde.md` (Wind-Überlauf #98 immer als Test) oder bleibt nach `AGENTS.md` §2.10 blockiert.
-- **Teile:** 1. Probe (`tools/reverse-engineering/feld*`); 2. `Core`: Puffer, Wand, Hintergrundwahl und Hintergründe, Gelände, Rahmen,
-  Panzerbild, Panzer, Fallen, Wind, Startspieler; 3. `PlayfieldScreen` (Kopfzeile, Waffenleiste); 4. `bombtool`, Desktop-Vorschau,
-  Suchwerkzeug (zählt die Schritte des Mischens `runde.md` §4 Nr. 1, ohne Tausch der Sätze, R2-D4); 5. Bildvergleich mit
-  Sitzung 3 (blockiert, bis die Bilder im Referenz-Repo gemergt sind: `spur-wartet`, kein erneuter Versuch).
-- **Dateien:** `src/BombRedone.Core/Playfield/*` (neu), `src/BombRedone.Core/Graphics/*` (neu), `src/BombRedone.UI/Screens/Playfield*` (neu),
-  Umstellung auf `Core/Graphics` in `src/BombRedone.UI/Screens/MenuGraphics.cs`, `src/BombRedone.UI/Text/LineRasterizer.cs`,
-  `src/BombRedone.UI/Screens/PlayerSelectTeamScreen.cs` (nur `DrawTank`) – gemeinsame Dateien, Begründung im PR; `tests/BombRedone.Core.Tests/Graphics/*` (neu), `src/BombRedone.Desktop/*`,
-  `src/BombRedone.Tools/RenderCommand.cs`, `src/BombRedone.Tools/Program.cs` (eine Zeile, falls nötig),
-  `tests/BombRedone.Core.Tests/Playfield/*`, `tests/BombRedone.UI.Tests/Screens/Playfield*`, `tests/BombRedone.UI.Tests/Tools/Render*`,
-  `tools/reverse-engineering/feld*` (neu), `docs/analyse/feld.md` (neu), `docs/anforderungen/bildschirme.md` (nur Abschnitt Spielfeld).
-- **Abnahme:** nach R2-D7; je Baustein `[ORIGINAL]` mit Offset aus `runde.md`; Folge der `Random`-Aufrufe als Test (Zahl der
-  Schritte von `RandSeed` je Baustein); Wind-Überlauf (#98) als Test; Rückfall ohne Beleg je Punkt `[APPROX]`.
+- **Inhalt:** `Core/Battle` (neu) nach `runde.md` §1: Schlacht über die Spiele 1..`DS:E8A6` (S1), Mischen `O3:2417` mit Tausch `O3:0000`
+  über Satz, Steuerart, Intelligenz und Nummern (S3, S4; #71, R2-D4 = A; `RoundSequence` darauf umstellen, Zähler +72h wandern mit
+  dem Satz), Teamsieg-Bonus S2, Wertung `O3:5AEF` mit Sortierung S5, Teamwertung `O3:6696`, Einkauf `O3:0E1F` je Spieler in
+  Satzreihenfolge (vorhandener `ShopScreen`), Wischbild, Endergebnis (Add, Exit; Save ohne Wirkung `[APPROX]` bis Runde 4); alle
+  `Random`-Aufrufe zwischen den Runden. Die Runde ist eine Schnittstelle (Eingabe: Sätze, Ausgabe: Sätze nach der Runde, Teamsieger
+  `DS:47E0`) mit Testdouble; Desktop bindet erst `runde` an.
+- **Probe:** `tools/reverse-engineering/folge*` (neu) führt `O3:2417`, `O3:0000`, `O3:5AEF`, `O3:6696` und den Bonus auf gesetzten
+  Sätzen aus (Einkauf bis zur Eingabe).
+- **Teile:** 1. Probe; 2. Tausch, Mischen, Wertung, Teamwertung, Bonus; 3. Ablauf der Schlacht mit Bildschirmen gegen das Testdouble.
+- **Dateien:** `src/BombRedone.Core/Battle/*` (neu), `src/BombRedone.Core/Economy/*`, `src/BombRedone.Core/Setup/*`,
+  `src/BombRedone.Core/Playfield/RoundSequence.cs`, `tests/BombRedone.Core.Tests/{Battle,Economy,Setup}/*`,
+  `tests/BombRedone.Core.Tests/Playfield/RoundSequence*`, `src/BombRedone.UI/Screens/{Score*,Shop*,StatusWindow.cs}`,
+  `tests/BombRedone.UI.Tests/Screens/{Score*,Shop*,Status*}`, `tools/reverse-engineering/folge*` (neu),
+  `docs/anforderungen/wertung-einkauf.md`, `docs/analyse/runde.md` (nur §1, Korrekturen mit Beleg).
+- **Abnahme:** Mischen und Tausch bitgleich zur Probe (Sätze, Steuerarten, Intelligenz-Zuordnung, `RandSeed`) für 2, 5 und 10 Spieler;
+  Wertungsreihenfolge gegen Probe und gegen `ablauf1-GAME1/2.TWS` („Player 2“ vorn, `spielstand.md` „Beobachtungen“); Teambonus
+  und Teamwertung mit drei Teams; Einkaufsreihenfolge; bestehende Score-/Shop-Tests grün.
 - **Modell:** Claude Opus 5.5.
 
-#### Spur `tws-leser` – Leser `*.TWS` (Stufe 2a, R2-D6 = B)
+### Welle 2 (nach Merge von Welle 1, eigenes Go)
 
-- **Voraussetzung (R2-D10 = A):** Sitzung 3 gemergt (bomb-referenz #11). Vorhanden sind vier Stände in `original/spielstaende/`:
-  `frisch-GAME1.TWS`, `frisch-GAME2.TWS` (sauber) und `ablauf1-GAME1.TWS`, `ablauf1-GAME2.TWS` (Fremdtext ab Offset 307 = Beginn
-  der Teamtabelle, bei Team Play 0 nicht gelöschter Speicher, Review #123 P3-2; Teamtabelle dann nur roh, Rohbytes erhalten). Nr. 2–8 aus
-  `formate/spielstand.md` fehlen → Restlücke, Abgleich dann mit Sitzung 4.
-- **Inhalt:** `SavedGame` in `Formats` nach `formate/spielstand.md` (Kopf, Sätze `74h`, Intelligenzblöcke, Teamtabelle), unbelegte
-  Felder roh; Satzreihenfolge wie gespeichert (#71 nur beschreiben, R2-D4); `bombtool tws <datei>`. `Fixes #78`.
-- **Teile:** 1. Leser mit synthetischen Ständen (aus `tools/reverse-engineering/tws.py` erzeugt); 2. Abgleich aller Originalstände
-  (`[GameDataTheory]`), Abweichungen zur Formatbeschreibung in `spielstand.md`; 3. `bombtool tws`.
-- **Dateien:** `src/BombRedone.Formats/SavedGame*.cs` (neu), `tests/BombRedone.Formats.Tests/SavedGame*` (neu),
-  `src/BombRedone.Tools/TwsCommand.cs` (neu), `src/BombRedone.Tools/Program.cs` (eine Zeile), `docs/formate/spielstand.md`.
-- **Abnahme:** alle vier Originalstände gelesen, Rundreise der Rohbytes unverändert (auch Fremdtext); Werte gegen Bilder der Sitzung 3
-  (`GAME1` ↔ `s3_08`, `s3_09`, `s3_20`; `GAME2` ↔ `s3_12`, `s3_17`; `frisch-*` nur Struktur und Rundreise); unbelegte Felder roh, `[APPROX]` je Deutung ohne Beleg.
+#### Spur `runde` – Rundenablauf, Tod, Blitz, Rundenende, ganze Partie
+
+- **Inhalt:** `Core/Round` (neu) nach `runde.md` §5.9: Rundenschleife `O4:44A7` ab dem Startspieler – Zug (`zug`) → Waffe (`waffen`)
+  → nach dem Schuss K11 (Panzer neu, Crumble, Fallen, Schussprotokoll `DS:4A80`, `O4:0000`) → Todesschleife K12 (Punkte +1500/−1000,
+  +6Eh) → Todesexplosionen `O5` K15/K16 (alle sieben, Bild per Probe) → Blitz K13 ab Durchgang 11 → Rundenende K14 (+68h, `DS:47E0`);
+  Anbindung an `Core/Battle`. Desktop: ganze Partie Mensch gegen Mensch vom Titel bis zum Endergebnis.
+- **Teile:** 1. Probe (`O5`, `O6:14C5`, Todesschleife; ganze Runden mit festen Eingaben); 2. nach dem Schuss, Todesschleife,
+  Rundenende; 3. Todesexplosionen, Blitz; 4. Desktop.
+- **Dateien:** `src/BombRedone.Core/Round/*` (neu), `tests/BombRedone.Core.Tests/Round/*` (neu), Erweiterungen in `Core/Shot/*`,
+  `Core/Turn/*`, `Core/Battle/*`, `UI/Screens/Playfield*` und deren Tests, `src/BombRedone.Desktop/*`, `tools/reverse-engineering/tod*`
+  (neu) und `feld*`, `docs/analyse/feld.md`, `docs/analyse/runde.md` (nur §5.9).
+- **Abnahme:** ganze Runden mit festem Startwert und festen Eingaben bitgleich zur Probe bis zum Rundenende samt `RandSeed`; je
+  Todesart; Blitz; `s3_06`/`s3_07` jetzt auch am toten Panzer pixelgleich (Restlücke `schuss-bilder`) bzw. Abweichung erklärt;
+  Wertung nach Spiel 1 gegen `s3_08`.
 - **Modell:** Claude Opus 5.5.
 
-#### Spur `schuss` – Schuss der Standardwaffe (Stufe 2b, nach Merge von `gelaende`)
+### Folgespuren nach Sitzung 4 (R3-D2 = A; Zuschnitt durch die Leitstelle nach Ablage im Referenz-Repo)
 
-- **Inhalt (R2-D1 = A, nur Lead Ball):** `Core`: Abschuss und Startwerte §5.1–5.2 (Rückstoß-`Random:Real`, Q2; Schaden Q11), Flug §5.3 in Real48
-  (`SS`/`LS`, Schwerkraft, Wind/5000/SS), Wände §5.4 (alle Wandarten, Randregel), Treffer und Ende §5.4, Einschlag und Schaden §5.5,
-  Explosion, Krater und Flächenschaden §5.6 (K1–K4) für Baby Missile (Waffe 1, Radius 10) nach R2-D8 = A, wählbar in
-  Vorschau und `bombtool` (`Random` nur bei Ton), Erdrutsch und Fallen §5.8 (Crumble, `Random(3)` je Zeile), Gelände bei voller
-  Kraft §5.12. `UI`: Spur (Trail, Inviso), Explosion, Krater, Erdrutsch im `PlayfieldScreen`. Nicht in Runde 2: übrige Waffen,
-  Laser, MIRV, Lenkung, Tod/Blitz/Rundenende §5.9, Zugfolge, Computer.
-- **Teile:** 1. Probe nach R2-D7 (Flug `O4:01B7`, Explosion `O6`); 2. Flug, Wände, Ende; 3. Einschlag, Schaden, Krater; 4. Erdrutsch,
-  Fallen; 5. Darstellung; 6. Bildvergleich mit Sitzung 3 (nach R2-D10 = A eigene Folgespur `schuss-bilder`).
-- **Dateien:** `src/BombRedone.Core/Shot/*` (neu), `src/BombRedone.Core/Numerics/Real48.Trig*.cs` (neu: `Cos` `12CE:12EE`, `Sin` `12CE:1301`,
-  Grad→Bogen `0DBD:00D9`, π, `Sqrt` `12CE:128F`), `tests/BombRedone.Core.Tests/Numerics/Real48Trig*` (neu),
-  `tools/reverse-engineering/real48.py` (nur neue Einsprünge, Hash-Probe wie Welle 1; Review #104 P2-3),
-  `src/BombRedone.Tools/RenderCommand.cs` (Waffenwahl, nach `gelaende`), `tests/BombRedone.UI.Tests/Tools/Render*`, `src/BombRedone.Core/Playfield/*` (nur Erweiterungen für Krater/Erdrutsch, nach
-  `gelaende`), `src/BombRedone.UI/Screens/Playfield*`, `src/BombRedone.Desktop/*`, `tests/BombRedone.Core.Tests/Shot/*`,
-  `tests/BombRedone.UI.Tests/Screens/Playfield*`, `tools/reverse-engineering/feld*` (Erweiterung der Probe), `docs/analyse/feld.md`.
-- **Abnahme:** nach R2-D7; Bahn und Endpunkt je Wandart, Krater und Flächenschaden für Baby Missile (R2-D8 = A); `Sin`/`Cos`/`Sqrt` bitgleich gegen die Laufzeit (Probe);
-  `RandSeed` nach dem Schuss gleich.
-- **Modell:** Claude Opus 5.5.
+- **`tws-abgleich`:** Stände Nr. 2–8 lesen und abgleichen (`formate/spielstand.md`), Autosave gegen Dialog (#71), Laden nur beschreiben
+  (Runde 4).
+- **`bilder-s4`:** Bildvergleich je Thema von `runde.md` §7 (Hintergründe und Palette 30..59, Rotation – dann Palettenrotation
+  umsetzen statt `[APPROX]` –, 10 Spieler, Wandarten, Rückstoß, Krater, Erdrutsch, Tod und Blitz, Laser, MIRV, volle Kraft) und der
+  Zugbilder (Panzerinfo, Zielwahl, MIRV-Dialog); `TIME` (R2-D3) und `PV`/IRQ2 (#39, `re-grundlagen.md` §8 Nr. 2) nachtragen. Bei
+  vielen Themen mehrere Spuren.
+- **`p3-runde-3`** (letzter Lauf): #140, #141 und die P3 der Runde; Verweis in `Core/Graphics/IndexBuffer.cs` Z. 6 auf das Archiv
+  Runde 2 richten (Review #145 P3-3).
 
-#### Spur `gelaende-bilder` – Bildvergleich Spielfeld (Folgespur, R2-D9 = A, R2-D10 = A)
+### Restlücken aus Runde 2 (übernommen)
 
-- **Inhalt:** Teil 5 von `gelaende`: `s3_02` (Spielfeld Runde 1 vor dem ersten Schuss) auf `RandSeed` nach dem Mischen zurückführen.
-  Optionen und Zielwind aus `ablauf1-GAME1.TWS` (Review #123 P3-1: 2 Spieler, Wind −92, Crumble 75, Wind-Option Norm, Wände 0,
-  Hintergrund RND, kein Team Play). Die Uhrzeit von Sitzung 3 ist nicht notiert (Review #123 P2-1): `bombtool seed` um ein Zeitfenster
-  erweitern (`--time-from`/`--time-to`, Rückfall ganzer Tag) mit billigen Vorfiltern in Aufrufreihenfolge (Hintergrund `Random(9)` =
-  gezeigter Hintergrund, Geländehöhe am Rand, Panzer-x, zuletzt Wind); k klein (2 Menschen, je Hauptmenü `Random(2)`). Liefert der
-  Nutzer die Dateizeiten der DOSBox-Originale von Sitzung 3, gelten sie als Obergrenze. Danach Spielfeld (Gelände, Hintergrund, Panzer,
-  Rahmen, Kopfzeile, Waffenleiste) pixelgenau mit dem Bild vergleichen; Abweichungen reproduzieren → roter Test → beheben.
-  Bildpixel nie ins Repo (`AGENTS.md` §2.1), Tests mit `[GameDataFact]`, Bildordner wie `GameConfigOriginalTests` (`~/referenz/bilder/…`),
-  PNG-Leser mit BCL `ZLibStream` in den eigenen Testdateien (kein neues Paket, nicht in `tests/**/Support/`).
-- **Teile:** 1. Zeitfenstersuche in `bombtool seed`, Startwert aus `s3_02`; 2. Pixelvergleich, Befunde beheben, `docs/analyse/feld.md` „Bildvergleich“.
-- **Dateien:** `tests/BombRedone.Core.Tests/Playfield/*`, `tests/BombRedone.UI.Tests/Screens/Playfield*`, `docs/analyse/feld.md`;
-  bei belegter Abweichung `src/BombRedone.Core/Playfield/*`, `src/BombRedone.Core/Graphics/*`, `src/BombRedone.UI/Screens/Playfield*`,
-  `src/BombRedone.Tools/RenderCommand.cs` (Begründung im PR). Lädt Bilder über `tools/claude/fetch-reference.sh bilder/runde-1`.
-- **Abnahme:** gefundener Startwert reproduziert `s3_02` pixelgleich, oder jede Abweichung ist erklärt (`[APPROX]` mit Grund bzw. Befund).
-  Kein Startwert gefunden → Rückfall R2-D3 D (Vergleich nach Lage und Form, `[APPROX]`); Suchraum und Laufzeit in `feld.md`.
-- **Modell:** Claude Opus 5.5.
+- **Erledigt durch Spuren dieser Runde:** Lenkung, Repulser, übrige Einschläge, Bestand (`waffen`); Desktop-Zug ohne Kopfzeile
+  (`zug`); Satzmischung #71 (`spielfolge`); Todesexplosion in `s3_06`/`s3_07` (`runde`); BGI-`Circle` nur Radius 1 (`waffen`).
+- **Nach Sitzung 4:** Palettenrotation, Stände Nr. 2–8, `TIME`, `PV`/#39 (Folgespuren).
+- **Bleiben `[APPROX]`:** Spurpunkt/Erdrutsch jenseits 64000 Byte, 15 ms je Flugtick, DAC 0..15 Grundpalette.
+- **Runde 4:** Computer (`runde.md` §6.5, offen §6.6), Speichern und Laden, Ton (E5).
 
-#### Spur `schuss-bilder` – Bildvergleich Schuss (Folgespur, nach Merge von `gelaende-bilder`)
-
-- **Inhalt:** Teil 6 von `schuss`: mit dem Startwert aus `gelaende-bilder` die Schüsse in `s3_03`–`s3_07` nachstellen (Winkel und Kraft
-  aus den Kopfzeilen nur als Startpunkt – die Kopfzeile zeigt den Spieler am Zug, nicht den letzten Schuss, Review #123 P3-3; Wind 92; fehlende Werte per Suche über plausible Winkel/Kräfte gegen die sichtbare Spur), Spur, Einschlag und
-  Panzerwerte (Energie in der Kopfzeile) pixelgenau vergleichen; Abweichungen reproduzieren → roter Test → beheben.
-- **Teile:** 1. Schussparameter aus den Bildern; 2. Vergleich Spur/Einschlag, Befunde beheben, `docs/analyse/feld.md`.
-- **Dateien:** `tests/BombRedone.Core.Tests/Shot/*`, `tests/BombRedone.UI.Tests/Screens/Playfield*`, `docs/analyse/feld.md`; bei belegter
-  Abweichung `src/BombRedone.Core/Shot/*`, `src/BombRedone.Core/Playfield/*`, `src/BombRedone.UI/Screens/Playfield*` (Begründung im PR).
-- **Abnahme:** wie `gelaende-bilder`; nicht nachstellbare Schüsse mit Grund dokumentiert. Ohne Startwert aus `gelaende-bilder`:
-  Rückfall R2-D3 D für die Bahnform.
-- **Modell:** Claude Opus 5.5.
-
-#### Spur `p3-runde-2` – gesammelte P3 der Runde (letzter Lauf, `zusammenarbeit.md` §5 Punkt 5)
-
-- **Inhalt (je Issue `Fixes #<nr>`):** #96 Real48: Pascal-`=` als `Real48.PascalEquals` (= `Compare(a, b) == 0`) mit Test, Hinweis in
-  `analyse/real48.md`; #109 Ellipsentest mit Radien, die den Fehlerterm unterscheiden (z. B. rx 9, ry 4, per `feld.py call`); #110
-  `UI/Screens/WeaponPictures.cs` – hiermit nachträglich in die Dateigrenzen von `gelaende` aufgenommen, Issue mit Verweis schließen;
-  #111 Verdacht „Desktop-Vorschau mischt bei jeder Runde neu und lässt den Startspieler aus“ nachstellen; bestätigt → Ablauflogik
-  (Mischen je Spiel, Startspieler je Runde) nach `Core/Playfield`, roter Test in `tests/BombRedone.Core.Tests/Playfield/*`, Fix
-  (Desktop ruft nur noch auf; kein neues Testprojekt); sonst mit Beleg schließen;
-  #112 Fallzahl in `feld.md` (der alte Statuseintrag „Status gelaende“ bleibt historisch); #117 `feld_schuss.py befunde` lauffähig; #118 Tests für Wände links/unten, Randregel bei Wind 0,
-  Tickgrenze; #119 Lenkung: Doku an den Code angleichen (kein Feld, keine Prüfung in Runde 2); #129 Test Rand-Ausschluss `y < 189`;
-  #130 Test letzte Sekunde des Suchfensters; #131, #132 Doku/Test zu „Wind 92“ und abgebrochener Satz. #102 bleibt Hinweis für Runde 3.
-- **Teile:** 1. Testlücken (#109, #118, #129, #130, #131 Testteil); 2. Code (#96, #111, #117, #119); 3. Doku (#110, #112, #131, #132).
-- **Dateien:** `src/BombRedone.Core/Numerics/Real48*.cs`, `tests/BombRedone.Core.Tests/Numerics/*`, `src/BombRedone.Core/Graphics/VgaDraw.cs`,
-  `tests/BombRedone.Core.Tests/Graphics/*`, `src/BombRedone.Core/Shot/*`, `tests/BombRedone.Core.Tests/Shot/*`,
-  `src/BombRedone.Core/Playfield/*`, `tests/BombRedone.Core.Tests/Playfield/*`, `src/BombRedone.Desktop/*`, `src/BombRedone.Tools/RenderCommand.cs`,
-  `tests/BombRedone.UI.Tests/Tools/*`, `tests/BombRedone.UI.Tests/Screens/Playfield*` (u. a. `PlayfieldSeedCommandTests.cs`,
-  `PlayfieldScreenSessionTests.cs`), `tools/reverse-engineering/feld*`, `docs/analyse/feld.md`, `docs/analyse/real48.md`.
-- **Abnahme:** je Testlücke Gegenprobe (Mutation rot), je Fix roter Test vorher; kein Verhalten außerhalb der Issues geändert (alle
-  bisherigen Probe-Hashes unverändert).
-- **Modell:** Claude Opus 5.5.
-
-### Restlücken Welle 2
-
-- `gelaende` (#107, gemergt 13.11.2026): Teil 5 Bildvergleich mit Sitzung 3 offen (R2-D9 = A) → nach Sitzung 3 Folgeteil auf
-  `paket/gelaende-bilder` (nur Teil 5, Tests und `docs/analyse/feld.md`). `[APPROX]`: Palettenrotation fehlt, BGI-`Circle`
-  nur Radius 1, DAC 0..15 Grundpalette (Rohrtabelle durch `schuss` ersetzt). P3: #109–#112.
-- `schuss` (#115, gemergt 13.11.2026): Teil 6 → `schuss-bilder`. `[APPROX]`: Spurpunkt/Erdrutsch jenseits 64000 Byte, 15 ms je Flugtick,
-  Desktop-Zug ohne Kopfzeile; nicht umgesetzt (Runde 3): Lenkung, Repulser, übrige Einschläge, Bestand. P3: #117–#119.
-- Aufnahmen (R2-D10 = A) → **Sitzung 4** (Runde 3): je Hintergrund ein Bild vor dem ersten Schuss und zwei kurz nacheinander
-  (Rotation); Rundenbeginn mit 2 und 10 Spielern; je Wandart ein Schuss mit Spur an (Winkel, Kraft, Wind notieren), dazu Wand 0 nach
-  links bei Wind < 0; Baby Missile neben einen Panzer (Energie vorher/nachher); Crumble 100 % mit Fallen (Video); voller Kraftschuss in
-  einen Hügel; Spielstände Nr. 2–8 (`formate/spielstand.md`); `TIME` in `autoexec` (R2-D3); `PV`/IRQ2 (#39).
-
-### Zuständigkeit für gemeinsame Dateien (Runde 2)
+### Zuständigkeit für gemeinsame Dateien (Runde 3)
 
 - `AGENTS.md`, `CLAUDE.md`, `docs/prozess/*`, `docs/vorlagen/*`, `docs/entscheidungen.md`, `tools/pruefen*.sh`,
   `tools/originalschutz-selbsttest.sh`, `.gitignore`, `.github/*`, `tests/**/Support/`: allein die Leitstelle.
-- `src/BombRedone.Desktop/*`: Welle 1 nur `real48` (Umzug des Zufalls), Stufe 2a nur `gelaende`, Stufe 2b nur `schuss`, danach `p3-runde-2`.
-- Nach Merge aller Welle-2-Spuren gehören alle in `p3-runde-2` genannten Dateien (auch `Core/Numerics/*`, `Core/Graphics/*`,
-  `Core/Playfield/*`, `RenderCommand.cs`, `feld*`, `feld.md`) allein `p3-runde-2`.
-- `src/BombRedone.Tools/Program.cs`: je Spur eine Registrierungszeile (`gelaende`, `tws-leser`); `RenderCommand.cs`: `gelaende`, danach `schuss`, danach `gelaende-bilder`.
-- `src/BombRedone.Core/Numerics/*` und `tools/reverse-engineering/real48.py`: in Welle 2 nur `schuss` (neue Dateien bzw. Einsprünge).
-- `src/BombRedone.Core/Graphics/*` (neu), `MenuGraphics.cs`, `LineRasterizer.cs`, `PlayerSelectTeamScreen.cs` (`DrawTank`): `gelaende`, danach `schuss` (`VgaDraw.cs`), danach `gelaende-bilder`.
-- `src/BombRedone.Core/Playfield/*`, `src/BombRedone.UI/Screens/Playfield*`, `tools/reverse-engineering/feld*`, `docs/analyse/feld.md`:
-  `gelaende`, danach `schuss`, danach `gelaende-bilder`, danach `schuss-bilder` (nacheinander, nie gleichzeitig).
-- `tools/reverse-engineering/bombre.py`: nur `re-runde` (neue Unterbefehle).
-- `docs/arbeitspakete.md`: jede Spur nur ihr eigener Statusabschnitt. Für Welle 1 und 2 hat die Leitstelle die Abschnitte unten
-  angelegt (vermeidet Konflikte beim Anfügen).
+- `src/BombRedone.Desktop/*`, `src/BombRedone.UI/Screens/Playfield*` (außer `PlayfieldShot*`): Welle 1 nur `zug`, Welle 2 nur `runde`.
+- `Core/Shot/*`, `Core/Playfield/*` (außer `RoundSequence.cs`), `Core/Graphics/*`, `Core/Numerics/*`, `PlayfieldShot*`, `RenderCommand.cs`,
+  `tools/reverse-engineering/feld*`, `real48.py`, `docs/analyse/feld.md`: Welle 1 nur `waffen`, Welle 2 nur `runde`.
+- `Core/Economy/*`, `Core/Setup/*`, `RoundSequence.cs`, Score-/Shop-Bildschirme: Welle 1 nur `spielfolge`.
+- `src/BombRedone.Tools/Program.cs`: je Spur höchstens eine Registrierungszeile.
+- **Aufrufer in fremden Dateien** (Review #145 P2-2): Ändert eine Spur eine Signatur, zieht sie die Aufrufer in fremden Dateien
+  minimal mit (`AGENTS.md` §2.5, Begründung im PR) – bekannt: `RenderCommand.cs` (Score-/Shop-/Status-Bildschirme, `PlayfieldScreen`),
+  `Desktop/DesktopGame.cs` (`RoundSequence`), `Desktop/RoundPreviewScreen.cs` (`PlayfieldShotScreen.Fire`). Kollidiert das beim
+  Integrieren, passt die spätere Spur der Integrationsfolge nach dem Rebase an (Fixlauf ohne Befund).
+- `tests/BombRedone.UI.Tests/Screens/PlayfieldSession*` (gemeinsamer Testhelfer): Welle 1 nur `waffen`; `zug` legt eigene Helfer an.
+- `docs/analyse/runde.md`: je Spur nur ihr Abschnitt (§5 `waffen`, §6 `zug`, §1 `spielfolge`, §5.9 `runde`), nur Korrekturen mit Beleg.
+- `docs/arbeitspakete.md`: jede Spur nur ihr eigener Statusabschnitt (unten angelegt).
 
-### Status real48
+### Status waffen
 
-- 12.11.2026, Claude Code (Opus 5.5), PR #93: Teile 1–3 fertig, wartet auf Erstreview. Probe
-  `tools/reverse-engineering/real48.py` (8086-Emulator der Originalroutinen), Abgleich je Operation 20.000 Fälle;
-  Befund: `Randomize` legt CX ins untere Wort (Desktop-Fassung korrigiert). Bericht [analyse/real48.md](analyse/real48.md).
+### Status zug
 
-### Status re-runde
+### Status spielfolge
 
-- 12.11.2026, Claude Opus 5.5, Draft-PR `paket/re-runde`, Base `5a3e384`. Teile (vom Lauf festgelegt, der Spurabschnitt hat
-  keine Teilliste): 1. O8 Spielfeldaufbau, Hintergründe, `Random`-Folge bis zum ersten Schuss; 2. O5–O7 Schuss; 3. O4 Runde,
-  O9 Panzerinfo, O3[0] Spielfolge mit #71; 4. Listings (Referenz-Repo, R2-D5 = A), Liste „nicht entscheidbar ohne DOSBox“.
-- 12.11.2026, Lauf 1: Teil 1 fertig (Spielfolge und #71 aus Teil 3 vorgezogen), Teil 2 bis auf `runde.md` §5.6 (Krater,
-  Erdrutsch, Fallen, Todesexplosionen, Laser, MIRV), Teil 4 Stand Lauf 1 (bomb-referenz#10, nicht gemergt). Offen: Rest Teil 2,
-  Teil 3 (Zug `O7:040C`, Kopfzeile `O4:44A7`, Eingaben, O9, Computer `0129`), §7 ergänzen, Listings neu erzeugen. 41 Befunde.
-- 12.11.2026, Fortsetzung 1: Teil 2 fertig (offen nur Bilddetails, `runde.md` §5.13): Explosion,
-  Krater, Flächenschaden, CRI, Sonic, Dirt, Erdrutsch, Fallen, Tod, Blitz, Rundenende, Laser, MIRV, Lenkung; §7 Nr. 6–11.
-  Teil 3: Zugbeginn, Kopfzeile, Waffenleiste, Zug `O7:040C`, Tasten, Maus, Schummeltaste, Panzerinfo, Zielwahl, Computer-Rahmen
-  `0129:01D0`, alle sieben Computer-Arten (§6); offen nur Sichtlinien von Wind Master (§6.6). Teil 4: Listings unverändert,
-  README in bomb-referenz#10 nachgetragen. 81 Befunde. Alle Teile fertig, Ready for review (Merge-Basis `1128839`).
-- 12.11.2026, Fixlauf zum Review `docs/reviews/2026-11-12-re-runde.md`: P2-1 (#98, Wind in 16 Bit, R3 verschärft), P3-1 (#99),
-  P3-2 (#100), P3-3 (#101, Begründung im PR) behoben; P3-4 (#102) Hinweis für Welle 2. 81 Befunde.
-
-### Status gelaende
-
-- 13.11.2026, Leitstelle: Teile 1–4 gemergt (#107, Erstreview #108 ja); Teil 5 Restlücke (R2-D9 = A).
-- 13.11.2026, Claude Code (Opus 5.5), Draft-PR #107, Base `6d91e69`. Teil 1 fertig: Probe `tools/reverse-engineering/feld*.py`
-  (Originalcode unverändert im eigenen 8086-Interpreter, 11 feste Fälle bis zum Startspieler), Festlegung des Vergleichs (N4-1) in
-  [analyse/feld.md](analyse/feld.md) §2. Teil 2 begonnen: `Core/Graphics` (`IndexBuffer`, `VgaDraw` Line/Rectangle/PutPixel/
-  Panzerkörper, bitgleich zur Probe), `MenuGraphics` und `DrawTank` darauf umgestellt. Offen: Rest Teil 2, Teile 3–5.
-- 13.11.2026, Fortsetzung 1: Teile 2–4 fertig. `Core/Graphics` (Ellipse, CopyLine, BGI-Linie, `LineRasterizer` umgestellt),
-  `Core/Playfield` (Wand, neun Hintergründe, Gelände, Panzer, Fallen, Wind #98, Startspieler) und `UI/Screens/PlayfieldScreen`
-  (Wandbeschriftung, Kopfzeile, Waffenleiste) bitgleich zur Probe an A, K und S in 13 Fällen; `bombtool render playfield`,
-  `bombtool seed` (Suchwerkzeug), Desktop-Vorschau. Teil 5 blockiert, bis die Bilder von Sitzung 3 im Referenz-Repo gemergt sind.
-
-### Status tws-leser
-
-- 15.11.2026, Claude Opus 5.5 (geplanter Lauf), PR #125: Teile 1–3 fertig – `Formats/SavedGame` (Rohbytes je Teil, Rundreise
-  bytegleich), Abgleich der vier Originalstände gegen `s3_08`/`s3_09`/`s3_12`/`s3_17`/`s3_20`, `bombtool tws`. Restlücke: Stände Nr. 2–8
-  (Sitzung 4). Beobachtungen in `formate/spielstand.md` (Satz +00h = Position, +1Bh = Power?, Fremdtext auch in `DS:47E6`/`47E8`).
-
-### Status gelaende-bilder
-
-- #126 (15.11.2026, Claude Opus 5.5): Teil 1 und 2 fertig – Startwert 17:12:39.69, k = 1, `RandSeed` nach dem Mischen
-  `D2E3BA6E`; `s3_02` pixelgleich bis auf die Zugwerte der Kopfzeile und die Farben 20/21 (R2-D4), beides erklärt (`analyse/feld.md` §6). Review offen.
-
-### Status schuss
-
-- 13.11.2026, Claude Code (Opus 5.5), PR #115, Base `090bf9e`. Teile 1–5 fertig in einem Lauf: Real48 `Sin`/`Cos`/`Sqrt`/`Rad`
-  bitgleich (Panzerrohr ohne gemessene Tabelle), Probe `feld_schuss.py` (25 Schüsse, 9 Fälle danach), `Core/Shot` (Flug, Wände,
-  Einschlag, Krater, Schaden, Erdrutsch, Fallen) bitgleich, `PlayfieldShotScreen`, `bombtool render playfield --shot`, Desktop-Vorschau
-  mit Schüssen. Teil 6 blockiert, bis die Bilder von Sitzung 3 im Referenz-Repo gemergt sind (wie R2-D9 = A). Bericht
-  [analyse/feld.md](analyse/feld.md) §5.
-
-### Status schuss-bilder
-
-- 15.11.2026, Claude Opus 5.5 (geplanter Lauf), PR #133, Base `204a8d0`: Teile 1 und 2 fertig – Schüsse 75/200, 75/272, 38/241,
-  30/272 (Baby Missile); `s3_03`–`s3_05` im Feld pixelgleich, `s3_06`/`s3_07` bis auf die Todesexplosion (Runde 3); DAC bis auf R2-D4
-  gleich; Rohrwechsel des Zugs im Test nachgebildet (`analyse/feld.md` §7). Kein Fix nötig.
-
-### Status p3-runde-2
-
-- 15.11.2026, Claude Opus 5.5 (geplanter Lauf), PR #138, Base `9b4219e`: Teile 1–3 fertig in einem Lauf. Testlücken #109, #118
-  (Schüsse 25–32 inkl. Tickgrenze), #129, #130, #131 geschlossen, je Mutation rot; `Real48.PascalEquals` (#96); #111 teilweise
-  bestätigt (Startspieler-Zähler je Runde neu, Mischen je Runde richtig) → `RoundSequence`; `feld_schuss.py befunde` 6/6 (#117);
-  Doku #112, #119, #131, #132; #110 per Plan erledigt. Alle bisherigen Probe-Hashes unverändert; #102 bleibt für Runde 3.
+### Status runde
