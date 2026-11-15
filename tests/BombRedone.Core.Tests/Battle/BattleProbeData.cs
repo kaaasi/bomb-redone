@@ -34,4 +34,10 @@ internal static class BattleProbeData
         new(15, "2,2,5,5,5,7,7", "100,100,0,50,50,300,-100", "1,0,0,1,1,1,0", "5,2,7,0,0,0,0,0,0,0", 3),
         new(16, "3,1,3,1,2,2,3,2,1", "10,20,30,40,50,60,70,80,90", "1,1,0,1,2,0,1,1,0", "2,1,3,0,0,0,0,0,0,0", 3),
     ];
+
+    public static readonly BattleProbeTests.BattleCase[] Battles =
+    [
+        new(24, 3, 3, "12345678", "", "2;Player 1:0:1500:0;Player 2:1:3000:0;Player 3:0:-1000:0|3;Player 1:0:0:0;Player 2:0:1500:0;Player 3:1:1500:0|3;Player 1:0:500:0;Player 2:0:0:0;Player 3:1:1500:0", "Player 1,Player 3,Player 2;6043A24C;Player 2,Player 1,Player 3;6000,1500,-1000;1,0,0;Player 2|Player 3,Player 1,Player 2;5598A2F6;Player 2,Player 3,Player 1;7500,3500,1500;1,1,0;Player 2,Player 3|Player 1,Player 2,Player 3;48BC9991;Player 3,Player 2,Player 1;8000,7500,2000;2,1,0;"),
+        new(25, 5, 2, "DEADBEEF", "1,2,1,2,3", "1;Player 1:1:1500:0;Player 2:0:-1000:0;Player 3:0:0:0|3;Player 5:1:4500:0", "Player 4,Player 1,Player 2,Player 3,Player 5;C39BCC1D;Player 1,Player 3,Player 4,Player 5,Player 2;4000,2500,0,0,-1000;1,0,0,0,0;Player 1|Player 5,Player 3,Player 2,Player 4,Player 1;34ABA2A5;Player 5,Player 1,Player 3,Player 4,Player 2;9500,4000,2500,0,-1000;1,1,0,0,0;"),
+    ];
 }

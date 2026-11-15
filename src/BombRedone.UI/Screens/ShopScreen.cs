@@ -60,6 +60,7 @@ public sealed class ShopScreen : IScreen
     private readonly List<Tile> _tiles = [];
 
     // Locals of O3:0E1F: [bp-E] cursor, [bp-4] hit, [bp-16] minus, [bp-17] plus, [bp-19]/[bp-1B] left/right button.
+    private readonly int _colorIndex;
     private int _hit;
     private bool _minus, _plus, _leftButton, _rightButton;
     private bool _waitingForRelease;
@@ -72,8 +73,12 @@ public sealed class ShopScreen : IScreen
     /// <param name="control">Keyboard or mouse.</param>
     /// <param name="playerColor">6-bit colour of the player (O10:01AC computes it from the player record).</param>
     /// <param name="next">Screen after "Done"; null quits.</param>
+    /// <param name="record">
+    /// Record number of the player (1..10) for its colour index 19 + record; null takes the account number. The record
+    /// number (+00h) is the position after the rating: the swap O3:0000 sets it (docs/analyse/runde.md section 1, S4).
+    /// </param>
     public ShopScreen(ShopFonts fonts, Surface background, ReadOnlySpan<byte> dac, Shop shop, ShopControl control,
-        (int Red, int Green, int Blue) playerColor, Func<IScreen?> next)
+        (int Red, int Green, int Blue) playerColor, Func<IScreen?> next, int? record = null)
     {
         ArgumentNullException.ThrowIfNull(fonts);
         ArgumentNullException.ThrowIfNull(background);
@@ -88,13 +93,14 @@ public sealed class ShopScreen : IScreen
         _shop = shop;
         _control = control;
         _next = next;
+        _colorIndex = PlayerColorBase + (record ?? shop.Account.Number);
         _dac = dac.ToArray();
         _text = new GraphText(fonts.Default);
         background.Pixels.CopyTo(_screen.Pixels, 0);
 
         // [ORIGINAL] O3:0F93: U431:01D8 sets the grey ramp; O3:1005: O10[2] the colour of the player.
         MenuGraphics.SetFrameColors(_dac);
-        MenuGraphics.SetRgb(_dac, PlayerColorBase + shop.Account.Number, playerColor.Red, playerColor.Green, playerColor.Blue);
+        MenuGraphics.SetRgb(_dac, _colorIndex, playerColor.Red, playerColor.Green, playerColor.Blue);
         DrawHeader();
         // [ORIGINAL] O3:11D1: restore (0, 38)–(319, 199) from the saved screen, then O3:015B.
         MenuGraphics.CopyRect(_background, _screen, 0, 38, 319, 199);
@@ -332,7 +338,7 @@ public sealed class ShopScreen : IScreen
         _text.SetUserCharSize(1, 2, 1, 2);
         _text.SetTextJustify(HorizontalJustify.Center, VerticalJustify.Top);
         MenuGraphics.Frame(_screen, 5, 5, 314, 35, Face, Light, Dark);
-        _text.Color = (byte)(PlayerColorBase + _shop.Account.Number);
+        _text.Color = (byte)_colorIndex;
         _text.OutTextXY(_screen, 160, 3, _shop.Account.Name);
 
         // [ORIGINAL] O3:1025–10C8: SmallFont size 4 (user size 1/2 stays), buttons "Purchase" and "Done" in colour 17.

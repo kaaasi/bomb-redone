@@ -414,7 +414,7 @@ def csv(values):
 
 
 def cmd_csharp(p, args):
-    """C# test data of the record cases (swap, shuffle, rating, bonus) and of the team ratings from
+    """C# test data of the record cases (swap, shuffle, rating, bonus), of the team ratings and of the battles from
     analyse/folge/cases.json, on stdout."""
     with open(os.path.join(args.root_out, "cases.json"), encoding="utf-8") as fh:
         results = json.load(fh)
@@ -452,6 +452,27 @@ def cmd_csharp(p, args):
         order = [t if t in c["teams"] else 0 for t in ev["team_order"]]
         print('        new(%d, "%s", "%s", "%s", "%s", %d),' % (
             r["index"], csv(c["teams"]), csv(c["score"]), csv(c["wins"]), csv(order), ev["team_counted"]))
+    print("    ];")
+    print()
+    print("    public static readonly BattleProbeTests.BattleCase[] Battles =")
+    print("    [")
+    for r in results:
+        c = r["case"]
+        if c["kind"] != "battle":
+            continue
+        rounds = "|".join("%d;" % rd["winner"] + ";".join("%s:%d:%d:%d" % (who, *v) for who, v in rd["players"].items())
+                          for rd in c["rounds"])
+        games = []
+        for g in range(1, c["games"] + 1):
+            snaps = {x["after"]: x for x in r["snapshots"] if x["game"] == g}
+            shuffled, rated = snaps["shuffle"], snaps["rating"]
+            shops = [e["name"] for e in r["events"] if e["event"] == "wait" and e["proc"] == "shop" and e["game"] == g]
+            games.append("%s;%s;%s;%s;%s;%s" % (
+                csv(x["name"] for x in shuffled["records"]), shuffled["randseed"],
+                csv(x["name"] for x in rated["records"]), csv(x["score"] for x in rated["records"]),
+                csv(x["wins"] for x in rated["records"]), csv(shops)))
+        print('        new(%d, %d, %d, "%08X", "%s", "%s", "%s"),' % (
+            r["index"], c["players"], c["games"], c["seed"], csv(c.get("teams") or []), rounds, "|".join(games)))
     print("    ];")
     print("}")
     return 0
