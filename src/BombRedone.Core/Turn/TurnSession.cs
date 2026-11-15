@@ -556,6 +556,10 @@ public sealed class TurnSession
 
         var shown = Player(n);
         _view.ShowTankInfo(shown, _players);
+
+        // O9:0223: O10:01AC(100, record): the name is drawn in the full colour of the tank.
+        var (r, g, b) = PlayfieldModel.ColorDivisors[n - 1];
+        Palette.Set(shown.Tank.Color, 63 / r, 63 / g, 63 / b);
         if (control == PlayerControl.Keyboard)
         {
             do

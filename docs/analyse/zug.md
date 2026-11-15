@@ -109,4 +109,17 @@ Gegenprobe: zwei absichtlich eingebaute Fehler (BildAuf + 98, Alt-Bedingung) las
 `[APPROX]` in Teil 2: `U431:0594` überspringt die Adresse 64000 (außerhalb beider Puffer); die Zielwahl mit der Tastatur ohne
 weiteren lebenden Spieler hängt im Original, das Remake wirft eine Ausnahme; der Computer (Steuerart 3) kommt mit Runde 4.
 
-Offen für Teil 3–4: keine Frage an den Nutzer; Bildvergleich in `bilder-s4` (R3-D2).
+## 6. Ergebnis Teil 3 (UI)
+
+`PlayfieldTurnView` (`ITurnView` auf einem `PlayfieldScreen`) zeichnet Kopfzeile Z1 und die vier Felder, `TankInfoWindow`,
+`TargetSelectBar` und `MirvSetupDialog`; Fenster sichern den Bildschirm und stellen ihn beim Schließen wieder her wie der Puffer
+`DS:E5BC`. Abnahme: in allen 40 Zügen ist der **ganze Bildschirm an jeder Abfragestelle** gleich der Probe (Spalte `poll_screens`,
+`PlayfieldTurnViewOriginalTests`, mit Originaldaten), dazu der Bildschirm am Ende (außer MIRV: die Probe hält vor dem Wiederherstellen).
+
+Aus Code und Probe dazu: In der Panzerinfo trägt die gewählte Waffe auch ihre Zahl (beides Farbe 4); Schild = Wert div 10 „%“ bis
+1000, Inertia Wert „%“ bis 100, darüber „100%“, Repulser der Wert (je das untere Wort). Ein Fenster mit mehr als 11 Zeilen reicht
+über den Bildschirm hinaus (Fall 24: y −52 bis 252); BGI schneidet Rahmen pixelweise ab und lässt Textzeilen der DefaultFont, deren
+Zelle nicht ganz in y 0..199 liegt, ganz weg. Beim Öffnen setzt O9 die Farbe 19 + n auf volle Helligkeit (`O10:01AC(100, …)`), beim
+Schließen wieder nach der Energie.
+
+Offen für Teil 4: keine Frage an den Nutzer; Bildvergleich in `bilder-s4` (R3-D2).

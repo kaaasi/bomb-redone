@@ -545,7 +545,7 @@ def turn_from(t):
 
 TURN_HEADER = ("nr\tseed\tplayers\tshooter\tcontrol\tstatus\tsteps_used\tcommands\tdelays\treleases\tpolls\ttrace"
                "\tz1_screen\tz1_dac\tscreen\tdac_set\trecords\tshooter_state\tmirv\trandseed\trandom_n\tscreen_field\tdac"
-               "\twall\tbackground\twind_opt\tsets\tsteps\toptions")
+               "\twall\tbackground\twind_opt\tsets\tsteps\toptions\tpoll_screens")
 
 
 def shooter_state(r):
@@ -594,7 +594,8 @@ def cmd_hashes(p, args):
             "%08X" % o["randseed"], o["random_n"], sha(field_crop(o["screen"])), dac_text(o["dac_set"]),
             case["wall"], case["background"], case["wind"],
             " ".join(("%s=%d" % (k, v)) if w is None else ("%d:%s=%d" % (w, k, v)) for w, k, v in turn["sets"]) or "-",
-            turn["steps"], ",".join(k for k in ("mirv", "sound") if turn.get(k)) or "-"))
+            turn["steps"], ",".join(k for k in ("mirv", "sound") if turn.get(k)) or "-",
+            " ".join(h[:24] for h in o["poll_screens"])))
         rows.append(row)
         print(row, flush=True)
     os.makedirs(args.root_out, exist_ok=True)
