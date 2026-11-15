@@ -44,6 +44,7 @@ und Nachteilen, Empfehlung); hier steht nur das Ergebnis mit der gewählten Opti
 | R2-D7 | Abnahme von `gelaende` und `schuss`, solange Sitzung 3 fehlt | **A** (13.11.2026): sofort starten; Probe führt die Originalroutinen im 8086-Emulator aus (Grafikaufrufe abgefangen), Vergleich von Pixeln und `RandSeed`; Bildvergleich mit Sitzung 3 als letzter Teil; präzisiert im Zuschnitt `gelaende` (Graph und Treiber mit emuliert). Gelingt die Probe für einen Baustein nicht, bleibt der Teil blockiert (`AGENTS.md` §2.10). |
 | R2-D8 | Krater in `schuss` (Lead Ball hat keinen) | **A** (13.11.2026): Lead Ball wie geplant, dazu Explosion, Krater und Flächenschaden (`runde.md` §5.6) für Baby Missile (Waffe 1, Radius 10), wählbar ohne Einkauf; übrige Sprengwaffen in Runde 3. |
 | R2-D9 | `gelaende` ohne Bildvergleich mergen | **A** (13.11.2026): Erstreview der Teile 1–4, Merge; Bildvergleich mit Sitzung 3 als Folge-PR (sinngemäß auch für `schuss`). |
+| R2-D10 | Weiter mit den vorhandenen Aufnahmen (Sitzungen 2, 3) | **A** (15.11.2026): `tws-leser` mit den vier Ständen, Bildvergleich `gelaende`/`schuss` als Folgespuren gegen `s3_02`–`s3_07`; Fehlendes (Hintergründe, Wandarten, Baby Missile, Crumble, Stände Nr. 2–8, `TIME`, `PV`) in Sitzung 4 (Runde 3). |
 
 Arbeitsweise (Nutzer 11.11.2026): `main` nur über Branch und PR; Deutsch in Doku und Commits, Quelltext und Kommentare englisch;
 knappe Antworten; je Aufgabe ein Claude-Modell; ChatGPT nur für Reviews; Spuren erst nach Go; Entscheidungen gesammelt.
