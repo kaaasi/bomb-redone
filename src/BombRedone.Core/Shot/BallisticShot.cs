@@ -68,6 +68,7 @@ public static class BallisticShot
     private static readonly Real48 Bounce = Real48.FromHex("819A99999919");          // 1.2, O4:0E0E
     private static readonly Real48 WarpWidth = Real48.FromHex("890000000016");       // 300, O4:107F
     private static readonly Real48 StopSpeed = Gravity;                              // 0.1, O4:104A
+    private static readonly Real48 RepelForce = Real48.FromHex("8A0000000096");      // −600, O4:091A
 
     /// <summary>Fires the weapon of <paramref name="shooter"/> (<see cref="PlayfieldTank.Weapon"/>) and runs the impact.</summary>
     public static ShotResult Fire(Playfield.Playfield field, PlayfieldTank shooter, ShotSettings settings,
@@ -79,8 +80,6 @@ public static class BallisticShot
         ArgumentNullException.ThrowIfNull(random);
         if (!Impact.IsSupported(shooter.Weapon))
             throw new NotSupportedException($"Weapon {shooter.Weapon} is not ported yet (spur waffen).");
-        if (field.Tanks.Any(t => t.Active && t.Defense[Damage.Repulser] > 0))
-            throw new NotSupportedException("Repulsers in the field are not ported (runde.md 5.3 Q5).");
 
         var screen = field.Screen.Pixels.AsSpan();
         var background = field.Background.Pixels.AsSpan();
@@ -122,6 +121,9 @@ public static class BallisticShot
         var subStep = (short)tanks.Count;
         var ticks = 0;
         var leftShooter = false;
+
+        // O4:05AE–05FC: is there an active record with a repulser (LongInt +5Ah > 0)?
+        var repulsers = tanks.Any(t => t.Active && t.Defense[Damage.Repulser] > 0);
         var steps = 0;
         int ix = 0, iy = 0;
         var subStepsReal = Real48.FromInt32(subSteps);
@@ -150,9 +152,12 @@ public static class BallisticShot
             ix = (short)x.Trunc();
             iy = (short)y.Trunc();
 
-            // O4:073F: the shooter's own tank counts only after the shot left its ±40 field once (Q5; no repulsers here).
+            // O4:073F: the shooter's own tank counts only after the shot left its ±40 field once (Q5).
             if (!leftShooter && (Abs16(iy - shooter.Y) > 40 || Abs16(ix - shooter.X) > 40))
                 leftShooter = true;
+
+            if (repulsers)
+                Repel(tanks, shooter, leftShooter, ix, iy, subStepsReal, ref vx, ref vy);
 
             // O4:0C34–0CEF: restore the old point, trail, clear the marks on the frame.
             if (ox > 11 && oy > 31 && ox < 309)
@@ -316,6 +321,50 @@ public static class BallisticShot
     {
         var v = (short)value;
         return (short)((v ^ (v >> 15)) - (v >> 15));
+    }
+
+    /// <summary>
+    /// Repulsers (Q5). [ORIGINAL] O4:0788–0A34 (BOMB.OVR 0x1148D): per active record with repulser &gt; 0 (the shooter
+    /// only after the shot left its ±40 field), dx = x_tank − ix, dy = iy − y_tank, both |·| ≤ 40 and d² = Trunc(dy ·
+    /// Int(dy) + dx · Int(dx)) ≤ 1600: f = −600 / d² / SS, w = Trunc(Deg(ArcTan(dy / dx))) (+180 for dx &lt; 0; dx = 0:
+    /// 90 for dy &gt; 0, else 270), vx := Cos(w) · f + vx, vy := vy − Sin(w) · f with the degree table 0B25. The line
+    /// colour 14 from the tank to the shot is drawn and at once restored from the buffer DS:E5BC (no lasting pixel).
+    /// d² = 0 is the runtime error of the division, as in the original.
+    /// </summary>
+    private static void Repel(IReadOnlyList<PlayfieldTank> tanks, PlayfieldTank shooter, bool leftShooter, int ix, int iy,
+        Real48 subSteps, ref Real48 vx, ref Real48 vy)
+    {
+        foreach (var tank in tanks)
+        {
+            if (!tank.Active || tank.Defense[Damage.Repulser] <= 0)
+                continue;
+            if (!leftShooter && tank == shooter)
+                continue;
+            var dy = (short)(iy - tank.Y);
+            var dx = (short)(tank.X - ix);
+            if (Abs16(dx) > 40 || Abs16(dy) > 40)
+                continue;
+            var fdx = Real48.FromInt32(dx);
+            var fdy = Real48.FromInt32(dy);
+            var squares = (Real48.Int(fdy) * fdy + Real48.Int(fdx) * fdx).Trunc();
+            if (squares > 1600)
+                continue;
+            var force = RepelForce / Real48.FromInt32(squares) / subSteps;
+            int angle;
+            if (dx != 0)
+            {
+                angle = (short)Real48.RadiansToDegrees(Real48.ArcTan(fdy / fdx)).Trunc();
+                if (dx < 0)
+                    angle = (short)(angle + 180);
+            }
+            else
+            {
+                angle = dy > 0 ? 90 : 270;
+            }
+
+            vx = Real48.CosDegrees(angle) * force + vx;
+            vy -= Real48.SinDegrees(angle) * force;
+        }
     }
 
     /// <summary>Sign flip of the original (<c>or al,al; jz; xor dh,80h</c>): zero stays as it is.</summary>

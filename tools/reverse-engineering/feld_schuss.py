@@ -537,7 +537,8 @@ def cmd_waffen_cs(p, args):
             "true" if r["sound"] == "1" else "false", n(r["crumble"]), q(r["defense"]), n(r["stock"]), r["ss"], r["wind"],
             q(r["seed_before"]), r["steps"], q(r["path"]), q(r["impacts"]), q(r["damage"]), q(r["randseed"]),
             r["random_n"], r["random_real"], q(r["screen_field"]), q(r["background_buffer"]), q(r["dac_set"]),
-            q(r["records"]), q(r["post_randseed"]), q(r["post_screen_field"]), q(r["post_background"])]))
+            q(r["records"]), q(r["post_randseed"]), q(r["post_screen_field"]), q(r["post_background"]),
+            "false" if WEAPON_SHOTS[int(r["nr"])][1].get("randseed") is None else "true"]))
     text = """namespace BombRedone.Core.Tests.Shot;
 
 /// <summary>

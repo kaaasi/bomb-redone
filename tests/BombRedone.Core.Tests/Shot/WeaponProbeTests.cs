@@ -20,18 +20,16 @@ public sealed class WeaponProbeTests
         int Weapon, int Guidance, int Target, int Pattern, int Detonation, bool Sound, int Crumble, string? Defense,
         int? Stock, int SubSteps, int Wind, string SeedBefore, int Steps, string Path, string? Impacts, string? Damage,
         string SeedAfter, int RandomN, int RandomReal, string ScreenField, string BackgroundBuffer, string DacSet,
-        string Records, string? PostSeed, string? PostScreenField, string? PostBackground)
+        string Records, string? PostSeed, string? PostScreenField, string? PostBackground, bool SeedSet)
     {
         public override string ToString() => $"weapon shot {Nr}";
     }
 
     /// <summary>
-    /// Whether the case only needs what is ported: every weapon of O4:01B7 (all but laser 5 and MIRV 7), shields, no
-    /// repulser, no guidance, no stock and no after-shot run.
+    /// Whether the case only needs what is ported: every weapon of O4:01B7 (all but laser 5 and MIRV 7) with all
+    /// defences, without guidance and stock.
     /// </summary>
-    public static bool IsPorted(WeaponCase c) =>
-        c.Weapon is not (5 or 7) && c.Guidance == 0 && c.Stock is null
-        && ParseDefense(c.Defense).All(d => d.Repulser == 0);
+    public static bool IsPorted(WeaponCase c) => c.Weapon is not (5 or 7) && c.Guidance == 0 && c.Stock is null;
 
     /// <summary>The ported cases that continue like O4:49CB (all of them with Crumble 0 in weapon_shots()).</summary>
     public static TheoryData<WeaponCase> PostCases
@@ -77,6 +75,8 @@ public sealed class WeaponProbeTests
         Wind.Choose(c.WindOption, random);
         StartPlayer.Choose(new int[c.Players], Enumerable.Repeat(true, c.Players).ToArray(), random);
         var seedBefore = random.Seed.ToString("X8");
+        if (c.SeedSet)
+            random = new TurboPascalRandom(Convert.ToUInt32(c.SeedBefore, 16));  // the probe sets RandSeed before the shot
 
         var shooter = field.Tanks[c.Shooter - 1];
         shooter.Aim(c.Angle, c.Power);
@@ -120,7 +120,8 @@ public sealed class WeaponProbeTests
     {
         var (_, random, seedBefore) = Fire(c);
 
-        Assert.Equal(c.SeedBefore, seedBefore);
+        if (!c.SeedSet)
+            Assert.Equal(c.SeedBefore, seedBefore);
         Assert.Equal(c.SeedAfter, random.Seed.ToString("X8"));
     }
 

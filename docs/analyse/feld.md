@@ -376,7 +376,7 @@ Ergebnis (Spiegelung ohne Faktor, `runde.md` §5.10 L3).
 - Abnahme: `WeaponProbeTests` (alle Fälle der Waffen 0–4, 11, 13–17 ohne Lenkung, Abwehr und `post`) und `BgiDrawTests`
   (Kreise mit Treiber- und Spielfeld-Seitenverhältnis, Clip).
 
-### 8.3 CRI, Sonic Blaster, Abwehr (Teil 3, Stand Zwischenstand)
+### 8.3 CRI, Sonic Blaster, Abwehr (Teil 3)
 
 - **CRI** {6, 8, 9, 10} (`O6:084E`, `Impact.Cri`): wie `runde.md` §5.7 K5; ergänzt: Startpunkt ab (Trunc(x), Trunc(y)) abwärts, bis
   ein Nachbar Gelände ist; je Durchgang erst alle Äste bewegen, dann übernimmt jeder tote Ast die Lage des ersten lebenden
@@ -384,8 +384,11 @@ Ergebnis (Spiegelung ohne Faktor, `runde.md` §5.10 L3).
   wenn zu Beginn dieser Prüfung alle Äste tot waren. `[APPROX]` Die Liste lebt hier im Spielfeld (je Runde leer).
 - **Sonic Blaster** 12 (`O6:0E66`): Schusspunkt, 2 × 100 Takte Farbe 19 bzw. 19 und 2, dann Farbe 19 weiß, Farbe 2 = (0, 42, 0),
   Erdrutsch unabhängig von Crumble.
-- **Abwehr:** Schild und Inertia (über das Fallen, `post`) laufen schon durch `Damage.Apply` (O10:0000) und stimmen mit der Probe.
-  **Offen:** Repulser im Flug (Q5, `O4:077F–0A34`): braucht `ArcTan` `12CE:14D8` bitgleich; die Sinustabelle `0B25:00F9` ist
-  Sin(a · π / 180) der Laufzeit (Probe: 91/91 gleich, a · (π / 180) wiche ab).
-- Abnahme bisher: `WeaponProbeTests` für alle Waffen von `O4:01B7` (ohne Laser und MIRV) mit Schild und Inertia, ohne Repulser
-  und Lenkung (121 Fälle, davon 2 mit Erdrutsch und Fallen).
+- **Abwehr:** Schild und Inertia (über das Fallen, `post`) laufen durch `Damage.Apply` (O10:0000). **Repulser im Flug** (Q5,
+  `O4:0788–0A34`, `BallisticShot.Repel`): d² = Trunc(dy · Int(dy) + dx · Int(dx)) mit dx = x_Panzer − ix, dy = iy − y_Panzer,
+  f = −600 / d² / SS, Winkel über `ArcTan` (`12CE:14D8`, jetzt `Real48.ArcTan`: `real48.py` Op `arctan`, 20000 Fälle bitgleich)
+  und Grad (`0DBD:011B`), Geschwindigkeit mit der Gradtabelle `0B25` (`Real48.SinDegrees`/`CosDegrees`; die Tabelle ist
+  Sin(a · π / 180) der Laufzeit, Test gegen die Bytes des Originals). Die Linie Farbe 14 zum Panzer wird sofort wieder aus
+  `DS:E5BC` hergestellt und bleibt nicht sichtbar.
+- Abnahme: `WeaponProbeTests` für alle Waffen von `O4:01B7` (ohne Laser und MIRV) mit allen Abwehrarten, ohne Lenkung (132 Fälle,
+  davon 2 mit Erdrutsch und Fallen), `Real48TrigProbeTests` (`arctan`), `Real48DegreeTableTests`.

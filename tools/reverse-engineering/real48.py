@@ -46,6 +46,8 @@ ENTRIES = {
     "sin": 0x1301,
     "cos": 0x12EE,
     "sqrt": 0x128F,
+    # Runde 3 (spur waffen): ArcTan, used by the repulser (O4:095E), argument and result in DX:BX:AX.
+    "arctan": 0x14D8,
 }
 RUNERROR = 0x00E2
 
@@ -56,12 +58,14 @@ REGIONS = {
     "random": (0x1675, 0x170A),
     "trig": (0x1202, 0x138C),  # helpers 1202-1229, Int 122A, Frac 127B, Sqrt 128F, Cos 12EE, Sin 1301, table 1362
     "poly": (0x160D, 0x1675),  # polynomial in x^2 with coefficient table (used by Sin)
+    "arctan": (0x14D8, 0x160D),  # ArcTan with its tables (reduction 15B9, series 15E9 through 1607)
 }
 REGION_HASHES = {
     "real48": "b38e4a079563fece462ac02174d165263ba69db3ca799ff68876a68f84cc0dbc",
     "random": "afe015890f68f4a8a28d397eb4e164d0d6d6cb2d0d2b18a4d19f0ce535658904",
     "trig": "e74a110c179a43c85d071aab80c6d912a71f1d84cccadb20ee4f4230ef0ca76e",
     "poly": "bdffe8b24b350ae89be2c7bb9c8ed62ee6d2e4f85ac77e7955fbd6570127e10a",
+    "arctan": "7e1dc0b544fe0744641cd22fc11b9d6d113471fb25676d12993d83674cbbb914",
 }
 
 
@@ -469,7 +473,7 @@ def run(rt, op, a, b=None):
         if op == "cmp":
             return bytes([0 if cpu.zf else (0xFF if cpu.cf else 1)]), err
         return (b"" if err else regs_real(cpu)), err
-    if op in ("sqr", "sin", "cos", "sqrt"):
+    if op in ("sqr", "sin", "cos", "sqrt", "arctan"):
         cpu, err = rt.call(e, real_regs(a, ("ax", "bx", "dx")))
         return (b"" if err else regs_real(cpu)), err
     if op == "float":
@@ -509,7 +513,8 @@ class SplitMix64:
 
 
 SEEDS = {"add": 1, "sub": 2, "sqr": 3, "mul": 4, "div": 5, "cmp": 6, "float": 7, "trunc": 8, "round": 9,
-         "random": 10, "random_n": 11, "sin": 12, "cos": 13, "sqrt": 14}
+         "random": 10, "random_n": 11, "sin": 12, "cos": 13, "sqrt": 14,
+         "arctan": 15}
 
 SPECIAL_EXP = [0, 1, 2, 0x7F, 0x80, 0x81, 0x82, 0x9E, 0x9F, 0xA0, 0xA1, 0xFE, 0xFF]
 
@@ -556,7 +561,7 @@ def gen_case(op, g):
         n = (r >> 48) & 0xFFFF if r & 1 else (r >> 48) & 0x3FF  # small ranges are the common case
         return ((r >> 8) & 0xFFFFFFFF, n)
     a = gen_real(g)
-    if op in ("sqr", "trunc", "round", "sin", "cos", "sqrt"):
+    if op in ("sqr", "trunc", "round", "sin", "cos", "sqrt", "arctan"):
         return (a,)
     return (a, gen_real(g, near=a[0]))
 
