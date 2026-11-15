@@ -259,6 +259,15 @@ SHOTS = [
     (A, (1, 45, 265, 1, None, False, None, None, True)),  # 22 Baby Missile with sound: Random(500)/Random(250) per step
     (A, (1, 88, 943, 1, None, False, 0)),             # 23 power = M through the terrain, explodes at the bottom (y 191)
     (A, (1, 88, 943, 3, None, False, 0)),             # 24 the same with weapon 3 (radius 30)
+    # Review #116 P3-2 (issue #118): the left wall for every wall kind, the wall 0 rules with wind 0, the tick limit.
+    (wall(1), (1, 135, 400, 0, None, False, None)),   # 25 Sticky, left wall
+    (wall(2), (1, 135, 400, 0, None, False, None)),   # 26 Elastic, left wall
+    (wall(3), (1, 135, 400, 1, None, False, None)),   # 27 Accelerate, left wall, Baby Missile
+    (wall(4), (1, 135, 400, 0, None, False, None)),   # 28 Warp, left wall
+    (A, (1, 135, 400, 0, None, False, 0)),            # 29 wall 0 left with wind 0: no y := 300
+    (A, (1, 135, 400, 0, None, False, -100)),         # 30 wall 0 left with wind < 0: y := 300
+    (A, (1, 45, 400, 0, None, False, 0)),             # 31 wall 0 right with wind 0: no y := 300
+    (wall(2), (2, 15, 943, 0, None, False, 0)),       # 32 Elastic, power = M: bounces until the tick limit (ticks > 1000)
 ]
 
 

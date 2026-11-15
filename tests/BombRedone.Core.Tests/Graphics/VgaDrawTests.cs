@@ -77,4 +77,26 @@ public sealed class VgaDrawTests
         Assert.Equal("50daeccfb488579947d1e42281b0fdec716236585bc8f11c18771039078db6f5",
             Convert.ToHexStringLower(SHA256.HashData(buffer.Pixels)));
     }
+
+    /// <summary>
+    /// Ellipses whose radii tell the error term of the first loop apart (review #108 P3-1, issue #109): for circles a
+    /// mutation of <c>error += dxTerm + b2</c> draws the same pixels, for these radii it does not.
+    /// <c>feld.py call --fill 0 "0E26:0F93(0,0,319,199,0)" "0CC8:0006" "0CC8:0351(40,40,9,4,40)" "0CC8:0351(100,40,5,1,41)"
+    /// "0CC8:0351(160,40,22,3,42)" "0CC8:0351(240,60,28,10,43)" "0CC8:0351(60,120,1,7,44)" "0CC8:0351(160,150,40,9,45)"</c>.
+    /// </summary>
+    [Fact]
+    public void Ellipses_with_unequal_radii_match_UCC8_0351()
+    {
+        var buffer = new IndexBuffer();
+        var full = new Viewport(0, 0, 319, 199, false);
+        VgaDraw.Ellipse(buffer.Pixels, full, 40, 40, 9, 4, 40);
+        VgaDraw.Ellipse(buffer.Pixels, full, 100, 40, 5, 1, 41);
+        VgaDraw.Ellipse(buffer.Pixels, full, 160, 40, 22, 3, 42);
+        VgaDraw.Ellipse(buffer.Pixels, full, 240, 60, 28, 10, 43);
+        VgaDraw.Ellipse(buffer.Pixels, full, 60, 120, 1, 7, 44);
+        VgaDraw.Ellipse(buffer.Pixels, full, 160, 150, 40, 9, 45);
+
+        Assert.Equal("cf26a5d5ed7f7b331a2a936da73dabca860bfab7f19892ae7ce87fd23c2916e2",
+            Convert.ToHexStringLower(SHA256.HashData(buffer.Pixels)));
+    }
 }
