@@ -404,7 +404,8 @@ Dann Befehle von `O7:0EF7(Satz, Steuerart DS:E5A6 + 2i)`, bis Befehl 5:
 | 7 / 8 | vorige / nächste Waffe mit Bestand (zyklisch 0..17) |
 | 9 / 10 | Herb / Vick an oder aus (nur mit Bestand +2Ah / +2Ch) |
 
-`O7:0EF7` gibt ohne Eingabe 0 zurück; hat die Waffe keinen Bestand, sofort 8, ebenso beim **Laser mit Bestand ≤ 100** (Z5).
+`O7:0EF7` gibt ohne Eingabe 0 zurück; hat die Waffe keinen Bestand, sofort 8, ebenso beim **Laser mit Bestand ≤ 100** (Z5), jeweils
+ohne `Delay(TS)` (Probe [zug.md](zug.md) §4 Nr. 5).
 
 ### 6.3 Eingaben `O7:0EF7` (Z4, Z5)
 
@@ -412,8 +413,10 @@ Die Tastatur liest die eigene Tastenroutine `0C48` (gehaltene Tasten in `DS:452A
 
 - **Tastatur** (Steuerart 1, Z4): ← / → Befehl 1 / 2, ↓ / ↑ 3 / 4, BildAuf / BildAb Kraft + 99 bzw. − 99 und Befehl 4 / 3 (also ± 100),
   Leertaste, Enter, Enter am Ziffernblock 5, I 6, Tab 8, Umschalt + Tab 7, H 9, V 10, Ziffern 1..9, 0 → Panzerinfo `O9:0040(n, 1)`
-  (n = 1..9, 0). Ohne Alt wartet jede Taste aufs Loslassen (ein Schritt), **mit Alt wiederholt** sie.
-- **Schummeltaste** (Z4): Einfg + Entf gleichzeitig öffnet eine Schleife bis Einfg + Entf oder Leertaste: C → `0431:0594(2, 2, …)`,
+  (n = 1..9, 0 → 10; n > N kehrt sofort zurück). **Korrektur (Probe [zug.md](zug.md) §4 Nr. 1–2):** Pfeile, BildAuf und BildAb
+  **wiederholen ohne Alt** und warten **mit Alt** aufs Loslassen (ein Schritt); I, Tab, Umschalt + Tab, H, V warten immer, Feuer
+  und Ziffern nie.
+- **Schummeltaste** (Z4): Einfg + Entf **des Ziffernblocks** (52h/53h, nicht E0; [zug.md](zug.md) §4 Nr. 3) gleichzeitig öffnet eine Schleife bis Einfg + Entf oder Leertaste: C → `0431:0594(2, 2, …)`,
   W → alle 18 Waffen Bestand 999, G → Herb und Vick 10, D → Schild, Inertia, Repulser je 1000.
 - **Maus** (Steuerart 2, Z5): Klick auf einen Panzer (Farbe 20..29) → Panzerinfo; Leiste y = 18..27: x in `E874..E898` links 7, rechts 8,
   `E898..E89A` Herb (9), `E89A..E89C` Vick (10); Winkelfeld (56..70, 0..7) links 1, rechts 2; Kraftfeld (56..86, 10..17) links 3, rechts

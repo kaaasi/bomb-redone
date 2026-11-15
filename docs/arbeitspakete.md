@@ -183,7 +183,8 @@ Integrationsfolge: `waffen` → `zug` → `spielfolge`. Gemeinsame Dateien: Absc
 
 ### Status zug
 
-- 15.11.2026: Teil 1 (Probe) begonnen, Claude Code (Claude Opus 5.5, geplanter Lauf), Base `26f0ae1`.
+- 15.11.2026: Teil 1 (Probe) fertig: `tools/reverse-engineering/zug.py` (40 Züge, 5 Zugfolgen), [analyse/zug.md](analyse/zug.md);
+  Korrektur `runde.md` §6.3 (Alt umgekehrt, Schummeltaste nur Ziffernblock). Teil 2 begonnen.
 
 ### Status spielfolge
 
