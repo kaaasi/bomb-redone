@@ -157,7 +157,7 @@ def run_shot(p, case, shot, post=None):
             p.wds(m, feld.RANDSEED, shot["randseed"], 4)
         out["before"] = {"randseed": p.rds(m, feld.RANDSEED, 4), "random_n": counts["random_n"],
                          "random_real": counts["random_real"], "ss": p.rds(m, 0xE8CA),
-                         "wind": p.rds(m, 0xE8A2, signed=True)}
+                         "wind": p.rds(m, 0xE8A2, signed=True), "crumble": p.rds(m, 0xE8A4)}
         m.dac_written.clear()
         path = hashlib.sha256()
         steps = {"n": 0, "first": None}
@@ -463,7 +463,7 @@ def weapon_row(p, i):
                     for r in a["records"])
     cols = [i, "%08X" % seed, n, wall_kind, bg, windopt, shot["shooter"], shot["angle"], shot["power"], shot["weapon"],
             shot.get("guidance", 0), shot.get("target", 2) if shot.get("guidance") else 0, shot.get("pattern", 0),
-            shot.get("detonation", 0), 1 if shot.get("sound") else 0, "-" if shot.get("crumble") is None else shot["crumble"],
+            shot.get("detonation", 0), 1 if shot.get("sound") else 0, out["before"]["crumble"],
             defense, "-" if shot.get("stock") is None else shot["stock"], out["before"]["ss"], out["before"]["wind"],
             "%08X" % out["before"]["randseed"], out["path"]["steps"], out["path"]["sha"],
             " ".join(out["impacts"]) or "-",
@@ -513,6 +513,50 @@ def cmd_waffen(p, args):
         os.makedirs(args.root_out, exist_ok=True)
         with open(os.path.join(args.root_out, "waffen-hashes.tsv"), "w") as f:
             f.write(WEAPON_HEADER + "\n" + "\n".join(rows) + "\n")
+    return 0
+
+
+def cmd_waffen_cs(p, args):
+    """analyse/feld/waffen-hashes.tsv -> tests/BombRedone.Core.Tests/Shot/WeaponProbeData.cs (hashes and numbers only)."""
+    import csv
+    root = os.path.normpath(os.path.join(HERE, "..", ".."))
+    with open(os.path.join(args.root_out, "waffen-hashes.tsv")) as f:
+        rows = list(csv.DictReader(f, delimiter="\t"))
+
+    def q(v):
+        return "null" if v == "-" else '"%s"' % v
+
+    def n(v):
+        return "null" if v == "-" else v
+
+    lines = []
+    for r in rows:
+        lines.append("        new(%s)," % ", ".join([
+            r["nr"], q(r["seed"]), r["players"], r["wall"], r["background"], r["wind_opt"], r["shooter"], r["angle"],
+            r["power"], r["weapon"], r["guidance"], r["target"], r["pattern"], r["detonation"],
+            "true" if r["sound"] == "1" else "false", n(r["crumble"]), q(r["defense"]), n(r["stock"]), r["ss"], r["wind"],
+            q(r["seed_before"]), r["steps"], q(r["path"]), q(r["impacts"]), q(r["damage"]), q(r["randseed"]),
+            r["random_n"], r["random_real"], q(r["screen_field"]), q(r["background_buffer"]), q(r["dac_set"]),
+            q(r["records"]), q(r["post_randseed"]), q(r["post_screen_field"]), q(r["post_background"])]))
+    text = """namespace BombRedone.Core.Tests.Shot;
+
+/// <summary>
+/// Generated from analyse/feld/waffen-hashes.tsv (<c>python3 -I tools/reverse-engineering/feld_schuss.py waffen</c>, then
+/// <c>waffen-cs</c>); the shots are listed with comments in weapon_shots() of that script. Hashes and numbers only, no bytes
+/// of the originals.
+/// </summary>
+internal static class WeaponProbeData
+{
+    public static readonly WeaponProbeTests.WeaponCase[] All =
+    [
+%s
+    ];
+}
+""" % "\n".join(lines)
+    out = os.path.join(root, "tests", "BombRedone.Core.Tests", "Shot", "WeaponProbeData.cs")
+    with open(out, "w") as f:
+        f.write(text)
+    print(out, len(rows))
     return 0
 
 
@@ -619,6 +663,7 @@ def main():
     wa = sub.add_parser("waffen", help="all weapons -> analyse/feld/waffen-hashes.tsv (spur waffen)")
     wa.add_argument("--only", type=int, nargs="*")
     wa.add_argument("--jobs", type=int, default=1)
+    sub.add_parser("waffen-cs", help="waffen-hashes.tsv -> tests/.../Shot/WeaponProbeData.cs")
     args = ap.parse_args()
     font = None
     if os.path.exists(args.font):
@@ -626,7 +671,7 @@ def main():
             font = f.read()
     p = feld.Probe(args.gamedata, font)
     return {"befunde": cmd_befunde, "run": cmd_run, "hashes": cmd_hashes, "post": cmd_post,
-            "waffen": cmd_waffen}[args.cmd](p, args)
+            "waffen": cmd_waffen, "waffen-cs": cmd_waffen_cs}[args.cmd](p, args)
 
 
 if __name__ == "__main__":

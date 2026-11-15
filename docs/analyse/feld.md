@@ -356,3 +356,36 @@ Befunde der Probe: Die bisherigen Hashes (`hashes`, `post`; alle Werte in `ShotP
 gleich. Der MIRV ruft kein `Random:Real` für den Selbstschaden (§5.1 gilt nur für `O4:01B7` und den Laser). Sonic Blaster ruft den
 Erdrutsch unabhängig von Crumble; Xplosive Dirt zieht immer ein `Random:Real`. Stick, Elastic und Accel geben beim Laser dasselbe
 Ergebnis (Spiegelung ohne Faktor, `runde.md` §5.10 L3).
+
+### 8.2 Sprengwaffen, Dirt, Xplosive Dirt, `Circle` (Teil 2)
+
+- **Sprengwaffen** {1, 2, 3, 4, 11}: liefen schon über `Impact.ExplosionRadius`; jetzt je Gelände, Volltreffer, Wand 1–4 und Ton
+  gegen die Probe geprüft (`WeaponProbeTests`), ohne Änderung. MIRV (7) folgt mit Teil 5.
+- **Graph `Circle`** `0E26:11EA` (`BgiDraw.Circle`): y-Radius = r · XAsp div YAsp (`0E26:11B7`), dann Bogen 0..360° über
+  Treiberfunktion 14h, die VGA256 2.00 der Emulation der Graph-Unit überlässt (Sprungziel nach InitGraph: Verteiler
+  `BOMB.EXE 0x11EEB`, Bogen `0x12346`); der geschlossene Bogen endet in der Ganzzahl-Ellipse `BOMB.EXE 0x12913` (beide Radien
+  ≥ 1, S = max(rx, ry)² · 100, Kx = S div rx div rx, Ky = S div ry div ry, je Schritt vier Punkte, erst x-, dann y-geführt bis
+  y = 0; der Winkeltest lässt bei Start = Ende jeden Punkt durch). Abgleich mit der Probe: Radius 0..63 an zwei Mittelpunkten
+  bitgleich, dazu Kreise am Rand der Fensters 11..309 × 31..189 mit Clip (je Punkt). **Seitenverhältnis:** der Treiber setzt
+  8500 / 10000, das Spielfeld aber `SetAspectRatio(1, 1)` in `O8:09F7` – im Spiel sind die Kreise rund.
+- **Dirt** {13..16} (`O6:1014`): Fenster mit Clip, Mittelpunkt x − 11, y − 31 (Real48), je i = 0..R drei Kreise um
+  (Trunc(x + 1), Trunc(y)), (Trunc(x − 1), Trunc(y)), (Trunc(x), Trunc(y)), Farbe 2. Kein Schaden, kein Zufall.
+- **Xplosive Dirt** 17 (`O6:1197`): erst alle Lagen (je Ring i, Korn j: `Random(20 · i)`, dann `Random(r + 1)`), dann alle
+  Körner `PutPixel` (Treiberfunktion 30h, Clip am Fenster) mit `Random(200)` bei Ton, am Ende `Random:Real · 100 < 2 · Crumble`
+  → Erdrutsch. Die Probe trägt jetzt den tatsächlichen Crumble-Wert vor dem Schuss in die Liste ein (Voreinstellung 75).
+- Abnahme: `WeaponProbeTests` (alle Fälle der Waffen 0–4, 11, 13–17 ohne Lenkung, Abwehr und `post`) und `BgiDrawTests`
+  (Kreise mit Treiber- und Spielfeld-Seitenverhältnis, Clip).
+
+### 8.3 CRI, Sonic Blaster, Abwehr (Teil 3, Stand Zwischenstand)
+
+- **CRI** {6, 8, 9, 10} (`O6:084E`, `Impact.Cri`): wie `runde.md` §5.7 K5; ergänzt: Startpunkt ab (Trunc(x), Trunc(y)) abwärts, bis
+  ein Nachbar Gelände ist; je Durchgang erst alle Äste bewegen, dann übernimmt jeder tote Ast die Lage des ersten lebenden
+  Eintrags 1..20 (ohne sich selbst) der **globalen** Liste `DS:E820` – auch Einträge jenseits der Astzahl aus früheren CRIs; Ende,
+  wenn zu Beginn dieser Prüfung alle Äste tot waren. `[APPROX]` Die Liste lebt hier im Spielfeld (je Runde leer).
+- **Sonic Blaster** 12 (`O6:0E66`): Schusspunkt, 2 × 100 Takte Farbe 19 bzw. 19 und 2, dann Farbe 19 weiß, Farbe 2 = (0, 42, 0),
+  Erdrutsch unabhängig von Crumble.
+- **Abwehr:** Schild und Inertia (über das Fallen, `post`) laufen schon durch `Damage.Apply` (O10:0000) und stimmen mit der Probe.
+  **Offen:** Repulser im Flug (Q5, `O4:077F–0A34`): braucht `ArcTan` `12CE:14D8` bitgleich; die Sinustabelle `0B25:00F9` ist
+  Sin(a · π / 180) der Laufzeit (Probe: 91/91 gleich, a · (π / 180) wiche ab).
+- Abnahme bisher: `WeaponProbeTests` für alle Waffen von `O4:01B7` (ohne Laser und MIRV) mit Schild und Inertia, ohne Repulser
+  und Lenkung (121 Fälle, davon 2 mit Erdrutsch und Fallen).

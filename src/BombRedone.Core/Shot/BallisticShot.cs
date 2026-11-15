@@ -13,7 +13,9 @@ namespace BombRedone.Core.Shot;
 /// Optional: called whenever the screen shows a picture the original would show for a while (for an animation in the UI);
 /// it must not change the playfield.
 /// </param>
-public sealed record ShotSettings(int SubSteps, int Wind, bool Trail = false, bool Sound = false, Action<ShotFrame>? Frame = null);
+/// <param name="Crumble">Option Crumble DS:E8A4 in percent: Xplosive Dirt decides its landslide with it (runde.md 5.7 K8).</param>
+public sealed record ShotSettings(int SubSteps, int Wind, bool Trail = false, bool Sound = false, Action<ShotFrame>? Frame = null,
+    int Crumble = 0);
 
 /// <summary>Kind of picture passed to <see cref="ShotSettings.Frame"/>.</summary>
 public enum ShotFrame
@@ -76,7 +78,7 @@ public static class BallisticShot
         ArgumentNullException.ThrowIfNull(settings);
         ArgumentNullException.ThrowIfNull(random);
         if (!Impact.IsSupported(shooter.Weapon))
-            throw new NotSupportedException($"Weapon {shooter.Weapon} is not ported (round 2: 0 and the explosives).");
+            throw new NotSupportedException($"Weapon {shooter.Weapon} is not ported yet (spur waffen).");
         if (field.Tanks.Any(t => t.Active && t.Defense[Damage.Repulser] > 0))
             throw new NotSupportedException("Repulsers in the field are not ported (runde.md 5.3 Q5).");
 
