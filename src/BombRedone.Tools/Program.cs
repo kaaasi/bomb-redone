@@ -17,6 +17,7 @@ switch (args[0])
     case "cfg": return BombRedone.Tools.ConfigCommand.Run(args[1..]);
     case "render": return BombRedone.Tools.RenderCommand.Run(args[1..]);
     case "seed": return BombRedone.Tools.RenderCommand.RunSeedSearch(args[1..]);
+    case "tws": return BombRedone.Tools.TwsCommand.Run(args[1..]);
     default:
         Console.Error.WriteLine($"Unknown command: {args[0]}");
         return 2;
