@@ -183,4 +183,6 @@ Integrationsfolge: `waffen` → `zug` → `spielfolge`. Gemeinsame Dateien: Absc
 
 ### Status spielfolge
 
+- 15.11.2026: begonnen (Claude Code, geplanter Lauf), Branch `paket/spielfolge`, Base `26f0ae1`; Teil 1 in Arbeit.
+
 ### Status runde
