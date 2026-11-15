@@ -124,19 +124,22 @@ internal static class RenderCommand
 
     private const string PlayfieldUsage =
         "Usage: bombtool render playfield [gamedata] [out.png] [--seed HEX] [--players N] [--cfg BOMB.CFG] " +
-        "[--shot ANGLE,POWER[,WEAPON]] [--shooter N]";
+        "[--shot ANGLE,POWER[,WEAPON[,PATTERN[,DETONATION]]]] [--guidance KIND,TARGET] [--shooter N]";
 
     /// <summary>
     /// Playfield of a round: <c>--seed</c> is RandSeed after the shuffle (hex, default 12345678), <c>--players</c> 2..10
     /// (default 2), options from <c>--cfg</c> or the defaults of BOMBCFG.EXE; prints RandSeed, wall, background, wind and
     /// tanks, writes the screen at the start of the round as PNG. With <c>--shot</c> the player <c>--shooter</c> (default:
-    /// the start player) fires once (weapon 0 Lead Ball or an explosive, 1 = Baby Missile; R2-D8) with the options of the
-    /// configuration (SS, Trail, Sound, Crumble, FallDown), and the PNG shows the field afterwards (spur schuss).
+    /// the start player) fires once with the options of the configuration (SS, Trail, Sound, Crumble, FallDown), and the PNG
+    /// shows the field afterwards (spur schuss). WEAPON 0..17 (ItemCatalog.WeaponTable, default 0 Lead Ball), for the MIRV
+    /// (7) PATTERN 0..4 (Random, Horizontal, Vertical, + 4 Way, X 4 Way) and DETONATION 0..2 (Impact, Simultanious, None);
+    /// <c>--guidance</c> KIND 1 Herb, 2 Vick, 3 both with the TARGET player (spur waffen). [APPROX] Without the accounts of
+    /// a game the stock is set like the probe: the power for the laser, at least 1 for the other weapons, Herb and Vick.
     /// </summary>
     private static int RunPlayfield(string[] args)
     {
         if (!TryParseOptions(args, out var positional, out var options) || positional.Count > 2
-            || options.Keys.Any(k => k is not ("seed" or "players" or "cfg" or "shot" or "shooter")))
+            || options.Keys.Any(k => k is not ("seed" or "players" or "cfg" or "shot" or "shooter" or "guidance")))
         {
             Console.Error.WriteLine(PlayfieldUsage);
             return 2;
@@ -147,11 +150,14 @@ internal static class RenderCommand
         uint seed;
         int players;
         int[]? shot = null;
+        int[]? guidance = null;
         int? shooter = null;
         try
         {
             if (options.TryGetValue("shot", out var shotText))
                 shot = shotText.Split(',').Select(v => int.Parse(v, CultureInfo.InvariantCulture)).ToArray();
+            if (options.TryGetValue("guidance", out var guidanceText))
+                guidance = guidanceText.Split(',').Select(v => int.Parse(v, CultureInfo.InvariantCulture)).ToArray();
             if (options.TryGetValue("shooter", out var shooterText))
                 shooter = int.Parse(shooterText, CultureInfo.InvariantCulture);
             seed = uint.Parse(options.GetValueOrDefault("seed", "12345678"), NumberStyles.HexNumber, CultureInfo.InvariantCulture);
@@ -164,9 +170,12 @@ internal static class RenderCommand
         }
 
         // Usage errors come before the game data is looked for (the CI has none).
-        if (!Core.GameLimits.IsValidPlayerCount(players) || shot is not (null or { Length: 2 or 3 })
-            || shot is not null && (shot[0] is < 0 or > 180 || !Core.Shot.Impact.IsSupported(shot.ElementAtOrDefault(2)))
-            || shooter is not null && (shot is null || shooter < 1 || shooter > players))
+        if (!Core.GameLimits.IsValidPlayerCount(players) || shot is not (null or { Length: >= 2 and <= 5 })
+            || shot is not null && (shot[0] is < 0 or > 180 || shot.ElementAtOrDefault(2) is < 0 or > 17
+                                    || shot.ElementAtOrDefault(3) is < 0 or > 4 || shot.ElementAtOrDefault(4) is < 0 or > 2)
+            || shooter is not null && (shot is null || shooter < 1 || shooter > players)
+            || guidance is not null && (shot is null || guidance.Length != 2 || guidance[0] is < 1 or > 3
+                                        || guidance[1] < 1 || guidance[1] > players))
         {
             Console.Error.WriteLine(PlayfieldUsage);
             return 2;
@@ -184,7 +193,7 @@ internal static class RenderCommand
             return 1;
         }
 
-        var screen = RenderPlayfield(data, config, seed, players, out var report, shot, shooter);
+        var screen = RenderPlayfield(data, config, seed, players, out var report, shot, shooter, guidance);
         var output = positional.ElementAtOrDefault(1) ?? "playfield.png";
         File.WriteAllBytes(output, ExportPng.Encode(new RawImage(screen.Screen.Pixels, Palette.FromBytes(screen.Dac.ToArray()))));
         foreach (var line in report)
@@ -195,7 +204,7 @@ internal static class RenderCommand
 
     /// <summary>Builds the round from <paramref name="seed"/> (RandSeed after the shuffle) and draws it.</summary>
     internal static PlayfieldScreen RenderPlayfield(GameData data, GameConfig config, uint seed, int players,
-        out IReadOnlyList<string> report, int[]? shot = null, int? shooter = null)
+        out IReadOnlyList<string> report, int[]? shot = null, int? shooter = null, int[]? guidance = null)
     {
         var random = new TurboPascalRandom(seed);
         var field = Playfield.Build(PlayfieldOptions.FromConfig(config, players), random);
@@ -220,12 +229,25 @@ internal static class RenderCommand
         var tank = field.Tanks[(shooter ?? start.Player) - 1];
         tank.Aim(shot[0], shot[1]);
         tank.Weapon = shot.ElementAtOrDefault(2);
-        var settings = new Core.Shot.ShotSettings(config.ShotSpeed, wind.Value, config.ShotTrail, config.SoundEffects);
-        var result = Core.Shot.BallisticShot.Fire(field, tank, settings, random);
+        tank.Stock[tank.Weapon] = tank.Weapon == 5 ? shot[1] : Math.Max(1, tank.Stock[tank.Weapon]);
+        if (guidance is not null)
+        {
+            tank.Guidance = guidance[0];
+            tank.GuidanceTarget = guidance[1];
+            tank.Herbs = Math.Max(1, tank.Herbs);
+            tank.Vicks = Math.Max(1, tank.Vicks);
+        }
+
+        var settings = new Core.Shot.ShotSettings(config.ShotSpeed, wind.Value, config.ShotTrail, config.SoundEffects,
+            Crumble: config.CrumblePercent);
+        var result = Core.Shot.WeaponShot.Fire(field, tank, settings, random, (Core.Shot.MirvPattern)shot.ElementAtOrDefault(3),
+            (Core.Shot.MirvDetonation)shot.ElementAtOrDefault(4));
         Core.Shot.AfterShot.Run(field, config.CrumblePercent, config.TanksFall, random);
         screen.RefreshField();
-        lines.Add($"shot player {tank.Number}: angle {shot[0]}, power {shot[1]}, weapon {tank.Weapon}; end {result.Ix},{result.Iy}, " +
-                  $"hit {result.Hit}, {(result.Exploded ? "impact" : "no impact")}, steps {result.Steps}, RandSeed {random.Seed:X8}");
+        var end = result is null
+            ? "no flight path"
+            : $"end {result.Ix},{result.Iy}, hit {result.Hit}, {(result.Exploded ? "impact" : "no impact")}, steps {result.Steps}";
+        lines.Add($"shot player {tank.Number}: angle {shot[0]}, power {shot[1]}, weapon {tank.Weapon}; {end}, RandSeed {random.Seed:X8}");
         lines.Add("after: " + string.Join(" ", field.Tanks.Select(t => $"{t.X},{t.Y} energy {t.Energy} points {t.Score}")));
         return screen;
 

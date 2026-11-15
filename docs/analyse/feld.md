@@ -419,3 +419,15 @@ Hintergrund (`U431:0594`, Adressen 64000..1, also nicht Pixel 0). Abnahme: alle 
   ist SS je Tick SS div (fliegende Teile), aufgerundet. Detonation 0 explodiert jedes Teil bei seinem Ende (auch außerhalb des
   Felds), 1 alle fünf am Schluss, 2 keine; nach jeder Explosion alle Panzer neu. Abnahme: alle 23 MIRV-Fälle der Liste bitgleich –
   damit laufen alle 182 Fälle der Probe (`WeaponProbeTests`).
+
+### 8.6 Darstellung, `bombtool`, Bestand (Teil 6)
+
+- `WeaponShot.Fire` (Auswahl `O4:4977`) für alle Waffen; `PlayfieldShotScreen.Fire` nutzt es (MIRV-Muster und Detonation als
+  Parameter, `Result` nur für `O4:01B7`) und spielt Laser-Aufladebild, Strahl, MIRV-Teile und alle Einschläge als Bilder ab.
+- `bombtool render playfield --shot ANGLE,POWER[,WEAPON[,PATTERN[,DETONATION]]] [--guidance KIND,TARGET]`: jede Waffe 0..17, Crumble
+  aus der Konfiguration auch für Xplosive Dirt. `[APPROX]` Ohne Konten setzt das Werkzeug den Bestand wie die Probe (Laser: Kraft,
+  sonst mindestens 1).
+- **Bestand:** `PlayfieldTank.Stock` (18 Waffen), `Herbs`, `Vicks`, `Guidance`, `GuidanceTarget`; `O4:01B7` zieht Waffe und
+  Lenkkörper ab (Q1), der MIRV die Waffe, der Laser die Kraft. Übertrag `TakeStock(PlayerAccount)` beim Rundenbeginn und
+  `ReturnStock(PlayerAccount)` beim Rundenende über die öffentliche API von `PlayerAccount` (unverändert); aufrufen müssen ihn
+  `spielfolge`/`runde`, im Original sind Konto und Panzer derselbe Satz.

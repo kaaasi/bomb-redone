@@ -52,7 +52,12 @@ public sealed class RenderPlayfieldTests
     {
         Assert.Equal(2, Capture(() => RenderCommand.Run(["playfield", "--shot", "45"])).Code);
         Assert.Equal(2, Capture(() => RenderCommand.Run(["playfield", "--shot", "181,300"])).Code);
-        Assert.Equal(2, Capture(() => RenderCommand.Run(["playfield", "--shot", "45,300,5"])).Code);
+        Assert.Equal(2, Capture(() => RenderCommand.Run(["playfield", "--shot", "45,300,18"])).Code);
+        Assert.Equal(2, Capture(() => RenderCommand.Run(["playfield", "--shot", "45,300,7,5"])).Code);
+        Assert.Equal(2, Capture(() => RenderCommand.Run(["playfield", "--shot", "45,300,7,0,3"])).Code);
+        Assert.Equal(2, Capture(() => RenderCommand.Run(["playfield", "--guidance", "1,2"])).Code);
+        Assert.Equal(2, Capture(() => RenderCommand.Run(["playfield", "--shot", "45,300", "--guidance", "4,2"])).Code);
+        Assert.Equal(2, Capture(() => RenderCommand.Run(["playfield", "--shot", "45,300", "--guidance", "1,3"])).Code);
         Assert.Equal(2, Capture(() => RenderCommand.Run(["playfield", "--shooter", "1"])).Code);
         Assert.Equal(2, Capture(() => RenderCommand.Run(["playfield", "--shot", "45,300", "--shooter", "3"])).Code);
     }
@@ -76,6 +81,46 @@ public sealed class RenderPlayfieldTests
 
         Assert.Contains("RandSeed " + random.Seed.ToString("X8"), report[3]);
         Assert.Equal(field.Tanks[1].Energy, screen.Field.Tanks[1].Energy);
+        for (var y = 28; y <= 192; y++)
+        {
+            for (var x = 8; x <= 312; x++)
+                Assert.Equal(field.Screen[x, y], screen.Screen[x, y]);
+        }
+    }
+
+    /// <summary>Every kind of weapon through the tool: the same shot with Core alone gives the same field (spur waffen).</summary>
+    [GameDataTheory]
+    [InlineData(5, 0, 0, 0)]
+    [InlineData(7, 4, 0, 0)]
+    [InlineData(7, 1, 1, 0)]
+    [InlineData(9, 0, 0, 0)]
+    [InlineData(13, 0, 0, 0)]
+    [InlineData(17, 0, 0, 0)]
+    [InlineData(0, 0, 0, 3)]
+    public void Render_fires_every_weapon_like_the_core(int weapon, int pattern, int detonation, int guidance)
+    {
+        var config = GameConfig.BombCfgDefaults;
+        int[] shot = weapon == 5 ? [4, 500, 5] : [55, 320, weapon, pattern, detonation];
+        var screen = RenderCommand.RenderPlayfield(TestGameData.Load(), config, 0x12345678, 2, out var report, shot, 1,
+            guidance == 0 ? null : [guidance, 2]);
+
+        var random = new TurboPascalRandom(0x12345678);
+        var field = Playfield.Build(PlayfieldOptions.FromConfig(config, 2), random);
+        var wind = Wind.Choose((int)config.Wind, random);
+        StartPlayer.Choose(new int[2], [true, true], random);
+        var tank = field.Tanks[0];
+        tank.Aim(shot[0], shot[1]);
+        tank.Weapon = weapon;
+        tank.Stock[weapon] = weapon == 5 ? shot[1] : 1;
+        tank.Guidance = guidance;
+        tank.GuidanceTarget = guidance == 0 ? 0 : 2;
+        Core.Shot.WeaponShot.Fire(field, tank, new Core.Shot.ShotSettings(config.ShotSpeed, wind.Value, config.ShotTrail,
+            config.SoundEffects, Crumble: config.CrumblePercent), random, (Core.Shot.MirvPattern)pattern,
+            (Core.Shot.MirvDetonation)detonation);
+        Core.Shot.AfterShot.Run(field, config.CrumblePercent, config.TanksFall, random);
+
+        Assert.Contains("RandSeed " + random.Seed.ToString("X8"), report[3]);
+        Assert.Equal(field.Tanks.Select(t => t.Energy), screen.Field.Tanks.Select(t => t.Energy));
         for (var y = 28; y <= 192; y++)
         {
             for (var x = 8; x <= 312; x++)

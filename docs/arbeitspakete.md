@@ -179,7 +179,7 @@ Integrationsfolge: `waffen` → `zug` → `spielfolge`. Gemeinsame Dateien: Absc
 
 ### Status waffen
 
-- 15.11.2026: Teil 1 begonnen (Claude Code, geplanter Lauf), Branch `paket/waffen`, Base `26f0ae1`.
+- 15.11.2026: Teile 1–6 fertig (Claude Code, ein geplanter Lauf, PR #147): Probe `feld_schuss.py waffen` (182 Schüsse), alle Waffen samt Laser, MIRV, Lenkung, Abwehr in `Core/Shot` bitgleich zur Probe, `BgiDraw.Circle`, `Real48.ArcTan`, Bestand im Panzer mit `TakeStock`/`ReturnStock`, Darstellung und `bombtool`. Wartet auf Erstreview.
 
 ### Status zug
 
