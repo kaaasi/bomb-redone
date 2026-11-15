@@ -301,15 +301,18 @@ R2-D6 = B); Stufe 2b `schuss` nach Merge von `gelaende`. Integrationsfolge: `gel
 - **Inhalt (je Issue `Fixes #<nr>`):** #96 Real48: Pascal-`=` als `Real48.PascalEquals` (= `Compare(a, b) == 0`) mit Test, Hinweis in
   `analyse/real48.md`; #109 Ellipsentest mit Radien, die den Fehlerterm unterscheiden (z. B. rx 9, ry 4, per `feld.py call`); #110
   `UI/Screens/WeaponPictures.cs` – hiermit nachträglich in die Dateigrenzen von `gelaende` aufgenommen, Issue mit Verweis schließen;
-  #111 Verdacht „Desktop-Vorschau mischt bei jeder Runde neu“ nachstellen, bestätigt → roter Test, Fix; sonst mit Beleg schließen;
-  #112 Fallzahl in `feld.md`; #117 `feld_schuss.py befunde` lauffähig; #118 Tests für Wände links/unten, Randregel bei Wind 0,
+  #111 Verdacht „Desktop-Vorschau mischt bei jeder Runde neu und lässt den Startspieler aus“ nachstellen; bestätigt → Ablauflogik
+  (Mischen je Spiel, Startspieler je Runde) nach `Core/Playfield`, roter Test in `tests/BombRedone.Core.Tests/Playfield/*`, Fix
+  (Desktop ruft nur noch auf; kein neues Testprojekt); sonst mit Beleg schließen;
+  #112 Fallzahl in `feld.md` (der alte Statuseintrag „Status gelaende“ bleibt historisch); #117 `feld_schuss.py befunde` lauffähig; #118 Tests für Wände links/unten, Randregel bei Wind 0,
   Tickgrenze; #119 Lenkung: Doku an den Code angleichen (kein Feld, keine Prüfung in Runde 2); #129 Test Rand-Ausschluss `y < 189`;
   #130 Test letzte Sekunde des Suchfensters; #131, #132 Doku/Test zu „Wind 92“ und abgebrochener Satz. #102 bleibt Hinweis für Runde 3.
-- **Teile:** 1. Testlücken (#109, #118, #129, #130); 2. Code (#96, #111, #117, #119); 3. Doku (#110, #112, #131, #132).
+- **Teile:** 1. Testlücken (#109, #118, #129, #130, #131 Testteil); 2. Code (#96, #111, #117, #119); 3. Doku (#110, #112, #131, #132).
 - **Dateien:** `src/BombRedone.Core/Numerics/Real48*.cs`, `tests/BombRedone.Core.Tests/Numerics/*`, `src/BombRedone.Core/Graphics/VgaDraw.cs`,
   `tests/BombRedone.Core.Tests/Graphics/*`, `src/BombRedone.Core/Shot/*`, `tests/BombRedone.Core.Tests/Shot/*`,
   `src/BombRedone.Core/Playfield/*`, `tests/BombRedone.Core.Tests/Playfield/*`, `src/BombRedone.Desktop/*`, `src/BombRedone.Tools/RenderCommand.cs`,
-  `tests/BombRedone.UI.Tests/Tools/*`, `tools/reverse-engineering/feld*`, `docs/analyse/feld.md`, `docs/analyse/real48.md`.
+  `tests/BombRedone.UI.Tests/Tools/*`, `tests/BombRedone.UI.Tests/Screens/Playfield*` (u. a. `PlayfieldSeedCommandTests.cs`,
+  `PlayfieldScreenSessionTests.cs`), `tools/reverse-engineering/feld*`, `docs/analyse/feld.md`, `docs/analyse/real48.md`.
 - **Abnahme:** je Testlücke Gegenprobe (Mutation rot), je Fix roter Test vorher; kein Verhalten außerhalb der Issues geändert (alle
   bisherigen Probe-Hashes unverändert).
 - **Modell:** Claude Opus 5.5.
@@ -330,7 +333,9 @@ R2-D6 = B); Stufe 2b `schuss` nach Merge von `gelaende`. Integrationsfolge: `gel
 
 - `AGENTS.md`, `CLAUDE.md`, `docs/prozess/*`, `docs/vorlagen/*`, `docs/entscheidungen.md`, `tools/pruefen*.sh`,
   `tools/originalschutz-selbsttest.sh`, `.gitignore`, `.github/*`, `tests/**/Support/`: allein die Leitstelle.
-- `src/BombRedone.Desktop/*`: Welle 1 nur `real48` (Umzug des Zufalls), Stufe 2a nur `gelaende`, Stufe 2b nur `schuss`.
+- `src/BombRedone.Desktop/*`: Welle 1 nur `real48` (Umzug des Zufalls), Stufe 2a nur `gelaende`, Stufe 2b nur `schuss`, danach `p3-runde-2`.
+- Nach Merge aller Welle-2-Spuren gehören alle in `p3-runde-2` genannten Dateien (auch `Core/Numerics/*`, `Core/Graphics/*`,
+  `Core/Playfield/*`, `RenderCommand.cs`, `feld*`, `feld.md`) allein `p3-runde-2`.
 - `src/BombRedone.Tools/Program.cs`: je Spur eine Registrierungszeile (`gelaende`, `tws-leser`); `RenderCommand.cs`: `gelaende`, danach `schuss`, danach `gelaende-bilder`.
 - `src/BombRedone.Core/Numerics/*` und `tools/reverse-engineering/real48.py`: in Welle 2 nur `schuss` (neue Dateien bzw. Einsprünge).
 - `src/BombRedone.Core/Graphics/*` (neu), `MenuGraphics.cs`, `LineRasterizer.cs`, `PlayerSelectTeamScreen.cs` (`DrawTank`): `gelaende`, danach `schuss` (`VgaDraw.cs`), danach `gelaende-bilder`.
