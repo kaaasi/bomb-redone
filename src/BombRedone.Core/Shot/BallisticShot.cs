@@ -50,11 +50,8 @@ public sealed record ShotResult(Real48 X, Real48 Y, Real48 Vx, Real48 Vy, int Ix
 /// docs/analyse/feld.md section 5; bit-identical to the probe <c>feld_schuss.py</c> (ShotProbeTests).
 /// </summary>
 /// <remarks>
-/// Not in round 2 (R2-D1 = A), rejected with <see cref="NotSupportedException"/>: repulsers in the field (+5Ah, Q5) and
-/// the weapons whose impact is not ported (only 0 Lead Ball and the explosives {1, 2, 3, 4, 7, 11}). Guidance (+26h) is
-/// not modelled: the playfield records have no such field, so the flight always runs as without guidance (no check, no
-/// exception; review #116 P3-3). The stock of the weapon (+2Eh) is not kept by the playfield yet and is not decremented.
-/// Tones are not played.
+/// Every weapon of O4:01B7 (all but laser 5 and MIRV 7, <see cref="WeaponShot"/>) with repulsers (Q5) and guidance (G1);
+/// bit-identical to the probe <c>feld_schuss.py waffen</c> (WeaponProbeTests). Tones are not played.
 /// </remarks>
 public static class BallisticShot
 {
@@ -69,6 +66,10 @@ public static class BallisticShot
     private static readonly Real48 WarpWidth = Real48.FromHex("890000000016");       // 300, O4:107F
     private static readonly Real48 StopSpeed = Gravity;                              // 0.1, O4:104A
     private static readonly Real48 RepelForce = Real48.FromHex("8A0000000096");      // −600, O4:091A
+    private static readonly Real48 Half = Real48.FromHex("800000000000");            // 0.5, O4:0ACF
+    private static readonly Real48 MinusOnePointZeroOne = Real48.FromHex("817B14AE4781"); // −1.01, O4:0B80
+    private static readonly Real48 OnePointZeroOne = Real48.FromHex("817B14AE4701"); // 1.01, O4:0BBE
+    private static readonly Real48 PointOne = Real48.FromHex("7DCDCCCCCC4C");        // 0.1, O4:0BD9
 
     /// <summary>Fires the weapon of <paramref name="shooter"/> (<see cref="PlayfieldTank.Weapon"/>) and runs the impact.</summary>
     public static ShotResult Fire(Playfield.Playfield field, PlayfieldTank shooter, ShotSettings settings,
@@ -163,6 +164,8 @@ public static class BallisticShot
 
             if (repulsers)
                 Repel(tanks, shooter, leftShooter, ix, iy, subStepsReal, ref vx, ref vy);
+            if (shooter.Guidance > 0)
+                Guide(field, shooter, ix, iy, ref y, ref vx, ref vy);
 
             // O4:0C34–0CEF: restore the old point, trail, clear the marks on the frame.
             if (ox > 11 && oy > 31 && ox < 309)
@@ -215,6 +218,7 @@ public static class BallisticShot
                             {
                                 stop = false;
                                 vy = (vy.IsZero ? vy : -vy) * Bounce;
+                                shooter.Guidance = 0;  // O4:0E31
                                 field.Palette.Set(Playfield.Playfield.ShotColor, 0, 0, 63);
                             }
                         }
@@ -262,9 +266,9 @@ public static class BallisticShot
             else
             {
                 // O4:10CE–115A (Q7): the left rule tests vx < 1, the right one vx > 1.
-                if (ix > 310 && Real48.Compare(vx, Real48.One) > 0 && settings.Wind > 0)
+                if (ix > 310 && Real48.Compare(vx, Real48.One) > 0 && settings.Wind > 0 && shooter.Guidance == 0)
                     y = WarpWidth;
-                if (ix < 10 && Real48.Compare(vx, Real48.One) < 0 && settings.Wind < 0)
+                if (ix < 10 && Real48.Compare(vx, Real48.One) < 0 && settings.Wind < 0 && shooter.Guidance == 0)
                     y = WarpWidth;
             }
 
@@ -370,6 +374,42 @@ public static class BallisticShot
             vx = Real48.CosDegrees(angle) * force + vx;
             vy -= Real48.SinDegrees(angle) * force;
         }
+    }
+
+    /// <summary>
+    /// Guidance (G1). [ORIGINAL] O4:0A37–0C01 (BOMB.OVR 0x1173C): target = record +28h, dx = x_target − ix, dy = y_target −
+    /// iy. Vick (+26h ∈ {2, 3}): |dx| ≤ 2 → vx = 0 and y ± 0.5 towards the target (+ for dy &gt; 0). Herb (+26h ∈ {1, 3}):
+    /// 0 &lt; dy ≤ 4 → vy = 0, then vx · (−1.01) if dx · vx &lt; 0, else vx · 1.01, or 0.1 for vx = 0. When one of them acts,
+    /// colour 19 becomes red (63, 0, 0).
+    /// </summary>
+    private static void Guide(Playfield.Playfield field, PlayfieldTank shooter, int ix, int iy, ref Real48 y,
+        ref Real48 vx, ref Real48 vy)
+    {
+        var target = field.Tanks[shooter.GuidanceTarget - 1];
+        var acted = false;
+        var dx = (short)(target.X - ix);
+        var dy = (short)(target.Y - iy);
+        if (shooter.Guidance is 2 or 3 && Abs16(dx) <= 2)
+        {
+            acted = true;
+            vx = Real48.Zero;
+            y = dy > 0 ? y + Half : y - Half;
+        }
+
+        if (shooter.Guidance is 1 or 3 && dy <= 4 && dy > 0)
+        {
+            acted = true;
+            vy = Real48.Zero;
+            if (Real48.Compare(Real48.FromInt32(dx) * vx, Real48.Zero) < 0)
+                vx *= MinusOnePointZeroOne;
+            else if (!Real48.PascalEquals(vx, Real48.Zero))
+                vx *= OnePointZeroOne;
+            else
+                vx = PointOne;
+        }
+
+        if (acted)
+            field.Palette.Set(Playfield.Playfield.ShotColor, 63, 0, 0);
     }
 
     /// <summary>Sign flip of the original (<c>or al,al; jz; xor dh,80h</c>): zero stays as it is.</summary>

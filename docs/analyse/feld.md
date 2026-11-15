@@ -405,3 +405,9 @@ Kontakt +1 Treffer (auch gleiches Team, nicht der Schütze), E − 10, ohne Schi
 das Pixel kein anderer Panzer und nicht 254 ist; je `Delay(LS)`), wieder aus dem Hintergrund, 3 Schaden, ein Schritt zurück; keine
 Punkte. Wände wie L3; Spitze in 254. Am Ende Farbe 254 schwarz und alle Pixel der Farbe 254 (Strahl **und Rohr**) aus dem
 Hintergrund (`U431:0594`, Adressen 64000..1, also nicht Pixel 0). Abnahme: alle 18 Laserfälle der Liste bitgleich.
+
+### 8.5 Lenkung und MIRV (Teil 5)
+
+- **Lenkung** (`O4:0A37–0C01`, `BallisticShot.Guide`) wie `runde.md` §5.12 G1, nach dem Repulser im Teilschritt; ergänzt: Wand-0-Regel
+  (y := 300) nur ohne Lenkung, und bei Waffe 12..16 setzt der Abprall am Panzer die Lenkung +26h auf 0 (`O4:0E31`). Abnahme: alle
+  9 Lenkfälle der Liste bitgleich.

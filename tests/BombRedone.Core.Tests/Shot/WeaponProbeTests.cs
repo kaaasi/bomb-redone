@@ -26,9 +26,9 @@ public sealed class WeaponProbeTests
     }
 
     /// <summary>
-    /// Whether the case only needs what is ported: every weapon but the MIRV (7) with all defences, without guidance.
+    /// Whether the case only needs what is ported: every weapon but the MIRV (7), with all defences and guidance.
     /// </summary>
-    public static bool IsPorted(WeaponCase c) => c.Weapon != 7 && c.Guidance == 0;
+    public static bool IsPorted(WeaponCase c) => c.Weapon != 7;
 
     /// <summary>The ported cases that continue like O4:49CB (all of them with Crumble 0 in weapon_shots()).</summary>
     public static TheoryData<WeaponCase> PostCases
@@ -81,6 +81,8 @@ public sealed class WeaponProbeTests
         shooter.Aim(c.Angle, c.Power);
         shooter.Weapon = c.Weapon;
         shooter.Stock[c.Weapon] = c.Stock ?? (c.Weapon == 5 ? c.Power : Math.Max(1, shooter.Stock[c.Weapon]));
+        shooter.Guidance = c.Guidance;
+        shooter.GuidanceTarget = c.Guidance == 0 ? 0 : c.Target;
         foreach (var (player, shield, inertia, repulser) in ParseDefense(c.Defense))
         {
             var tank = field.Tanks[player - 1];
