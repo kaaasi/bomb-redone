@@ -358,7 +358,9 @@ R2-D6 = B); Stufe 2b `schuss` nach Merge von `gelaende`. Integrationsfolge: `gel
 
 ### Status tws-leser
 
-- 15.11.2026, Claude Opus 5.5 (geplanter Lauf): begonnen auf `paket/tws-leser`, Base `8202e50`.
+- 15.11.2026, Claude Opus 5.5 (geplanter Lauf), PR #125: Teile 1–3 fertig – `Formats/SavedGame` (Rohbytes je Teil, Rundreise
+  bytegleich), Abgleich der vier Originalstände gegen `s3_08`/`s3_09`/`s3_12`/`s3_17`/`s3_20`, `bombtool tws`. Restlücke: Stände Nr. 2–8
+  (Sitzung 4). Beobachtungen in `formate/spielstand.md` (Satz +00h = Position, +1Bh = Power?, Fremdtext auch in `DS:47E6`/`47E8`).
 
 ### Status gelaende-bilder
 
