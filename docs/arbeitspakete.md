@@ -183,6 +183,7 @@ Integrationsfolge: `waffen` → `zug` → `spielfolge`. Gemeinsame Dateien: Absc
 
 ### Status spielfolge
 
-- 15.11.2026: begonnen (Claude Code, geplanter Lauf), Branch `paket/spielfolge`, Base `26f0ae1`; Teil 1 in Arbeit.
+- 15.11.2026: begonnen (Claude Code, geplanter Lauf), Branch `paket/spielfolge`, Base `26f0ae1`, PR #149.
+- Teil 1 fertig: Probe `tools/reverse-engineering/folge.py` (Tausch, Mischen, Wertung, Teamwertung, Bonus, Einkauf, Schlacht mit Testdouble der Runde).
 
 ### Status runde
