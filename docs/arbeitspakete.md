@@ -232,8 +232,8 @@ R2-D6 = B); Stufe 2b `schuss` nach Merge von `gelaende`. Integrationsfolge: `gel
 #### Spur `tws-leser` – Leser `*.TWS` (Stufe 2a, R2-D6 = B)
 
 - **Voraussetzung (R2-D10 = A):** Sitzung 3 gemergt (bomb-referenz #11). Vorhanden sind vier Stände in `original/spielstaende/`:
-  `frisch-GAME1.TWS`, `frisch-GAME2.TWS` (sauber) und `ablauf1-GAME1.TWS`, `ablauf1-GAME2.TWS` (hinten Fremdtext – vermutlich
-  nicht gelöschter Speicher, den das Original mitschreibt; als Rohbytes erhalten, nicht als Fehler werten). Nr. 2–8 aus
+  `frisch-GAME1.TWS`, `frisch-GAME2.TWS` (sauber) und `ablauf1-GAME1.TWS`, `ablauf1-GAME2.TWS` (Fremdtext ab Offset 307 = Beginn
+  der Teamtabelle, bei Team Play 0 nicht gelöschter Speicher, Review #123 P3-2; Teamtabelle dann nur roh, Rohbytes erhalten). Nr. 2–8 aus
   `formate/spielstand.md` fehlen → Restlücke, Abgleich dann mit Sitzung 4.
 - **Inhalt:** `SavedGame` in `Formats` nach `formate/spielstand.md` (Kopf, Sätze `74h`, Intelligenzblöcke, Teamtabelle), unbelegte
   Felder roh; Satzreihenfolge wie gespeichert (#71 nur beschreiben, R2-D4); `bombtool tws <datei>`. `Fixes #78`.
@@ -241,8 +241,8 @@ R2-D6 = B); Stufe 2b `schuss` nach Merge von `gelaende`. Integrationsfolge: `gel
   (`[GameDataTheory]`), Abweichungen zur Formatbeschreibung in `spielstand.md`; 3. `bombtool tws`.
 - **Dateien:** `src/BombRedone.Formats/SavedGame*.cs` (neu), `tests/BombRedone.Formats.Tests/SavedGame*` (neu),
   `src/BombRedone.Tools/TwsCommand.cs` (neu), `src/BombRedone.Tools/Program.cs` (eine Zeile), `docs/formate/spielstand.md`.
-- **Abnahme:** alle vier Originalstände gelesen, Rundreise der Rohbytes unverändert (auch Fremdtext); Werte gegen Bilder und Notizen
-  der Sitzung 3 (`s3_08`, `s3_12`, `s3_20` Status, `s3_09`–`s3_11`, `s3_17` Einkauf); unbelegte Felder roh, `[APPROX]` je Deutung ohne Beleg.
+- **Abnahme:** alle vier Originalstände gelesen, Rundreise der Rohbytes unverändert (auch Fremdtext); Werte gegen Bilder der Sitzung 3
+  (`GAME1` ↔ `s3_08`, `s3_09`, `s3_20`; `GAME2` ↔ `s3_12`, `s3_17`; `frisch-*` nur Struktur und Rundreise); unbelegte Felder roh, `[APPROX]` je Deutung ohne Beleg.
 - **Modell:** Claude Opus 5.5.
 
 #### Spur `schuss` – Schuss der Standardwaffe (Stufe 2b, nach Merge von `gelaende`)
@@ -267,26 +267,33 @@ R2-D6 = B); Stufe 2b `schuss` nach Merge von `gelaende`. Integrationsfolge: `gel
 
 #### Spur `gelaende-bilder` – Bildvergleich Spielfeld (Folgespur, R2-D9 = A, R2-D10 = A)
 
-- **Inhalt:** Teil 5 von `gelaende`: `s3_02` (Spielfeld Runde 1 vor dem ersten Schuss, Wind 92, `BOMB.CFG` = Voreinstellungen,
-  Spieler laut `s3_01`) mit `bombtool seed` auf `RandSeed` nach dem Mischen zurückführen, dann Spielfeld (Gelände, Hintergrund, Panzer,
+- **Inhalt:** Teil 5 von `gelaende`: `s3_02` (Spielfeld Runde 1 vor dem ersten Schuss) auf `RandSeed` nach dem Mischen zurückführen.
+  Optionen und Zielwind aus `ablauf1-GAME1.TWS` (Review #123 P3-1: 2 Spieler, Wind −92, Crumble 75, Wind-Option Norm, Wände 0,
+  Hintergrund RND, kein Team Play). Die Uhrzeit von Sitzung 3 ist nicht notiert (Review #123 P2-1): `bombtool seed` um ein Zeitfenster
+  erweitern (`--time-from`/`--time-to`, Rückfall ganzer Tag) mit billigen Vorfiltern in Aufrufreihenfolge (Hintergrund `Random(9)` =
+  gezeigter Hintergrund, Geländehöhe am Rand, Panzer-x, zuletzt Wind); k klein (2 Menschen, je Hauptmenü `Random(2)`). Liefert der
+  Nutzer die Dateizeiten der DOSBox-Originale von Sitzung 3, gelten sie als Obergrenze. Danach Spielfeld (Gelände, Hintergrund, Panzer,
   Rahmen, Kopfzeile, Waffenleiste) pixelgenau mit dem Bild vergleichen; Abweichungen reproduzieren → roter Test → beheben.
-  Bildpixel nie ins Repo (`AGENTS.md` §2.1), Tests mit `[GameDataFact]` und Pfad ins Referenz-Repo bzw. Prüfsummen.
-- **Teile:** 1. Startwert aus `s3_02`; 2. Pixelvergleich, Befunde beheben, `docs/analyse/feld.md` „Bildvergleich“.
+  Bildpixel nie ins Repo (`AGENTS.md` §2.1), Tests mit `[GameDataFact]`, Bildordner wie `GameConfigOriginalTests` (`~/referenz/bilder/…`),
+  PNG-Leser mit BCL `ZLibStream` in den eigenen Testdateien (kein neues Paket, nicht in `tests/**/Support/`).
+- **Teile:** 1. Zeitfenstersuche in `bombtool seed`, Startwert aus `s3_02`; 2. Pixelvergleich, Befunde beheben, `docs/analyse/feld.md` „Bildvergleich“.
 - **Dateien:** `tests/BombRedone.Core.Tests/Playfield/*`, `tests/BombRedone.UI.Tests/Screens/Playfield*`, `docs/analyse/feld.md`;
   bei belegter Abweichung `src/BombRedone.Core/Playfield/*`, `src/BombRedone.Core/Graphics/*`, `src/BombRedone.UI/Screens/Playfield*`,
   `src/BombRedone.Tools/RenderCommand.cs` (Begründung im PR). Lädt Bilder über `tools/claude/fetch-reference.sh bilder/runde-1`.
 - **Abnahme:** gefundener Startwert reproduziert `s3_02` pixelgleich, oder jede Abweichung ist erklärt (`[APPROX]` mit Grund bzw. Befund).
+  Kein Startwert gefunden → Rückfall R2-D3 D (Vergleich nach Lage und Form, `[APPROX]`); Suchraum und Laufzeit in `feld.md`.
 - **Modell:** Claude Opus 5.5.
 
 #### Spur `schuss-bilder` – Bildvergleich Schuss (Folgespur, nach Merge von `gelaende-bilder`)
 
 - **Inhalt:** Teil 6 von `schuss`: mit dem Startwert aus `gelaende-bilder` die Schüsse in `s3_03`–`s3_07` nachstellen (Winkel und Kraft
-  aus den Kopfzeilen, Wind 92; fehlende Werte per Suche über plausible Winkel/Kräfte gegen die sichtbare Spur), Spur, Einschlag und
+  aus den Kopfzeilen nur als Startpunkt – die Kopfzeile zeigt den Spieler am Zug, nicht den letzten Schuss, Review #123 P3-3; Wind 92; fehlende Werte per Suche über plausible Winkel/Kräfte gegen die sichtbare Spur), Spur, Einschlag und
   Panzerwerte (Energie in der Kopfzeile) pixelgenau vergleichen; Abweichungen reproduzieren → roter Test → beheben.
 - **Teile:** 1. Schussparameter aus den Bildern; 2. Vergleich Spur/Einschlag, Befunde beheben, `docs/analyse/feld.md`.
 - **Dateien:** `tests/BombRedone.Core.Tests/Shot/*`, `tests/BombRedone.UI.Tests/Screens/Playfield*`, `docs/analyse/feld.md`; bei belegter
   Abweichung `src/BombRedone.Core/Shot/*`, `src/BombRedone.Core/Playfield/*`, `src/BombRedone.UI/Screens/Playfield*` (Begründung im PR).
-- **Abnahme:** wie `gelaende-bilder`; nicht nachstellbare Schüsse mit Grund dokumentiert.
+- **Abnahme:** wie `gelaende-bilder`; nicht nachstellbare Schüsse mit Grund dokumentiert. Ohne Startwert aus `gelaende-bilder`:
+  Rückfall R2-D3 D für die Bahnform.
 - **Modell:** Claude Opus 5.5.
 
 ### Restlücken Welle 2
@@ -308,7 +315,7 @@ R2-D6 = B); Stufe 2b `schuss` nach Merge von `gelaende`. Integrationsfolge: `gel
 - `src/BombRedone.Desktop/*`: Welle 1 nur `real48` (Umzug des Zufalls), Stufe 2a nur `gelaende`, Stufe 2b nur `schuss`.
 - `src/BombRedone.Tools/Program.cs`: je Spur eine Registrierungszeile (`gelaende`, `tws-leser`); `RenderCommand.cs`: `gelaende`, danach `schuss`, danach `gelaende-bilder`.
 - `src/BombRedone.Core/Numerics/*` und `tools/reverse-engineering/real48.py`: in Welle 2 nur `schuss` (neue Dateien bzw. Einsprünge).
-- `src/BombRedone.Core/Graphics/*` (neu), `MenuGraphics.cs`, `LineRasterizer.cs`, `PlayerSelectTeamScreen.cs` (`DrawTank`): nur `gelaende`.
+- `src/BombRedone.Core/Graphics/*` (neu), `MenuGraphics.cs`, `LineRasterizer.cs`, `PlayerSelectTeamScreen.cs` (`DrawTank`): `gelaende`, danach `schuss` (`VgaDraw.cs`), danach `gelaende-bilder`.
 - `src/BombRedone.Core/Playfield/*`, `src/BombRedone.UI/Screens/Playfield*`, `tools/reverse-engineering/feld*`, `docs/analyse/feld.md`:
   `gelaende`, danach `schuss`, danach `gelaende-bilder`, danach `schuss-bilder` (nacheinander, nie gleichzeitig).
 - `tools/reverse-engineering/bombre.py`: nur `re-runde` (neue Unterbefehle).
