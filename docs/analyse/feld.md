@@ -227,3 +227,48 @@ bitgleich (`AfterShotProbeTests`: `RandSeed`, Rahmen und Feld, Puffer, DAC, Ener
 Nicht umgesetzt (Runde 2, R2-D1 = A; `NotSupportedException`): Lenkung, Repulser im Feld (Q5, braucht `ArcTan` `12CE:14D8` und die
 Tabelle `0B25`), Einschläge der Waffen außer 0 und {1, 2, 3, 4, 7, 11}; der Bestand (+2Eh) wird noch nicht abgezogen. Ton und
 Verzögerungen spielen nicht; mit Ton zieht die Explosion die `Random`-Aufrufe wie das Original (Schuss 22).
+
+## 6. Bildvergleich mit Sitzung 3 (Spur `gelaende-bilder`, Stand 15.11.2026)
+
+### 6.1 Startwert (Teil 1)
+
+`bombtool seed` sucht jetzt auch über ein **Zeitfenster** (Review #123 P2-1): `--time-from`/`--time-to` (je `HH:MM:SS.cc`, fehlt
+eines, gilt 00:00:00.00 bzw. 23:59:59.99; `--time-from 00:00:00.00` allein = ganzer Tag), k = 0..K (Standard 30 im Fenster, 2000
+bei `--time`). Je Hundertstel `RandSeed` wie `Randomize` (`DosTime`: Wort `SS·256 + cc` oben, `HH·256 + MM` unten), k Schritte,
+Mischen, dann billige Vorfilter in Aufrufreihenfolge (`PlayfieldPrefilter`, ohne Zeichnen): gezeigter Hintergrund
+(`--background`), Höhe h des linken flachen Rands (aus den `--terrain`-Punkten im Rand, y < 189), x von Panzer 1 und N (`--tanks`),
+Wind (`--wind`, Windoption aus der Konfiguration); erst danach das ganze Spielfeld gegen alle Panzer und Geländepunkte. Alle
+Hundertstel 0..99 werden versucht, obwohl DOS sie aus dem 18,2-Hz-Takt ableitet (Obermenge). Die Hundertstel- und
+Je Sekunde des Fensters ein Stück, die Stücke laufen parallel.
+
+**s3_02:** Optionen aus `ablauf1-GAME1.TWS` = Voreinstellungen von `BOMBCFG.EXE` mit 2 Spielern. Aus dem Bild gemessen (Werte,
+keine Bildpixel): Hintergrund 8 (Asterisk), Panzer x 25 und 281, oberstes Geländepixel (20, 136), (100, 132), (160, 161),
+(200, 185), (250, 141), (300, 141) – also h = 54 am linken Rand –, Wind −92. Dateizeiten der DOSBox-Originale lagen nicht vor
+(weder im PR noch in `bilder/runde-1/README.md`), daher der ganze Tag:
+
+```text
+bombtool seed --players 2 --time-from 00:00:00.00 --max-steps 30 --background 8 --wind -92 --tanks 25,281 \
+  --terrain 20:136,100:132,160:161,200:185,250:141,300:141
+→ 17:12:39.69 k 1: before shuffle 4983853D, after D2E3BA6E      1 candidate(s), 47.8 s
+```
+
+Suchraum 8.640.000 Zeiten × 31 = 267,8 Mio. Kandidaten, 47,8 s auf 2 Kernen. Genau ein Treffer: `Randomize` um 17:12:39.69 (DOSBox-
+Uhr), ein Menüschritt (`Random(2)` des Hauptmenüs, zwei Menschen ohne Intelligenz), 27 Tausche beim Mischen (ungerade: Satz 1 hält
+danach „Player 2“, Satz 2 „Player 1“), `RandSeed` nach dem Mischen `D2E3BA6E`. Test: `SeedSearchTests.Window_search_finds_the_start_value_of_session_3`
+(Fenster 17:12:39.00–17:12:40.99).
+
+### 6.2 Pixelvergleich (Teil 2)
+
+`PlayfieldScreen` an K aus diesem Startwert (Namen in Satzreihenfolge „Player 2“, „Player 1“) gegen `s3_02`, Bildindizes und
+DAC (`PlayfieldScreenSessionTests`, `[GameDataFact]`, Bild aus `~/referenz/bilder/runde-1`):
+
+- **Gleich:** Rahmen, Hintergrund Asterisk, Gelände, beide Panzer mit Rohr (x, y = 25/135 und 281/140), Beschriftungen der Kopfzeile,
+  Name des Spielers am Zug („Player 1“ in Farbe 21 = Satz 2, auch der Startspieler), Waffenleiste – alle 64.000 Indizes außer den
+  unten genannten 248. DAC aller benutzten Farben gleich, auch der Verlauf 30..59 (noch kein Rotationsschritt sichtbar).
+- **Abweichung 1 (erklärt, Zug):** 248 Pixel Farbe 14 in der Kopfzeile fehlen – die Werte, die erst der Zug schreibt (Winkel 75,
+  Kraft 200, Richtungspfeil, Wind 92, Men 100; `runde.md` §6.1, Zug in Runde 2 nicht umgesetzt). Ebenso setzt der Zug die DAC-Einträge
+  100, 101, 111 der Waffenleiste (bei uns an K noch schwarz).
+- **Abweichung 2 (erklärt, R2-D4 = A):** DAC 20 und 21 sind vertauscht. Die Farbteiler gehören zum Satz (+60h..+64h) und wandern
+  beim Mischen mit; `Core` mischt die Sätze erst in Runde 3 mit (R2-D4 = A) und nimmt die Teiler nach Satznummer. Indizes gleich.
+
+Keine Abweichung im Spielfeldaufbau, also kein Fix an `Core/Playfield` nötig.

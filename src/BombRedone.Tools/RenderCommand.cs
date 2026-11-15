@@ -233,19 +233,27 @@ internal static class RenderCommand
     }
 
     private const string SeedUsage =
-        "Usage: bombtool seed --time HH:MM:SS.cc --players N [--cfg BOMB.CFG] [--max-steps K] [--tanks X1,X2,...] " +
-        "[--terrain X:Y,...]";
+        "Usage: bombtool seed --players N (--time HH:MM:SS.cc | [--time-from HH:MM:SS.cc] [--time-to HH:MM:SS.cc]) " +
+        "[--cfg BOMB.CFG] [--max-steps K] [--tanks X1,X2,...] [--terrain X:Y,...] [--background B] [--wind V]";
 
     /// <summary>
     /// <c>bombtool seed</c>: start value search (R2-D3, docs/analyse/runde.md section 4): RandSeed from the DOS time of
-    /// Randomize (<c>--time</c>), then k = 0..K steps before the shuffle (default 2000); prints every k whose playfield
-    /// has the tanks at <c>--tanks</c> (x from left to right) and the topmost terrain pixels <c>--terrain</c> (x:y).
+    /// Randomize, either one time (<c>--time</c>) or every hundredth of a window (<c>--time-from</c>/<c>--time-to</c>; a
+    /// missing end means midnight or 23:59:59.99, so <c>--time-from 00:00:00.00</c> alone searches the whole day,
+    /// Review #123 P2-1); then
+    /// k = 0..K steps before the shuffle (default 2000 for one time, 30 for a window). Cheap prefilters in the order of the
+    /// Random calls (<see cref="PlayfieldPrefilter"/>): background <c>--background</c>, height of the left margin (from the
+    /// <c>--terrain</c> points inside it), first and last tank of <c>--tanks</c>, wind <c>--wind</c> (needs the wind option
+    /// of the configuration); then the playfield against all tanks and terrain points. Prints every match.
     /// </summary>
     public static int RunSeedSearch(string[] args)
     {
         if (!TryParseOptions(args, out var positional, out var options) || positional.Count > 0
-            || !options.ContainsKey("time") || !options.ContainsKey("players")
-            || options.Keys.Any(k => k is not ("time" or "players" or "cfg" or "max-steps" or "tanks" or "terrain")))
+            || !options.ContainsKey("players")
+            || !options.ContainsKey("time") && !options.ContainsKey("time-from") && !options.ContainsKey("time-to")
+            || options.ContainsKey("time") && (options.ContainsKey("time-from") || options.ContainsKey("time-to"))
+            || options.Keys.Any(k => k is not ("time" or "time-from" or "time-to" or "players" or "cfg" or "max-steps"
+                or "tanks" or "terrain" or "background" or "wind")))
         {
             Console.Error.WriteLine(SeedUsage);
             return 2;
@@ -253,20 +261,38 @@ internal static class RenderCommand
 
         PlayfieldOptions playfield;
         PlayfieldTarget target;
-        TimeSpan time;
-        int maxSteps;
+        PlayfieldPrefilter prefilter;
+        DosTime from, to;
+        int maxSteps, windOption;
         try
         {
             var config = options.TryGetValue("cfg", out var cfg) ? GameConfig.Load(cfg) : GameConfig.BombCfgDefaults;
+            windOption = (int)config.Wind;
             playfield = PlayfieldOptions.FromConfig(config, int.Parse(options["players"], CultureInfo.InvariantCulture));
             playfield.Validate();
-            time = TimeSpan.ParseExact(options["time"], @"hh\:mm\:ss\.ff", CultureInfo.InvariantCulture);
-            maxSteps = int.Parse(options.GetValueOrDefault("max-steps", "2000"), CultureInfo.InvariantCulture);
-            target = new PlayfieldTarget(
-                options.TryGetValue("tanks", out var tanks) ? tanks.Split(',').Select(ParseInt).ToArray() : null,
-                options.TryGetValue("terrain", out var terrain)
-                    ? terrain.Split(',').Select(p => p.Split(':')).Select(p => (ParseInt(p[0]), ParseInt(p[1]))).ToArray()
-                    : null);
+            if (options.TryGetValue("time", out var time))
+            {
+                from = to = ParseTime(time);
+            }
+            else
+            {
+                from = options.TryGetValue("time-from", out var f) ? ParseTime(f) : new DosTime(0, 0, 0, 0);
+                to = options.TryGetValue("time-to", out var t) ? ParseTime(t) : new DosTime(23, 59, 59, 99);
+                if (to.Ticks < from.Ticks)
+                    throw new ArgumentException("--time-to lies before --time-from.");
+            }
+
+            maxSteps = int.Parse(options.GetValueOrDefault("max-steps", from == to ? "2000" : "30"),
+                CultureInfo.InvariantCulture);
+            ArgumentOutOfRangeException.ThrowIfNegative(maxSteps);
+            var tanks = options.TryGetValue("tanks", out var tanksText) ? tanksText.Split(',').Select(ParseInt).ToArray() : null;
+            var terrain = options.TryGetValue("terrain", out var terrainText)
+                ? terrainText.Split(',').Select(p => p.Split(':')).Select(p => (ParseInt(p[0]), ParseInt(p[1]))).ToArray()
+                : null;
+            target = new PlayfieldTarget(tanks, terrain);
+            prefilter = BuildPrefilter(playfield.Players, tanks, terrain,
+                options.TryGetValue("background", out var b) ? ParseInt(b) : null,
+                options.TryGetValue("wind", out var w) ? ParseInt(w) : null);
         }
         catch (Exception ex) when (ex is IOException or GameConfigException or FormatException or OverflowException
                                        or ArgumentException or IndexOutOfRangeException)
@@ -275,19 +301,69 @@ internal static class RenderCommand
             return 1;
         }
 
-        var start = TurboPascalRandom.FromClock(DateTime.MinValue.Add(time)).Seed;
-        Console.WriteLine($"RandSeed after Randomize {start:X8}, k = 0..{maxSteps}");
-        var count = 0;
-        foreach (var c in SeedSearch.Search(start, maxSteps, playfield, target))
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+        List<ClockCandidate> found;
+        if (from == to)
         {
-            Console.WriteLine($"k {c.StepsBeforeShuffle}: before shuffle {c.SeedBeforeShuffle:X8}, after {c.SeedAfterShuffle:X8}");
-            count++;
+            var start = from.Seed;
+            Console.WriteLine($"RandSeed after Randomize {start:X8}, k = 0..{maxSteps}");
+            found = SeedSearch.Search(start, maxSteps, playfield, target)
+                .Where(c => prefilter.Passes(c.SeedAfterShuffle, playfield, windOption))
+                .Select(c => new ClockCandidate(from, c)).ToList();
+        }
+        else
+        {
+            Console.WriteLine($"time {from}..{to}, k = 0..{maxSteps}");
+            // One chunk per second of the window, searched in parallel; the order of the output is sorted afterwards.
+            var bag = new System.Collections.Concurrent.ConcurrentBag<ClockCandidate>();
+            var first = from.Ticks / 100;
+            var last = to.Ticks / 100;
+            Parallel.For(first, last + 1, second =>
+            {
+                var a = DosTime.FromTicks(Math.Max(from.Ticks, second * 100));
+                var z = DosTime.FromTicks(Math.Min(to.Ticks, second * 100 + 99));
+                foreach (var c in SeedSearch.SearchWindow(a, z, maxSteps, playfield, windOption, prefilter, target))
+                    bag.Add(c);
+            });
+            found = bag.OrderBy(c => c.Time.Ticks).ThenBy(c => c.Candidate.StepsBeforeShuffle).ToList();
         }
 
-        Console.WriteLine($"{count} candidate(s)");
-        return count > 0 ? 0 : 1;
+        foreach (var c in found)
+        {
+            Console.WriteLine($"{c.Time} k {c.Candidate.StepsBeforeShuffle}: before shuffle {c.Candidate.SeedBeforeShuffle:X8}, " +
+                              $"after {c.Candidate.SeedAfterShuffle:X8}");
+        }
+
+        Console.WriteLine($"{found.Count} candidate(s), {stopwatch.Elapsed.TotalSeconds:F1} s");
+        return found.Count > 0 ? 0 : 1;
 
         static int ParseInt(string s) => int.Parse(s, CultureInfo.InvariantCulture);
+
+        static DosTime ParseTime(string text)
+        {
+            var span = TimeSpan.ParseExact(text, @"hh\:mm\:ss\.ff", CultureInfo.InvariantCulture);
+            return new DosTime(span.Hours, span.Minutes, span.Seconds, span.Milliseconds / 10);
+        }
+    }
+
+    /// <summary>
+    /// Prefilter from the target: tanks 1 and N, the height of the flat left margin from the terrain points inside it
+    /// (x = 11 .. 70 − 7 (N − 2), y &lt; 189, all must agree), background and wind as given.
+    /// </summary>
+    internal static PlayfieldPrefilter BuildPrefilter(int players, IReadOnlyList<int>? tanks,
+        IReadOnlyList<(int X, int Y)>? terrain, int? background, int? wind)
+    {
+        if (tanks is not null && tanks.Count != players)
+            throw new ArgumentException("--tanks needs one x per player.");
+        if (background is < 0 or > 8)
+            throw new ArgumentException("--background is 0..8.");
+        var marginEnd = 60 - (players - 2) * 7 + 11;
+        // y = 189 is also the floor line, so it does not tell h = 0 from h = 1.
+        var heights = (terrain ?? []).Where(p => p.X >= 11 && p.X < marginEnd && p.Y < 189).Select(p => 190 - p.Y).Distinct()
+            .ToArray();
+        if (heights.Length > 1)
+            throw new ArgumentException("The terrain points of the left margin differ in height.");
+        return new PlayfieldPrefilter(background, heights.Length == 1 ? heights[0] : null, tanks?[0], tanks?[^1], wind);
     }
 
     /// <summary>Splits arguments into positional ones and <c>--name value</c> pairs.</summary>

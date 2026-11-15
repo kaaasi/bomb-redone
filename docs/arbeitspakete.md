@@ -362,7 +362,8 @@ R2-D6 = B); Stufe 2b `schuss` nach Merge von `gelaende`. Integrationsfolge: `gel
 
 ### Status gelaende-bilder
 
-- noch nicht begonnen.
+- #126 (15.11.2026, Claude Opus 5.5): Teil 1 und 2 fertig – Startwert 17:12:39.69, k = 1, `RandSeed` nach dem Mischen
+  `D2E3BA6E`; `s3_02` pixelgleich bis auf die Zugwerte der Kopfzeile und die Farben 20/21 (R2-D4), beides erklärt (`analyse/feld.md` §6). Review offen.
 
 ### Status schuss
 
