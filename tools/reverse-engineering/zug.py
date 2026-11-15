@@ -544,7 +544,8 @@ def turn_from(t):
 
 
 TURN_HEADER = ("nr\tseed\tplayers\tshooter\tcontrol\tstatus\tsteps_used\tcommands\tdelays\treleases\tpolls\ttrace"
-               "\tz1_screen\tz1_dac\tscreen\tdac_set\trecords\tshooter_state\tmirv\trandseed\trandom_n")
+               "\tz1_screen\tz1_dac\tscreen\tdac_set\trecords\tshooter_state\tmirv\trandseed\trandom_n\tscreen_field\tdac"
+               "\twall\tbackground\twind_opt\tsets\tsteps\toptions")
 
 
 def shooter_state(r):
@@ -552,6 +553,16 @@ def shooter_state(r):
     return "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d;%s" % (
         r["angle"], r["power"], r["dir"], r["energy"], r["weapon"], r["guidance"], r["target"], r["herb"], r["vick"],
         r["shots"], r["turns"], stocks)
+
+
+def field_crop(screen):
+    """Frame and field (x 8..312, y 28..192) as in feld_schuss.py: what Core/Playfield draws."""
+    return b"".join(screen[y * 320 + 8:y * 320 + 313] for y in range(28, 193))
+
+
+def dac_text(dac_set):
+    """Written DAC entries as index:r,g,b (6-bit values the game computed, no bytes of the files)."""
+    return " ".join("%d:%d,%d,%d" % tuple(dac_set[k:k + 4]) for k in range(0, len(dac_set), 4)) or "-"
 
 
 def compress(seq):
@@ -580,7 +591,10 @@ def cmd_hashes(p, args):
             compress(o["polls"]), o["trace"], sha(z1["screen"]), sha(z1["dac_set"]), sha(o["screen"]),
             sha(o["dac_set"]), sha(o["records_raw"]), shooter_state(r),
             "-" if mirv is None else "%d,%d" % (mirv["pattern"], mirv["detonation"]),
-            "%08X" % o["randseed"], o["random_n"]))
+            "%08X" % o["randseed"], o["random_n"], sha(field_crop(o["screen"])), dac_text(o["dac_set"]),
+            case["wall"], case["background"], case["wind"],
+            " ".join(("%s=%d" % (k, v)) if w is None else ("%d:%s=%d" % (w, k, v)) for w, k, v in turn["sets"]) or "-",
+            turn["steps"], ",".join(k for k in ("mirv", "sound") if turn.get(k)) or "-"))
         rows.append(row)
         print(row, flush=True)
     os.makedirs(args.root_out, exist_ok=True)

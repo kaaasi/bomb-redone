@@ -94,4 +94,19 @@ nach Spieler N hoch, +5Eh und +70h zählen je Zug des Spielers.
 8. **Ton an** (Fall 39): Winkeländerung spielt `Sound` mit `Delay(10)`, Richtungswechsel vier Töne mit `Delay(5)`; ohne Ton keine
    weiteren Delays als `Delay(TS)` je Abfrage.
 
-Offen für Teil 2–4: keine Frage an den Nutzer; Bildvergleich in `bilder-s4` (R3-D2).
+## 5. Ergebnis Teil 2 (`Core/Turn`)
+
+`TurnSession` bildet Z1 (`Begin`), `O7:040C` mit `O7:0EF7` (`Play`), `O9:0040`, `O9:092E` und den MIRV-Dialog (`MirvSetup`) als
+Koroutine nach: Jede Abfragestelle der Probe ist ein `TurnWait.Poll`, `Delay`/`Sound`/`NoSound` werden an den Gastgeber gereicht,
+die Warteschleifen lassen die Tasten in `TurnInput` selbst los. BGI-Text und Fenster zeichnet die UI über `ITurnView` (Teil 3);
+Rohr, Panzer, Rahmen und DAC zeichnet Core selbst. `TurnOrder.Next` ist R5, `WeaponBar` Z2.
+
+Abnahme: alle 40 Züge **bitgleich** zur Probe (`TurnProbeTests`: Status, verbrauchte Schritte, Abfragestellen, jeder Befehl, jede
+Verzögerung, jedes Loslassen, Satz des Schützen, MIRV-Wahl, alle geschriebenen DAC-Einträge, Rahmen und Feld – beim MIRV-Dialog ohne
+das Feld, weil der Dialog darüber liegt), alle 5 Zugfolgen gleich (`TurnOrderProbeTests`). Kein Zug verbraucht `Random`.
+Gegenprobe: zwei absichtlich eingebaute Fehler (BildAuf + 98, Alt-Bedingung) lassen 5 Fälle scheitern.
+
+`[APPROX]` in Teil 2: `U431:0594` überspringt die Adresse 64000 (außerhalb beider Puffer); die Zielwahl mit der Tastatur ohne
+weiteren lebenden Spieler hängt im Original, das Remake wirft eine Ausnahme; der Computer (Steuerart 3) kommt mit Runde 4.
+
+Offen für Teil 3–4: keine Frage an den Nutzer; Bildvergleich in `bilder-s4` (R3-D2).

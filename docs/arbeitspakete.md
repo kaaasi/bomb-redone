@@ -184,7 +184,8 @@ Integrationsfolge: `waffen` → `zug` → `spielfolge`. Gemeinsame Dateien: Absc
 ### Status zug
 
 - 15.11.2026: Teil 1 (Probe) fertig: `tools/reverse-engineering/zug.py` (40 Züge, 5 Zugfolgen), [analyse/zug.md](analyse/zug.md);
-  Korrektur `runde.md` §6.3 (Alt umgekehrt, Schummeltaste nur Ziffernblock). Teil 2 begonnen.
+  Korrektur `runde.md` §6.3 (Alt umgekehrt, Schummeltaste nur Ziffernblock).
+- 15.11.2026: Teil 2 (`Core/Turn`) fertig: 40 Züge und 5 Zugfolgen bitgleich zur Probe. Teil 3 begonnen.
 
 ### Status spielfolge
 
