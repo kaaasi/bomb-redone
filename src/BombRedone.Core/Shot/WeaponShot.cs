@@ -7,10 +7,12 @@ namespace BombRedone.Core.Shot;
 public static class WeaponShot
 {
     /// <summary>
-    /// [ORIGINAL] O4:4977–49C8 (BOMB.OVR 0x1567C): weapon 5 → laser O4:3426, otherwise O4:01B7. The MIRV (7, O4:13D4)
-    /// follows in spur waffen part 5 and still throws <see cref="NotSupportedException"/>.
+    /// [ORIGINAL] O4:4977–49C8 (BOMB.OVR 0x1567C): weapon 5 → laser O4:3426, 7 → MIRV O4:13D4 with the choice of its
+    /// dialog (<paramref name="pattern"/>, <paramref name="detonation"/>; the dialog itself belongs to the turn), otherwise
+    /// O4:01B7.
     /// </summary>
-    public static void Fire(Playfield.Playfield field, PlayfieldTank shooter, ShotSettings settings, TurboPascalRandom random)
+    public static void Fire(Playfield.Playfield field, PlayfieldTank shooter, ShotSettings settings, TurboPascalRandom random,
+        MirvPattern pattern = MirvPattern.Random, MirvDetonation detonation = MirvDetonation.Impact)
     {
         ArgumentNullException.ThrowIfNull(shooter);
         switch (shooter.Weapon)
@@ -19,7 +21,8 @@ public static class WeaponShot
                 LaserShot.Fire(field, shooter, settings, random);
                 break;
             case 7:
-                throw new NotSupportedException("The MIRV (O4:13D4) is not ported yet (spur waffen part 5).");
+                MirvShot.Fire(field, shooter, pattern, detonation, settings, random);
+                break;
             default:
                 BallisticShot.Fire(field, shooter, settings, random);
                 break;

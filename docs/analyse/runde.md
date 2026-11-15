@@ -352,8 +352,7 @@ E ≤ 0. Danach `0431:0594` und `NoSound` (`[APPROX]` Löschen des Strahls nicht
 Vor dem Abschuss ein Dialog „MIRV Setup“ (Maus `0E11`, Tasten) mit dem Muster (Random, Horizontal, Vertical, + 4 Way, X 4 Way →
 0..4) und „Detonations“ (Impact, Simultanious, None) – Bedienung mit Teil 3. Die Mutter fliegt wie §5.3 und **teilt sich im Scheitel** (vy > 0, M2) in
 fünf Teile mit Lage und Geschwindigkeit der Mutter, verändert je Muster (M1): 0 `vx, vy += Random:Real · 6 − 3` (je Teil zwei
-`Random:Real`), 1 vx += (i − 3) · 1,75, 2 vy += (i − 3) · 1,75, 3 und 4 je Teil ±1,75 in x und y (`[APPROX]` Zuordnung der
-Vorzeichen zu den Teilen nicht ausgewertet). Einschläge über `O6:00E0` (als Waffe 7: Radius 15, §5.5): Detonation 0 (Impact) je Teil bei seinem Einschlag,
+`Random:Real`), 1 vx += (i − 3) · 1,75, 2 vy += (i − 3) · 1,75, 3 (+ 4 Way) vx₁ + 1,75, vx₂ − 1,75, vy₃ − 1,75, vy₄ + 1,75, 4 (X 4 Way) Teil 1 (+, +), 2 (−, −), 3 (+, −), 4 (−, +) in (vx, vy), Teil 5 jeweils unverändert (Spur `waffen`, `O4:31B7–3383`) Einschläge über `O6:00E0` (als Waffe 7: Radius 15, §5.5): Detonation 0 (Impact) je Teil bei seinem Einschlag,
 1 (Simultanious) alle zusammen am Ende, 2 (None) keine Explosion (M2).
 
 ### 5.12 Lenkung und Gelände im Flug (G1, G2)
@@ -371,7 +370,7 @@ fliegt dann durch das Gelände (`[ORIGINAL]` so im Code; die Höchstkraft ist 10
 
 ### 5.13 Offen in Teil 2
 
-Bilder `O5` im Einzelnen (`[APPROX]`, nur für die Darstellung nötig); Zuordnung der Vorzeichen bei MIRV-Muster 3 und 4.
+Bilder `O5` im Einzelnen (`[APPROX]`, nur für die Darstellung nötig). MIRV-Muster 3 und 4: geklärt in §5.11 (Spur `waffen`).
 
 ## 6. Zug, Kopfzeile, Eingaben (Teil 3)
 

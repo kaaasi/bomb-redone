@@ -411,3 +411,11 @@ Hintergrund (`U431:0594`, Adressen 64000..1, also nicht Pixel 0). Abnahme: alle 
 - **Lenkung** (`O4:0A37–0C01`, `BallisticShot.Guide`) wie `runde.md` §5.12 G1, nach dem Repulser im Teilschritt; ergänzt: Wand-0-Regel
   (y := 300) nur ohne Lenkung, und bei Waffe 12..16 setzt der Abprall am Panzer die Lenkung +26h auf 0 (`O4:0E31`). Abnahme: alle
   9 Lenkfälle der Liste bitgleich.
+- **MIRV** (`O4:1AD0–3423`, `MirvShot`, Muster und Detonation als Eingabe; der Dialog `O4:13D4–1AB9` gehört zu `zug`): Bestand − 1,
+  Lenkung aus; Mutter wie `O4:01B7` (Startwerte Q3, Teilschritt Q4, Repulser Q5), aber ohne Lenkung, ohne Kraftregel G2 und ohne
+  Trefferzähler; Teile enden an Gelände oder lebendem Panzer, über 30, nach 1000 Ticks, ohne Prallwände bei y < −5000 oder y ≥ 190,
+  mit Prallwänden am Boden erst bei |vx| und |vy| < 0,1. Die Mutter endet zusätzlich bei vy > 0 (Scheitel); dann starten fünf Teile
+  an ihrer Stelle mit ihrer Geschwindigkeit, geändert je Muster (§5.11 `runde.md`, Vorzeichen jetzt geklärt). Während Teile fliegen,
+  ist SS je Tick SS div (fliegende Teile), aufgerundet. Detonation 0 explodiert jedes Teil bei seinem Ende (auch außerhalb des
+  Felds), 1 alle fünf am Schluss, 2 keine; nach jeder Explosion alle Panzer neu. Abnahme: alle 23 MIRV-Fälle der Liste bitgleich –
+  damit laufen alle 182 Fälle der Probe (`WeaponProbeTests`).

@@ -26,9 +26,9 @@ public sealed class WeaponProbeTests
     }
 
     /// <summary>
-    /// Whether the case only needs what is ported: every weapon but the MIRV (7), with all defences and guidance.
+    /// Whether the case only needs what is ported: since part 5 every case of the list.
     /// </summary>
-    public static bool IsPorted(WeaponCase c) => c.Weapon != 7;
+    public static bool IsPorted(WeaponCase c) => true;
 
     /// <summary>The ported cases that continue like O4:49CB (all of them with Crumble 0 in weapon_shots()).</summary>
     public static TheoryData<WeaponCase> PostCases
@@ -92,7 +92,8 @@ public sealed class WeaponProbeTests
         }
 
         field.Palette.ClearWritten();
-        WeaponShot.Fire(field, shooter, new ShotSettings(c.SubSteps, c.Wind, Sound: c.Sound, Crumble: c.Crumble), random);
+        WeaponShot.Fire(field, shooter, new ShotSettings(c.SubSteps, c.Wind, Sound: c.Sound, Crumble: c.Crumble), random,
+            (MirvPattern)c.Pattern, (MirvDetonation)c.Detonation);
         return (field, random, seedBefore);
     }
 

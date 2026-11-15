@@ -326,7 +326,7 @@ public static class BallisticShot
         return result;
     }
 
-    private static int Abs16(int value)
+    internal static int Abs16(int value)
     {
         var v = (short)value;
         return (short)((v ^ (v >> 15)) - (v >> 15));
@@ -340,7 +340,7 @@ public static class BallisticShot
     /// colour 14 from the tank to the shot is drawn and at once restored from the buffer DS:E5BC (no lasting pixel).
     /// d² = 0 is the runtime error of the division, as in the original.
     /// </summary>
-    private static void Repel(IReadOnlyList<PlayfieldTank> tanks, PlayfieldTank shooter, bool leftShooter, int ix, int iy,
+    internal static void Repel(IReadOnlyList<PlayfieldTank> tanks, PlayfieldTank shooter, bool leftShooter, int ix, int iy,
         Real48 subSteps, ref Real48 vx, ref Real48 vy)
     {
         foreach (var tank in tanks)
@@ -413,10 +413,10 @@ public static class BallisticShot
     }
 
     /// <summary>Sign flip of the original (<c>or al,al; jz; xor dh,80h</c>): zero stays as it is.</summary>
-    private static Real48 Negate(Real48 value) => value.IsZero ? value : -value;
+    internal static Real48 Negate(Real48 value) => value.IsZero ? value : -value;
 
     /// <summary><c>and dh,7Fh</c>.</summary>
-    private static Real48 Abs(Real48 value) => value.IsNegative ? -value : value;
+    internal static Real48 Abs(Real48 value) => value.IsNegative ? -value : value;
 
     /// <summary>[ORIGINAL] U431:03C3 (BOMB.EXE 0x05D73): plus of five pixels in colour 19 for 0 &lt; x &lt; 320, 0 &lt; y &lt; 199.</summary>
     internal static void DrawPoint(Span<byte> screen, int x, int y)
@@ -442,7 +442,7 @@ public static class BallisticShot
     /// [ORIGINAL] U431:056D (BOMB.EXE 0x05F1D): one pixel in screen and background buffer, no bounds check.
     /// [APPROX] Addresses beyond the 64000 screen bytes are dropped (only reachable below the frame).
     /// </summary>
-    private static void TrailPoint(Span<byte> screen, Span<byte> background, int x, int y, byte color)
+    internal static void TrailPoint(Span<byte> screen, Span<byte> background, int x, int y, byte color)
     {
         var a = (ushort)(y * 320 + x);
         if (a >= IndexBuffer.Size)
