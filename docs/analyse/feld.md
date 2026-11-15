@@ -159,9 +159,9 @@ Zufallsaufrufe und alle Sätze.
 
 | Aufruf | Ergebnis |
 |---|---|
-| `python3 -I tools/reverse-engineering/feld_schuss.py befunde` | SHA-256 von `O4:01B7–1378`, O6 ganz, `U431:03C3–05EC`, `UCC8:0BB6–0C1E` |
+| `python3 -I tools/reverse-engineering/feld_schuss.py befunde` | SHA-256 von `O4:01B7–1378`, O6 ganz, `U431:03C3–05EC`, `UCC8:0BB6–0C1E`, O7 `0000–040B` (Fallen, Rahmen, Erdrutsch), `O4:4960–4A0A` (nach dem Schuss); 6/6 ok (#117) |
 | `… run --seed <hex> [Fall wie feld.py] --shooter N --angle A --power P [--weapon W] [--ss S] [--trail] [--wind-value V] [--shot-seed HEX] [--sound]` | ein Schuss nach `analyse/feld/schuss-…/` |
-| `… hashes [--only I …]` | feste Liste (25 Schüsse) → `analyse/feld/schuss-hashes.tsv`; daraus `tests/…/Shot/ShotProbeData.cs` |
+| `… hashes [--only I …]` | feste Liste (33 Schüsse; 25–32 aus #118: linke Wand je Wandart, Wand 0 bei Wind 0, Tickgrenze) → `analyse/feld/schuss-hashes.tsv`; daraus `tests/…/Shot/ShotProbeData.cs` |
 
 Die Liste deckt ab: Lead Ball auf Gelände und Panzer, Baby Missile auf Gelände (ohne und mit Flächenschaden), Volltreffer, auf den
 Schützen selbst, alle fünf Wandarten, Wand 0 rechts/links mit Wind > 0/< 0, Kraft = M und > M (G2), Spur, unsichtbarer Schuss mit
@@ -224,8 +224,9 @@ bitgleich (`AfterShotProbeTests`: `RandSeed`, Rahmen und Feld, Puffer, DAC, Ener
 
 ### 5.6 Grenzen
 
-Nicht umgesetzt (Runde 2, R2-D1 = A; `NotSupportedException`): Lenkung, Repulser im Feld (Q5, braucht `ArcTan` `12CE:14D8` und die
-Tabelle `0B25`), Einschläge der Waffen außer 0 und {1, 2, 3, 4, 7, 11}; der Bestand (+2Eh) wird noch nicht abgezogen. Ton und
+Nicht umgesetzt (Runde 2, R2-D1 = A; `NotSupportedException`): Repulser im Feld (Q5, braucht `ArcTan` `12CE:14D8` und die
+Tabelle `0B25`), Einschläge der Waffen außer 0 und {1, 2, 3, 4, 7, 11}. Lenkung (+26h) ist nicht modelliert: `PlayfieldTank` hat kein
+solches Feld, der Flug läuft immer wie ohne Lenkung, ohne Prüfung und ohne Ausnahme (#119). Der Bestand (+2Eh) wird noch nicht abgezogen. Ton und
 Verzögerungen spielen nicht; mit Ton zieht die Explosion die `Random`-Aufrufe wie das Original (Schuss 22).
 
 ## 6. Bildvergleich mit Sitzung 3 (Spur `gelaende-bilder`, Stand 15.11.2026)

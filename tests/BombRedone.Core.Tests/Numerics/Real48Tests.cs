@@ -110,6 +110,32 @@ public sealed class Real48Tests
         Assert.False(Real48.FromHex("000000000000") == Real48.FromHex("000000000080"));
     }
 
+    /// <summary>
+    /// Pascal <c>=</c> is <see cref="Real48.Compare"/> = 0 (review #95 P3, issue #96); expected values from
+    /// <c>real48.py eval cmp A B</c> (00 = equal). <c>==</c> of the type compares bits.
+    /// </summary>
+    [Theory]
+    [InlineData("001234567800", "000000000000", true)]  // exponent 0 with a mantissa: zero for Pascal, other bits
+    [InlineData("810000000000", "810000000000", true)]
+    [InlineData("000000000000", "000000000080", false)] // +0 and -0 differ by the sign bit
+    [InlineData("810000000000", "820000000000", false)]
+    public void PascalEquals_is_Compare_zero(string a, string b, bool expected)
+    {
+        var (left, right) = (Real48.FromHex(a), Real48.FromHex(b));
+
+        Assert.Equal(expected, Real48.PascalEquals(left, right));
+        Assert.Equal(Real48.Compare(left, right) == 0, Real48.PascalEquals(left, right));
+    }
+
+    [Fact]
+    public void Bit_equality_differs_from_PascalEquals_for_zeros_with_mantissa()
+    {
+        var zeroWithMantissa = Real48.FromHex("001234567800");
+
+        Assert.False(zeroWithMantissa == Real48.Zero);
+        Assert.True(Real48.PascalEquals(zeroWithMantissa, Real48.Zero));
+    }
+
     [Fact]
     public void Negation_flips_the_sign_bit()
     {

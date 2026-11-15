@@ -58,6 +58,8 @@ REGION_HASHES = {
     "O6 Einschlag": "d58b9aecd1635788f76a91d32cff5b0cd2d8e8be2be5f163d0ea508211f6d6fb",
     "0431 Punkte und Erdrutsch": "ccad557dbf333b6b505f99e89b8ba528e8f70abb8f06507e65571496cff621e0",
     "0CC8 PutPixel/GetPixel": "a4a9bcc22bfa4ca3ca362ee7f3e41b32f74fac3595909c20b110d9d988161b84",
+    "O7 Fallen, Rahmen, Erdrutsch": "55fc0dfa00df9a64ee3436241519c124de7dc5397cac54ac65f09815508d12bf",
+    "O4 nach dem Schuss": "a32d2990cddcea807769594c4076fa03c7f3b16f95a20f97053da861a1f4e585",
 }
 
 FIELDS = (("energy", 0x21, 2, True), ("score", 0x13, 4, True), ("shield", 0x52, 4, True),

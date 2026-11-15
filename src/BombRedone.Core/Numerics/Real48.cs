@@ -12,7 +12,8 @@ namespace BombRedone.Core.Numerics;
 /// Every operation is a step-by-step translation of the runtime routine (12CE:0EAE-1201), including its
 /// truncating alignment, rounding on the guard byte and its treatment of non-canonical zeros (exponent 0
 /// with mantissa bits), so results are bit-identical with the original.
-/// <see cref="Equals(Real48)"/> and <c>==</c> compare the bits; the Pascal comparison is <see cref="Compare"/>.
+/// <see cref="Equals(Real48)"/> and <c>==</c> compare the bits; the Pascal comparison is <see cref="Compare"/>, Pascal
+/// <c>=</c> is <see cref="PascalEquals"/>.
 /// </summary>
 public readonly partial struct Real48 : IEquatable<Real48>
 {
@@ -297,6 +298,12 @@ public readonly partial struct Real48 : IEquatable<Real48>
         int magnitude = CompareMagnitude(left, right);
         return left.IsNegative ? -magnitude : magnitude;
     }
+
+    /// <summary>
+    /// Pascal <c>=</c>: <see cref="Compare"/> is 0. Unlike <c>==</c> (bits) it treats every number with exponent 0 and
+    /// the same sign as equal. [ORIGINAL] BOMB.EXE 0x15471 (12CE:10F1), as <see cref="Compare"/>.
+    /// </summary>
+    public static bool PascalEquals(Real48 left, Real48 right) => Compare(left, right) == 0;
 
     /// <summary>12CE:1108: exponent, then DX, BX, AH unsigned; stops at equal exponent 0.</summary>
     private static int CompareMagnitude(Real48 left, Real48 right)

@@ -55,7 +55,9 @@ eine Stelle rechts mit gesetztem Bit, Exponent + 1.
 
 **Cmp (`10F1`).** Verschiedene Vorzeichenbits entscheiden allein (auch bei Null: +0 > −x, −0 < +0). Gleiche: Exponent, bei
 gleichem Exponent 0 gleich, sonst DX, BX, AH vorzeichenlos; bei negativen Zahlen umgekehrt. Das Remake liefert −1/0/1;
-`==` des Typs vergleicht Bits, der Pascal-Vergleich ist `Real48.Compare`.
+`==` des Typs vergleicht Bits, der Pascal-Vergleich ist `Real48.Compare`. **Pascal-`=` ist `Real48.PascalEquals`**
+(= `Compare(a, b) == 0`), nicht `==`: Zahlen mit Exponent 0 und gleichem Vorzeichen sind für Pascal gleich, auch mit Mantisse
+(`001234567800` = `000000000000`, `real48.py eval cmp` → 00; #96).
 
 **LongInt → Real (`111B`).** 0 → Null. Betrag, Exponent A0h, bei oberem Wort 0 Wortschiebung (90h), bei oberem Byte 0
 Byteschiebung (88h), dann normalisieren. Exakt, AH bleibt 0.
