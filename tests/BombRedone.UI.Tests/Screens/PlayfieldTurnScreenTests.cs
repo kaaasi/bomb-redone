@@ -30,6 +30,11 @@ public sealed class PlayfieldTurnScreenTests
         public int NextRounds;
 
         public Rig(params PlayerControl[] controls)
+            : this(new TurnSettings(), controls)
+        {
+        }
+
+        public Rig(TurnSettings turn, params PlayerControl[] controls)
         {
             var random = new TurboPascalRandom(0x12345678);
             var field = Playfield.Build(new PlayfieldOptions(controls.Length, 0, 0, 0xFFFF, 2, false), random);
@@ -42,7 +47,7 @@ public sealed class PlayfieldTurnScreenTests
                 p.SetDefaultStocks();
             Screen = new PlayfieldTurnScreen(playfield, view, Players, controls, 1, 1, () => (bool[])Held.Clone(),
                 new ShotSettings(10, wind.Value, false, false), 0, false, random,
-                new ShotTiming(TimeSpan.Zero, TimeSpan.Zero, TimeSpan.Zero), () =>
+                new ShotTiming(TimeSpan.Zero, TimeSpan.Zero, TimeSpan.Zero), turn, () =>
                 {
                     NextRounds++;
                     return null;
@@ -72,19 +77,93 @@ public sealed class PlayfieldTurnScreenTests
     }
 
     [Fact]
-    public void With_Alt_an_arrow_turns_once_until_it_is_released()
+    public void The_delay_is_the_turret_speed_of_the_settings()
     {
+        var rig = new Rig(new TurnSettings(Delay: 16), PlayerControl.Keyboard, PlayerControl.Keyboard);
+        var start = rig.Players[0].Tank.Angle;
+        rig.Held[Scancode.Right] = true;
+        rig.Run(10);
+        var turned = start - rig.Players[0].Tank.Angle;
+
+        // 160 ms at TS = 16 ms per poll: about 10 steps.
+        Assert.InRange(turned, 8, 11);
+    }
+
+    [Fact]
+    public void With_Alt_an_arrow_turns_once_after_it_is_released()
+    {
+        // O7:1203: with Alt the routine waits until the arrow is up; O7:040C turns only after it returns.
         var rig = new Rig(PlayerControl.Keyboard, PlayerControl.Keyboard);
         var start = rig.Players[0].Tank.Angle;
         rig.Held[Scancode.Alt] = true;
         rig.Held[Scancode.Left] = true;
         rig.Run(10);
+        Assert.Equal(start, rig.Players[0].Tank.Angle);
+        rig.Held[Scancode.Left] = false;
+        rig.Run(1);
+        Assert.Equal(start + 1, rig.Players[0].Tank.Angle);
+        rig.Held[Scancode.Left] = true;
+        rig.Run(5);
         Assert.Equal(start + 1, rig.Players[0].Tank.Angle);
         rig.Held[Scancode.Left] = false;
         rig.Run(1);
-        rig.Held[Scancode.Left] = true;
-        rig.Run(1);
         Assert.Equal(start + 2, rig.Players[0].Tank.Angle);
+    }
+
+    [Fact]
+    public void Tab_changes_the_weapon_only_after_it_is_released()
+    {
+        var rig = new Rig(PlayerControl.Keyboard, PlayerControl.Keyboard);
+        var start = rig.Players[0].Tank.Weapon;
+        rig.Held[Scancode.Tab] = true;
+        rig.Run(10);
+        Assert.Equal(start, rig.Players[0].Tank.Weapon);
+        rig.Held[Scancode.Tab] = false;
+        rig.Run(1);
+        Assert.NotEqual(start, rig.Players[0].Tank.Weapon);
+    }
+
+    [Fact]
+    public void A_key_pressed_while_another_is_waited_for_counts_after_the_release()
+    {
+        // O7:10F1 waits for Tab, then the routine reads I (O7:1104) from the live table.
+        var rig = new Rig(PlayerControl.Keyboard, PlayerControl.Keyboard);
+        var direction = rig.Players[0].Tank.Direction;
+        rig.Held[Scancode.Tab] = true;
+        rig.Run(2);
+        rig.Held[Scancode.I] = true;
+        rig.Run(2);
+        Assert.Equal(direction, rig.Players[0].Tank.Direction);
+        rig.Held[Scancode.Tab] = false;
+        rig.Run(2);
+        rig.Held[Scancode.I] = false;
+        rig.Run(2);
+        Assert.Equal(-direction, rig.Players[0].Tank.Direction);
+    }
+
+    [Fact]
+    public void A_held_click_on_the_weapon_bar_changes_the_weapon_once()
+    {
+        var rig = new Rig(PlayerControl.Mouse, PlayerControl.Keyboard);
+        foreach (var p in rig.Players)
+            Array.Fill(p.WeaponStock, (short)999);
+        var start = rig.Players[0].Tank.Weapon;
+        var click = new ScreenInput(Mouse: MouseButtons.Right) { MouseX = 2 * WeaponBar.FieldLeft(8), MouseY = 20 };
+        rig.Run(10, click);
+        Assert.Equal(start, rig.Players[0].Tank.Weapon);
+        rig.Run(2);
+        Assert.Equal(start + 1, rig.Players[0].Tank.Weapon);
+    }
+
+    [Fact]
+    public void The_mouse_shot_starts_only_after_both_buttons_are_up()
+    {
+        var rig = new Rig(PlayerControl.Mouse, PlayerControl.Keyboard);
+        var both = new ScreenInput(Mouse: MouseButtons.Left | MouseButtons.Right) { MouseX = 320, MouseY = 100 };
+        Assert.Same(rig.Screen, rig.Run(10, both));
+        Assert.Equal(30, rig.Players[0].WeaponStock[1]);
+        Assert.IsType<PlayfieldShotScreen>(rig.Run(1));
+        Assert.Equal(29, rig.Players[0].WeaponStock[1]);
     }
 
     [Fact]

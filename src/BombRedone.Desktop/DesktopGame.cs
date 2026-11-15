@@ -167,15 +167,25 @@ public sealed class DesktopGame : Game
     {
         var round = rounds.NextRound();
         var screen = new PlayfieldScreen(fonts, round.Field, round.Wind, setup.Players.Select(p => p.Name).ToArray());
-        var view = new PlayfieldTurnView(screen, fonts, round.Wind);
+        var view = new PlayfieldTurnView(screen, fonts, round.Wind, teamPlay: options.TeamPlay);
         var players = round.Field.Tanks.Select(t => new TurnPlayer(t, setup.Players[t.Number - 1].Name)).ToList();
         foreach (var p in players)
             p.SetDefaultStocks();
+        foreach (var team in options.TeamPlay ? setup.Teams : [])
+        {
+            foreach (var member in team.Members)
+                players[member - 1].TeamName = team.Name;
+        }
+
         var cfg = config ?? GameConfig.BombCfgDefaults;
         var settings = new Core.Shot.ShotSettings(cfg.ShotSpeed, round.Wind.Value, options.TrailVisible, cfg.SoundEffects);
+
+        // TS from BOMB.CFG (DS:E8C4, GameConfig.TurretSpeed), team play from the game options (DS:E8BC, loaded from
+        // BOMB.CFG). [APPROX] Sound off: the desktop has no sound output yet, so the turn yields no tones.
+        var turn = new TurnSettings(Sound: false, Delay: cfg.TurretSpeed, TeamPlay: options.TeamPlay);
         return new PlayfieldTurnScreen(screen, view, players, setup.Players.Select(p => p.Control).ToArray(), round.Start.Player,
             round.Start.Pass, HeldScancodes, settings, options.CrumblePercent, options.TanksFall, random,
-            ShotTiming.FromOptions(cfg.ExplosionSpeed, cfg.FallSpeed),
+            ShotTiming.FromOptions(cfg.ExplosionSpeed, cfg.FallSpeed), turn,
             () => RoundPreview(fonts, config, options, random, setup, rounds));
     }
 

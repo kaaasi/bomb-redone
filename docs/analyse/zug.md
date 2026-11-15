@@ -77,7 +77,7 @@ nach Spieler N hoch, +5Eh und +70h zählen je Zug des Spielers.
 3. **Schummeltaste nur mit Einfg und Entf des Ziffernblocks** (Scancodes 52h/53h, nicht E0 52h/53h; Fall 22). In der Schleife wirken
    C, W, G, D bei jedem Durchlauf, Ende mit Einfg + Entf oder Leertaste; danach werden Einfg, Entf und Leertaste gelöscht und der
    Befehl ist 0 (der Feuerknopf muss neu gedrückt werden, Fall 20).
-4. **Taste 0** ruft `O9:0040(10, …)`; bei mehr als N Spielern kehrt `O9:0040` **sofort** zurück (`0190`) – ohne `U0C48:0227`, die
+4. **Taste 0** ruft `O9:0040(0, …)` (`O7:112C`), `O9:0054–005A` macht daraus 10; bei n > N kehrt `O9:0040` **sofort** zurück (`0190`) – ohne `U0C48:0227`, die
    Tastatur bleibt also im BIOS-Weitergabemodus (Tasten landen zusätzlich im BIOS-Puffer, bei vollem Puffer piept das BIOS;
    im Remake `[APPROX]` nicht nachgebildet, weil ohne Wirkung auf Bild und Spielzustand).
 5. **Laser mit Bestand ≤ 100** und **Waffe ohne Bestand**: `O7:0EF7` gibt 8 zurück, **ohne** `Delay(TS)` (Fall 15: ein Delay bei
@@ -98,7 +98,8 @@ nach Spieler N hoch, +5Eh und +70h zählen je Zug des Spielers.
 
 `TurnSession` bildet Z1 (`Begin`), `O7:040C` mit `O7:0EF7` (`Play`), `O9:0040`, `O9:092E` und den MIRV-Dialog (`MirvSetup`) als
 Koroutine nach: Jede Abfragestelle der Probe ist ein `TurnWait.Poll`, `Delay`/`Sound`/`NoSound` werden an den Gastgeber gereicht,
-die Warteschleifen lassen die Tasten in `TurnInput` selbst los. BGI-Text und Fenster zeichnet die UI über `ITurnView` (Teil 3);
+an den Warteschleifen meldet Core `TurnWait.ReleaseKeys` (Tasten) bzw. `ReleaseButtons` (`O7:0E97` und die Mausfelder von
+`O7:0EF7`, MIRV-Seiten) und lässt die Tasten in `TurnInput` nach dem Fortsetzen selbst los; die Probe setzt sofort fort. BGI-Text und Fenster zeichnet die UI über `ITurnView` (Teil 3);
 Rohr, Panzer, Rahmen und DAC zeichnet Core selbst. `TurnOrder.Next` ist R5, `WeaponBar` Z2.
 
 Abnahme: alle 40 Züge **bitgleich** zur Probe (`TurnProbeTests`: Status, verbrauchte Schritte, Abfragestellen, jeder Befehl, jede
@@ -127,9 +128,13 @@ Schließen wieder nach der Energie.
 `PlayfieldTurnScreen` (UI, ohne MonoGame testbar) ersetzt die Vorschau `RoundPreviewScreen`: Z1 und Zug aus Core mit Tastatur und
 Maus, MIRV-Dialog bei Waffe 7, dann der Schuss über `PlayfieldShotScreen`/`Core/Shot` und der nächste Spieler nach R5. Je Bild läuft
 die Koroutine bis zur nächsten Abfrage ohne vorherige Verzögerung; die Verzögerungen TS des Zugs werden von der Bildzeit abgezogen
-(gehaltener Pfeil ≈ 125 Schritte/s wie im Original bei TS = 8). Von Core losgelassene Tasten bleiben gesperrt, bis der Spieler sie
-loslässt (das Original wartet in der Schleife). `DesktopGame` liefert die Tabelle `DS:452A` aus dem Tastaturzustand (F2: nächste
-Runde). Restlücke R2 „Desktop-Zug ohne Kopfzeile“ damit erledigt.
+(gehaltener Pfeil ≈ 125 Schritte/s wie im Original bei TS = 8). An `ReleaseKeys`/`ReleaseButtons` bleibt die Koroutine stehen, bis
+der Spieler die Tasten bzw. Knöpfe physisch losgelassen hat, und läuft dann mit der Eingabe dieses Augenblicks weiter: der Befehl
+wirkt wie im Original erst nach dem Loslassen (`O7:054E` → `0551`), währenddessen gedrückte Tasten liest die Routine danach aus der
+laufenden Tabelle, der Mausschuss startet erst bei losgelassenen Knöpfen (Review 2026-11-16 P2-1). Von Core ohne Warten gelöschte
+Tasten (MIRV-Dialog, Schummelschleife) bleiben gesperrt, bis der Spieler sie loslässt. `DesktopGame` liefert die Tabelle `DS:452A`
+aus dem Tastaturzustand (F2: nächste Runde) und übergibt TS aus `BOMB.CFG` (`GameConfig.TurretSpeed`) und das Teamspiel der
+Spieloptionen samt Teamnamen; Ton ausdrücklich aus (`[APPROX]`, P2-2). Restlücke R2 „Desktop-Zug ohne Kopfzeile“ damit erledigt.
 
 `[APPROX]` bis zur Spur `runde` bzw. Runde 4: kein Tod und kein Rundenende (Energie 0 zählt als ausgeschieden, unter zwei Panzern
 folgt die nächste Runde), Waffen ohne Core-Schuss (Laser, Roller, Sonic, MIRV-Teilung, Repulser im Feld) überspringen den Schuss,

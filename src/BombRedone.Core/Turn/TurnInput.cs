@@ -25,7 +25,8 @@ public static class Scancode
 /// <summary>
 /// The input the turn reads, as an abstract state the host feeds (docs/analyse/zug.md section 2): held keys (DS:452A),
 /// the BIOS keyboard buffer (Crt.KeyPressed/ReadKey in O9) and the mouse (INT 33h function 3 through U0E11).
-/// The turn itself releases keys at its wait-for-release loops (it waits there until the player lets go).
+/// At its wait-for-release loops the turn yields <see cref="TurnWaitKind.ReleaseKeys"/> / <see cref="TurnWaitKind.ReleaseButtons"/>
+/// and clears the keys itself when resumed.
 /// </summary>
 public sealed class TurnInput
 {
@@ -96,25 +97,13 @@ public sealed class TurnInput
         return ascii;
     }
 
-    /// <summary>A wait-for-release loop: the player lets go of <paramref name="scancodes"/>.</summary>
-    internal void Release(string name, params int[] scancodes)
+    /// <summary>Any of <paramref name="scancodes"/> held.</summary>
+    internal bool AnyHeld(IReadOnlyList<int> scancodes) => scancodes.Any(s => _held[s]);
+
+    /// <summary>The end of a wait-for-release loop: <paramref name="scancodes"/> are up.</summary>
+    internal void Release(IReadOnlyList<int> scancodes)
     {
-        var any = false;
         foreach (var s in scancodes)
-        {
-            any |= _held[s];
             _held[s] = false;
-        }
-
-        if (any)
-            Releases.Add(name);
-    }
-
-    /// <summary>A loop that waits until both mouse buttons are up.</summary>
-    internal void ReleaseMouse(string name)
-    {
-        if (MouseButtons != 0)
-            Releases.Add(name);
-        MouseButtons = 0;
     }
 }

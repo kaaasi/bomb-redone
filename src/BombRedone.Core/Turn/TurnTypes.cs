@@ -66,10 +66,24 @@ public enum TurnWaitKind
 
     /// <summary>Crt.NoSound.</summary>
     NoSound,
+
+    /// <summary>
+    /// A wait-for-release loop (O7:0EF7, docs/analyse/zug.md section 4): the routine spins until every key of
+    /// <see cref="TurnWait.Keys"/> is up. The host resumes once the player has let go (and may update <see cref="TurnInput"/>
+    /// before); the turn then clears the keys itself. A host without time (the probe) resumes at once.
+    /// </summary>
+    ReleaseKeys,
+
+    /// <summary>
+    /// A loop that waits until both mouse buttons are up (O7:0E97 before the shot, the bar fields of O7:0EF7, the MIRV
+    /// pages O4:13D4); resumed like <see cref="ReleaseKeys"/>.
+    /// </summary>
+    ReleaseButtons,
 }
 
 /// <summary>What the turn coroutine yields to its host.</summary>
-public readonly record struct TurnWait(TurnWaitKind Kind, TurnPollSite Site = TurnPollSite.Input, int Value = 0)
+public readonly record struct TurnWait(TurnWaitKind Kind, TurnPollSite Site = TurnPollSite.Input, int Value = 0,
+    IReadOnlyList<int>? Keys = null)
 {
     public static TurnWait Poll(TurnPollSite site) => new(TurnWaitKind.Poll, site);
 
@@ -78,6 +92,10 @@ public readonly record struct TurnWait(TurnWaitKind Kind, TurnPollSite Site = Tu
     public static TurnWait Sound(int hz) => new(TurnWaitKind.Sound, Value: hz);
 
     public static TurnWait NoSound { get; } = new(TurnWaitKind.NoSound);
+
+    public static TurnWait ReleaseKeys(IReadOnlyList<int> scancodes) => new(TurnWaitKind.ReleaseKeys, Keys: scancodes);
+
+    public static TurnWait ReleaseButtons { get; } = new(TurnWaitKind.ReleaseButtons);
 }
 
 /// <summary>Options the turn reads.</summary>

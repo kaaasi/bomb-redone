@@ -8,8 +8,9 @@ namespace BombRedone.Core.Turn;
 /// One player's turn of a round: turn start Z1 (O4:479A–495D), the turn O7:040C with the input routine O7:0EF7, the tank
 /// info O9:0040, the target selection O9:092E and the MIRV dialog at the start of O4:13D4 (docs/analyse/runde.md section 6,
 /// docs/analyse/zug.md). The waits of the original are yields of a coroutine (<see cref="TurnWait"/>): at a poll the host
-/// updates <see cref="Input"/>, delays and tones it plays or skips. Wait-for-release loops release the keys in
-/// <see cref="Input"/> themselves. Verified bit for bit against the probe zug.py (TurnProbeTests).
+/// updates <see cref="Input"/>, delays and tones it plays or skips. At wait-for-release loops it resumes once the keys or
+/// buttons are up (<see cref="TurnWaitKind.ReleaseKeys"/>, <see cref="TurnWaitKind.ReleaseButtons"/>); the turn then
+/// releases them in <see cref="Input"/> itself. Verified bit for bit against the probe zug.py (TurnProbeTests).
 /// </summary>
 public sealed class TurnSession
 {
@@ -108,7 +109,8 @@ public sealed class TurnSession
         while (!fire);
 
         // O7:0E97: until both buttons are up.
-        Input.ReleaseMouse("mouse fire");
+        foreach (var w in WaitForButtons("mouse fire"))
+            yield return w;
         if (p.Guidance > 0)
         {
             foreach (var w in SelectTarget(p, control))
@@ -216,6 +218,29 @@ public sealed class TurnSession
         }
     }
 
+    /// <summary>
+    /// A wait-for-release loop of O7:0EF7: the host resumes once <paramref name="scancodes"/> are up (the probe at once);
+    /// the routine only goes on afterwards, so the command takes effect after the release like in the original.
+    /// </summary>
+    private IEnumerable<TurnWait> WaitForRelease(string name, int[] scancodes)
+    {
+        if (!Input.AnyHeld(scancodes))
+            yield break;
+        Input.Releases.Add(name);
+        yield return TurnWait.ReleaseKeys(scancodes);
+        Input.Release(scancodes);
+    }
+
+    /// <summary>A loop that waits until both mouse buttons are up (O7:0E97, O7:13EB ff., O4:13D4 ff.).</summary>
+    private IEnumerable<TurnWait> WaitForButtons(string name)
+    {
+        if (Input.MouseButtons == 0)
+            yield break;
+        Input.Releases.Add(name);
+        yield return TurnWait.ReleaseButtons;
+        Input.MouseButtons = 0;
+    }
+
     private static IEnumerable<TurnWait> Tone(int hz, int ms)
     {
         yield return TurnWait.Sound(hz);
@@ -299,37 +324,43 @@ public sealed class TurnSession
             if (k[Scancode.I])
             {
                 command = TurnCommand.FlipDirection;
-                k.Release("I", Scancode.I);
+                foreach (var w in WaitForRelease("I", [Scancode.I]))
+                    yield return w;
             }
 
             if (k[Scancode.H])
             {
                 command = TurnCommand.ToggleHerb;
-                k.Release("H", Scancode.H);
+                foreach (var w in WaitForRelease("H", [Scancode.H]))
+                    yield return w;
             }
 
             if (k[Scancode.V])
             {
                 command = TurnCommand.ToggleVick;
-                k.Release("V", Scancode.V);
+                foreach (var w in WaitForRelease("V", [Scancode.V]))
+                    yield return w;
             }
 
             if (k[Scancode.Tab] && (k[Scancode.LeftShift] || k[Scancode.RightShift]))
             {
                 command = TurnCommand.PreviousWeapon;
-                k.Release("Shift+Tab", Scancode.Tab);
+                foreach (var w in WaitForRelease("Shift+Tab", [Scancode.Tab]))
+                    yield return w;
             }
 
             if (k[Scancode.Tab])
             {
                 command = TurnCommand.NextWeapon;
-                k.Release("Tab", Scancode.Tab);
+                foreach (var w in WaitForRelease("Tab", [Scancode.Tab]))
+                    yield return w;
             }
 
             if (k[Scancode.I])
             {
                 command = TurnCommand.FlipDirection;
-                k.Release("I", Scancode.I);
+                foreach (var w in WaitForRelease("I", [Scancode.I]))
+                    yield return w;
             }
 
             if (k[Scancode.Space] || k[Scancode.Enter] || k[Scancode.PadEnter])
@@ -356,7 +387,8 @@ public sealed class TurnSession
             {
                 command = TurnCommand.AnglePlus;
                 if (alt)
-                    k.Release("Left", Scancode.PadLeft, Scancode.Left);
+                    foreach (var w in WaitForRelease("Left", [Scancode.PadLeft, Scancode.Left]))
+                        yield return w;
             }
 
             alt = k[Scancode.Alt] || k[Scancode.RightAlt];
@@ -364,14 +396,16 @@ public sealed class TurnSession
             {
                 command = TurnCommand.AngleMinus;
                 if (alt)
-                    k.Release("Right", Scancode.PadRight, Scancode.Right);
+                    foreach (var w in WaitForRelease("Right", [Scancode.PadRight, Scancode.Right]))
+                        yield return w;
             }
 
             alt = k[Scancode.Alt] || k[Scancode.RightAlt];
             if (k[Scancode.PadDown] || k[Scancode.Down])
             {
                 if (alt)
-                    k.Release("Down", Scancode.PadDown, Scancode.Down);
+                    foreach (var w in WaitForRelease("Down", [Scancode.PadDown, Scancode.Down]))
+                        yield return w;
                 command = TurnCommand.PowerDown;
             }
 
@@ -380,7 +414,8 @@ public sealed class TurnSession
             {
                 command = TurnCommand.PowerUp;
                 if (alt)
-                    k.Release("Up", Scancode.PadUp, Scancode.Up);
+                    foreach (var w in WaitForRelease("Up", [Scancode.PadUp, Scancode.Up]))
+                        yield return w;
             }
 
             alt = k[Scancode.Alt] || k[Scancode.RightAlt];
@@ -389,7 +424,8 @@ public sealed class TurnSession
                 command = TurnCommand.PowerUp;
                 p.Tank.Power += 99;
                 if (alt)
-                    k.Release("PgUp", Scancode.PadPageUp, Scancode.PageUp);
+                    foreach (var w in WaitForRelease("PgUp", [Scancode.PadPageUp, Scancode.PageUp]))
+                        yield return w;
             }
 
             alt = k[Scancode.Alt] || k[Scancode.RightAlt];
@@ -398,7 +434,8 @@ public sealed class TurnSession
                 command = TurnCommand.PowerDown;
                 p.Tank.Power -= 99;
                 if (alt)
-                    k.Release("PgDn", Scancode.PadPageDown, Scancode.PageDown);
+                    foreach (var w in WaitForRelease("PgDn", [Scancode.PadPageDown, Scancode.PageDown]))
+                        yield return w;
             }
         }
 
@@ -429,19 +466,22 @@ public sealed class TurnSession
                         command = TurnCommand.PreviousWeapon;
                     if (b2)
                         command = TurnCommand.NextWeapon;
-                    k.ReleaseMouse("mouse bar");
+                    foreach (var w in WaitForButtons("mouse bar"))
+                        yield return w;
                 }
 
                 if (x >= WeaponBar.FieldLeft(18) && x < WeaponBar.FieldLeft(19))
                 {
                     command = TurnCommand.ToggleHerb;
-                    k.ReleaseMouse("mouse Herb");
+                    foreach (var w in WaitForButtons("mouse Herb"))
+                        yield return w;
                 }
 
                 if (x >= WeaponBar.FieldLeft(19) && x < WeaponBar.FieldLeft(20))
                 {
                     command = TurnCommand.ToggleVick;
-                    k.ReleaseMouse("mouse Vick");
+                    foreach (var w in WaitForButtons("mouse Vick"))
+                        yield return w;
                 }
             }
 
@@ -479,7 +519,8 @@ public sealed class TurnSession
             if (x is >= 296 and <= 302 && y is >= 0 and <= 7)
             {
                 command = TurnCommand.FlipDirection;
-                k.ReleaseMouse("mouse direction");
+                foreach (var w in WaitForButtons("mouse direction"))
+                    yield return w;
             }
 
             if (b1 && b2)
@@ -693,7 +734,8 @@ public sealed class TurnSession
         while (true)
         {
             _view.ShowMirvPage(1);
-            k.ReleaseMouse("mirv mouse 1");
+            foreach (var w in WaitForButtons("mirv mouse 1"))
+                yield return w;
             ClearFireKeys();
             pattern = 0;
             var shown = -1;
@@ -733,7 +775,8 @@ public sealed class TurnSession
             }
 
             _view.ShowMirvPage(2);
-            k.ReleaseMouse("mirv mouse 2");
+            foreach (var w in WaitForButtons("mirv mouse 2"))
+                yield return w;
             ClearFireKeys();
             detonation = 0;
             shown = -1;
