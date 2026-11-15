@@ -406,4 +406,7 @@ R2-D6 = B); Stufe 2b `schuss` nach Merge von `gelaende`. Integrationsfolge: `gel
 
 ### Status p3-runde-2
 
-- noch nicht begonnen.
+- 15.11.2026, Claude Opus 5.5 (geplanter Lauf), PR #138, Base `9b4219e`: Teile 1–3 fertig in einem Lauf. Testlücken #109, #118
+  (Schüsse 25–32 inkl. Tickgrenze), #129, #130, #131 geschlossen, je Mutation rot; `Real48.PascalEquals` (#96); #111 teilweise
+  bestätigt (Startspieler-Zähler je Runde neu, Mischen je Runde richtig) → `RoundSequence`; `feld_schuss.py befunde` 6/6 (#117);
+  Doku #112, #119, #131, #132; #110 per Plan erledigt. Alle bisherigen Probe-Hashes unverändert; #102 bleibt für Runde 3.

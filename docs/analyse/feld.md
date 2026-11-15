@@ -67,7 +67,8 @@ vergleichen SHA-256 der Puffer gegen die Werte aus `feld.py hashes` (Hashes sind
 
 ## 3. Ergebnisse (Stand Teil 1)
 
-`befunde`: 5 von 5 Bereichen bestätigt; `cpu`: 11 von 11 Operationen gleich. `hashes`: alle 11 Fälle laufen bis S. Die Zählung der
+`befunde`: 5 von 5 Bereichen bestätigt; `cpu`: 11 von 11 Operationen gleich. `hashes`: alle 11 Fälle von Teil 1 laufen bis S (die
+Liste hat seitdem 13 Fälle, §1 und §4; #112). Die Zählung der
 Zufallsaufrufe an A bestätigt [runde.md](runde.md) §3.3–§3.6 und §4 (Beispiele aus `hashes.tsv`):
 
 | Fall | `Random(n)` an A | Aufschlüsselung nach `runde.md` |
@@ -122,6 +123,11 @@ ohne BGI-Text (`screen_core`), gesetzte DAC-Einträge; an S Windstufe, Wind, Sta
   Spieler gleich `SkipShuffle` (`SeedSearchTests`).
 - Desktop: nach der Spielerauswahl eine Vorschau der Runde (`PlayfieldScreen`), jede Taste baut die nächste (`[APPROX]` bis Zug
   und Schuss folgen); nicht gesetzte DAC-Einträge 0..15 aus der VGA-Grundpalette (`MenuGraphics.DefaultColors`, `[APPROX]`).
+- Rundenfolge (#111, Spur `p3-runde-2`): `Core/Playfield/RoundSequence` – vor jeder Runde Mischen (richtig: je Spiel der Schlacht
+  genau eine Runde, `runde.md` §1 S1/S3), dann Spielfeld, Wind und Startspieler mit den über die Schlacht gehaltenen Zählern +72h
+  (`runde.md` §2 R4). Vorher legte die Desktop-Vorschau die Zähler je Runde neu an, sodass derselbe Satz mehrmals hintereinander
+  beginnen konnte (`RoundSequenceTests` vorher rot); das Mischen je Runde war kein Fehler. `[APPROX]`: Zähler bleiben bei der
+  Position (Sätze nicht getauscht, R2-D4 = A), Zufallsaufrufe zwischen den Runden (Wertung, Einkauf, Computer) fehlen bis Runde 3.
 
 ## 4. Grenzen
 
@@ -239,8 +245,9 @@ bei `--time`). Je Hundertstel `RandSeed` wie `Randomize` (`DosTime`: Wort `SS·2
 Mischen, dann billige Vorfilter in Aufrufreihenfolge (`PlayfieldPrefilter`, ohne Zeichnen): gezeigter Hintergrund
 (`--background`), Höhe h des linken flachen Rands (aus den `--terrain`-Punkten im Rand, y < 189), x von Panzer 1 und N (`--tanks`),
 Wind (`--wind`, Windoption aus der Konfiguration); erst danach das ganze Spielfeld gegen alle Panzer und Geländepunkte. Alle
-Hundertstel 0..99 werden versucht, obwohl DOS sie aus dem 18,2-Hz-Takt ableitet (Obermenge). Die Hundertstel- und
-Je Sekunde des Fensters ein Stück, die Stücke laufen parallel.
+Hundertstel 0..99 werden versucht, obwohl DOS sie aus dem 18,2-Hz-Takt ableitet (Obermenge). Je Sekunde des Fensters bilden die
+Hundertstel mit ihren k Schritten ein Stück, die Stücke laufen parallel; die letzte Sekunde gehört dazu (Test mit Treffer am
+Fensterende, #130/#132).
 
 **s3_02:** Optionen aus `ablauf1-GAME1.TWS` = Voreinstellungen von `BOMBCFG.EXE` mit 2 Spielern. Aus dem Bild gemessen (Werte,
 keine Bildpixel): Hintergrund 8 (Asterisk), Panzer x 25 und 281, oberstes Geländepixel (20, 136), (100, 132), (160, 161),
@@ -266,9 +273,11 @@ DAC (`PlayfieldScreenSessionTests`, `[GameDataFact]`, Bild aus `~/referenz/bilde
 - **Gleich:** Rahmen, Hintergrund Asterisk, Gelände, beide Panzer mit Rohr (x, y = 25/135 und 281/140), Beschriftungen der Kopfzeile,
   Name des Spielers am Zug („Player 1“ in Farbe 21 = Satz 2, auch der Startspieler), Waffenleiste – alle 64.000 Indizes außer den
   unten genannten 248. DAC aller benutzten Farben gleich, auch der Verlauf 30..59 (noch kein Rotationsschritt sichtbar).
-- **Abweichung 1 (erklärt, Zug):** 248 Pixel Farbe 14 in der Kopfzeile fehlen – die Werte, die erst der Zug schreibt (Winkel 75,
-  Kraft 200, Richtungspfeil, Wind 92, Men 100; `runde.md` §6.1, Zug in Runde 2 nicht umgesetzt). Ebenso setzt der Zug die DAC-Einträge
-  100, 101, 111 der Waffenleiste (bei uns an K noch schwarz).
+- **Abweichung 1 (erklärt, Zug):** 248 Pixel Farbe 14 in der Kopfzeile fehlen – die Werte, die erst der Zug schreibt (`runde.md`
+  §6.1, Zug in Runde 2 nicht umgesetzt): Winkel 75 (45 Pixel in x 56..69, y 0..6), Kraft 200 (97 Pixel in x 56..79, y 10..16),
+  Richtungspfeil (15 Pixel in x 290..302, y 1..5) und der Wert nach „Men“ (91 Pixel in x 248..270, y 10..16). Der Windwert („Wind: 92 ←“,
+  Farbe 9) gehört zur Kopfzeile des Rundenbeginns und ist gleich (#131). Ebenso setzt der Zug die DAC-Einträge 100, 101, 111 der
+  Waffenleiste (bei uns an K noch schwarz); die übrigen Einträge 102..110 und 112..119 sind gleich und werden mitgeprüft.
 - **Abweichung 2 (erklärt, R2-D4 = A):** DAC 20 und 21 sind vertauscht. Die Farbteiler gehören zum Satz (+60h..+64h) und wandern
   beim Mischen mit; `Core` mischt die Sätze erst in Runde 3 mit (R2-D4 = A) und nimmt die Teiler nach Satznummer. Indizes gleich.
 
