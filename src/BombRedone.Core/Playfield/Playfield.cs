@@ -88,6 +88,8 @@ public sealed class Playfield
     /// <summary>Tanks of players 1..N.</summary>
     public IReadOnlyList<PlayfieldTank> Tanks => _tanks;
 
+    private IReadOnlyList<(int R, int G, int B)>? _divisors;
+
     /// <summary>
     /// Branch list DS:E820 of the CRI (entries 1..20, x = 0 for a dead branch). [APPROX] A global of the original that
     /// keeps its entries for the whole game; here it starts empty with every playfield.
@@ -98,12 +100,20 @@ public sealed class Playfield
     /// Builds the playfield like O8:0984. <paramref name="random"/> holds RandSeed after the shuffle of the records
     /// (docs/analyse/runde.md section 4 no. 2–5) and is advanced exactly as in the original.
     /// </summary>
-    public static Playfield Build(PlayfieldOptions options, TurboPascalRandom random)
+    /// <param name="divisors">
+    /// Colour divisors (+60h, +62h, +64h) of the records 1..N; without them those of players 1..N
+    /// (<see cref="ColorDivisors"/>). The shuffle O3:0000 swaps whole records and only sets +00h to the new position
+    /// (O10:0161), so the colour index follows the position and its RGB the player (#153).
+    /// </param>
+    public static Playfield Build(PlayfieldOptions options, TurboPascalRandom random,
+        IReadOnlyList<(int R, int G, int B)>? divisors = null)
     {
         ArgumentNullException.ThrowIfNull(options);
         ArgumentNullException.ThrowIfNull(random);
         options.Validate();
-        var field = new Playfield(options);
+        if (divisors is not null && divisors.Count != options.Players)
+            throw new ArgumentException("One colour divisor triple per player.", nameof(divisors));
+        var field = new Playfield(options) { _divisors = divisors };
 
         // O8:09A6: wall of the round.
         field.Wall = (WallKind)(options.Wall == PlayfieldOptions.RandomWall ? random.Next(5) : options.Wall);
@@ -233,7 +243,7 @@ public sealed class Playfield
     {
         var n = Options.Players;
         for (var i = 1; i <= n; i++)
-            _tanks.Add(new PlayfieldTank(i));
+            _tanks.Add(new PlayfieldTank(i) { ColorDivisors = _divisors?[i - 1] ?? ColorDivisors[i - 1] });
 
         _tanks[0].X = random.Next(28) + 16;
         _tanks[n - 1].X = 305 - random.Next(28);
@@ -287,7 +297,7 @@ public sealed class Playfield
         var v = (short)(63 * tank.Energy) / 100;
         if (tank.Energy > 0)
         {
-            var (r, g, b) = ColorDivisors[tank.Number - 1];
+            var (r, g, b) = tank.ColorDivisors;
             Palette.Set(tank.Color, v / r, v / g, v / b);
         }
         else

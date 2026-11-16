@@ -334,11 +334,12 @@ def run_round(p, case, rnd):
         m.traps[feld.lin(fm.LOAD_SEG + CRT_DELAY[0], CRT_DELAY[1])] = on_delay
         out["start"] = {"player": start, "randseed": "%08X" % p.rds(m, feld.RANDSEED, 4),
                         "wind": p.rds(m, 0xE8A2, signed=True), "crumble": p.rds(m, 0xE8A4),
-                        "pass": p.rds(m, 0x47EA)}
+                        "pass": p.rds(m, 0x47EA), "ss": p.rds(m, 0xE8CA), "trail": p.rds(m, 0xE8B5, 1)}
         try:
             m.run(limit=c.steps + rnd.get("limit", 20_000_000_000))
         except Exhausted as e:
             out["status"] = "exhausted at %s" % e.args[0]
+            state["turn"] += 1  # the turn that has no script entry
             checkpoint("exhausted")
 
     result, _ = p.run_case(case, after=after)
@@ -456,7 +457,7 @@ ROUNDS = [
 
 
 ROW_HEADER = ("nr\tseed\tplayers\twall\tbackground\twind_opt\tinvisible\tno_fall\tturns\tsets\tsound\tcrumble\tpass\t"
-              "death_seeds\tstatus\tstart\tcp\tkind\tturn\tvictim\tchoice\tpass_now\tto_move\twinner\trandseed\t"
+              "death_seeds\tstatus\tstart\tss\ttrail\twind\tcp\tkind\tturn\tvictim\tchoice\tpass_now\tto_move\twinner\trandseed\t"
               "random_n\trandom_real\tfield\tbackground_sha\tdac_set\tdac_entries\trecords_raw\tshot_log\tdelays\t"
               "delay_ms\trecords")
 
@@ -477,7 +478,8 @@ def round_rows(p, i):
             rnd["sets_text"], str(int(bool(rnd.get("sound")))), "" if rnd.get("crumble") is None else str(rnd["crumble"]),
             "" if rnd.get("pass") is None else str(rnd["pass"]),
             ",".join("%08X" % v for v in rnd.get("death_seeds") or ()), out["status"],
-            "%d/%s" % (out["start"]["player"], out["start"]["randseed"])]
+            "%d/%s" % (out["start"]["player"], out["start"]["randseed"]), str(out["start"]["ss"]),
+            str(out["start"]["trail"]), str(out["start"]["wind"])]
     rows = []
     for j, cp in enumerate(out["checkpoints"]):
         rows.append("\t".join(head + [str(j), cp["kind"], str(cp["turn"]), str(cp.get("victim", "")),
@@ -522,6 +524,60 @@ def cmd_runden(p, args):
     return 0 if all(results[i][1]["status"] == "ok" for i in results) else 2
 
 
+def cmd_runden_cs(p, args):
+    """analyse/feld/runden-hashes.tsv -> tests/BombRedone.Core.Tests/Round/RoundProbeData.cs (hashes and numbers only)."""
+    import csv
+    root = os.path.normpath(os.path.join(HERE, "..", ".."))
+    with open(os.path.join(args.root_out, "runden-hashes.tsv")) as f:
+        rows = list(csv.DictReader(f, delimiter="\t"))
+
+    def q(v):
+        return "null" if v == "" else '"%s"' % v
+
+    def n(v):
+        return "null" if v == "" else v
+
+    cases, points = [], []
+    for r in rows:
+        if r["cp"] == "0":
+            cases.append("        new(%s)," % ", ".join([
+                r["nr"], q(r["seed"]), r["players"], r["wall"], r["background"], r["wind_opt"],
+                "true" if r["invisible"] == "1" else "false", "true" if r["no_fall"] == "1" else "false",
+                q(r["turns"]), q(r["sets"]), "true" if r["sound"] == "1" else "false", n(r["crumble"]), n(r["pass"]),
+                q(r["death_seeds"]), q(r["status"]), q(r["start"]), r["ss"], "true" if r["trail"] == "1" else "false",
+                r["wind"]]))
+        points.append("        new(%s)," % ", ".join([
+            r["nr"], r["cp"], q(r["kind"]), r["turn"], n(r["victim"]), n(r["choice"]), r["pass_now"], r["to_move"],
+            r["winner"], q(r["randseed"]), q(r["field"]), q(r["background_sha"]), q(r["dac_set"]), q(r["shot_log"]),
+            q(r["records"])]))
+    text = """namespace BombRedone.Core.Tests.Round;
+
+/// <summary>
+/// Generated from analyse/feld/runden-hashes.tsv (<c>python3 -I tools/reverse-engineering/tod.py runden</c>, then
+/// <c>runden-cs</c>); the rounds are listed with comments in ROUNDS of that script. Hashes and numbers only, no bytes of the
+/// originals.
+/// </summary>
+internal static class RoundProbeData
+{
+    public static readonly RoundProbeTests.RoundCase[] Cases =
+    [
+%s
+    ];
+
+    public static readonly RoundProbeTests.ProbePoint[] Points =
+    [
+%s
+    ];
+}
+""" % ("\n".join(cases), "\n".join(points))
+    out = os.path.join(root, "tests", "BombRedone.Core.Tests", "Round", "RoundProbeData.cs")
+    os.makedirs(os.path.dirname(out), exist_ok=True)
+    with open(out, "w") as f:
+        f.write(text)
+    print(out, len(cases), len(points))
+    return 0
+
+
 def main():
     root = os.path.normpath(os.path.join(HERE, "..", ".."))
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -552,6 +608,7 @@ def main():
     h = sub.add_parser("runden")
     h.add_argument("--only", type=int, nargs="*")
     h.add_argument("--jobs", type=int, default=1)
+    sub.add_parser("runden-cs")
     args = ap.parse_args()
     font = None
     if os.path.exists(args.font):
@@ -559,7 +616,7 @@ def main():
             font = f.read()
     p = feld.Probe(args.gamedata, font)
     p.font = font
-    return {"befunde": cmd_befunde, "run": cmd_run, "runden": cmd_runden}[args.cmd](p, args)
+    return {"befunde": cmd_befunde, "run": cmd_run, "runden": cmd_runden, "runden-cs": cmd_runden_cs}[args.cmd](p, args)
 
 
 if __name__ == "__main__":

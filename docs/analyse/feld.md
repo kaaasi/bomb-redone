@@ -479,3 +479,18 @@ wiederholbar; 14 Runden enden mit `end`, 7 laufen bis zum Ende ihres Skripts (`e
   keiner lebt (dann Team 0); Runde aus bei `DS:4813` = 1, Sieger `DS:47E0`. Rundensumme +68h += 100 − Energie, bei Energie < 0 oder
   > 100 aber + 100 (Fall 13: Energie 84 → 16; Tote mit −1 → 100).
 - Der Blitz wiederholt sich, solange kein Tod folgt und `Random(100)` < Durchgang ist (bei Durchgang ≥ 100 also bis zum ersten Tod).
+
+### 9.2 Rundenschleife `Core/Round` (Teil 2)
+
+`RoundPlay` (`Core/Round/RoundPlay.cs`) spielt `O4:44A7` ab dem Startspieler: Z1 über `TurnSession.Begin`, der Zug als Rückruf
+(setzt Winkel, Kraft, Waffe, Lenkung am Panzer, gibt die MIRV-Wahl zurück), Waffe wie `O4:4977`, `AfterShot.Run`, Schussprotokoll
+(`ShotLog`, Einträge wie §9.1; x über 32767 → 7FFFh; der MIRV lässt den Schusszustand stehen, der Laser setzt ihn auf das Ende des
+Strahls), `WeaponBar.SetColors` (`O4:0000`), Todesschleife, Blitzprüfung, Rundenende mit Rundensumme. `RoundPoint` meldet die
+Messpunkte der Probe, dazu `DeathStart` vor `Random(7)` (Name in der Kopfzeile; dort setzt der Test `--death-seed` über
+`TurboPascalRandom.SetSeed`). Neu am Panzer: `Kills` (+6Eh), `RoundSum` (+68h), `ColorDivisors` (+60h..+64h, #153: der Index der
+Farbe folgt der Lage, die RGB-Teiler wandern mit dem Satz; `Playfield.Build(…, divisors)`).
+
+Abnahme (`RoundProbeTests`): alle 26 Runden bis zum ersten noch nicht portierten Bild bitgleich (Art, `RandSeed`, Rahmen und Feld,
+Puffer, DAC, Schussprotokoll, Durchgang, Spieler am Zug, Sieger, Sätze); vollständig bis zum Ende die Runden ohne Tod und die mit
+Todesbild 5 (`O5:28DE`: Energie 0..100..0 über `O10:0171`, dann −1 und Panzer aus dem Puffer `U431:08D7`). Die übrigen Bilder und der
+Blitz folgen mit Teil 3.
