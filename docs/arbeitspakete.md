@@ -149,16 +149,34 @@ Integrationsfolge: `waffen` → `zug` → `spielfolge`. Gemeinsame Dateien: Absc
   umsetzen statt `[APPROX]` –, 10 Spieler, Wandarten, Rückstoß, Krater, Erdrutsch, Tod und Blitz, Laser, MIRV, volle Kraft) und der
   Zugbilder (Panzerinfo, Zielwahl, MIRV-Dialog); `TIME` (R2-D3) und `PV`/IRQ2 (#39, `re-grundlagen.md` §8 Nr. 2) nachtragen. Bei
   vielen Themen mehrere Spuren.
-- **`p3-runde-3`** (letzter Lauf): #140, #141 und die P3 der Runde; Verweis in `Core/Graphics/IndexBuffer.cs` Z. 6 auf das Archiv
-  Runde 2 richten (Review #145 P3-3).
+- **`p3-runde-3b`** (letzter Lauf nach den Folgespuren): deren P3; `p3-runde-3` ist vorgezogen (Nutzer 16.11.2026, unten).
+
+#### Spur `p3-runde-3` – gesammelte P3 der Runde (vorgezogen vor Sitzung 4, Nutzer 16.11.2026; `zusammenarbeit.md` §5 Punkt 5)
+
+- **Inhalt (je Issue `Fixes #<nr>`):** #151 Flow-Test Textfarbe/DAC-Eintrag `19 + Satz` im Einkauf; #152 Probefall Teambonus mit Rest
+  (z. B. 7 Spieler, 3 Mitglieder) in `folge.py`; #163 `WeaponProbeTests` vergleichen Path/Steps/Impacts/Damage und Bestandsfelder aus
+  `records_raw` (oder Kommentar korrigieren, wo die Probe sie nicht liefert); #164 Fall MIRV-Muster 4 in `weapon_shots()`; #174 DAC der
+  Runde bleibt im Wertungsbild stehen (`O3:5AEF`, `s3_08` Farbe 0), roter Test vorher; #175 Glyphen „5“/„a“ im Wertungsbild gegen
+  `s3_08` nachstellen, Ursache beheben oder mit Beleg `[APPROX]`; #160 Verdacht NumLock/Ziffernblock: Tastenzuordnung von MonoGame
+  im Code belegen, sonst `[APPROX]` mit Hinweis in `zug.md`, Issue mit Beleg schließen; #140 Fundstelle des Nullsetzens im
+  `[ORIGINAL]`-Kommentar von `RoundSequence`; #141 Hinweis zum zweiten Test in `RoundSequenceTests` umsetzen oder mit Begründung
+  schließen; Verweis in `Core/Graphics/IndexBuffer.cs` auf das Archiv Runde 2 richten (Review #145 P3-3). #39 und #102 bleiben
+  (Folgespuren bzw. Hinweis).
+- **Teile:** 1. Testlücken (#151, #152, #163, #164); 2. Code (#174, #175, #160); 3. Doku und Kommentare (#140, #141, `IndexBuffer.cs`).
+- **Dateien:** `src/BombRedone.Core/{Battle,Playfield,Shot,Graphics}/*`, `src/BombRedone.UI/Screens/{Score*,Shop*}`,
+  `src/BombRedone.Desktop/*`, `tests/BombRedone.Core.Tests/{Battle,Playfield,Shot}/*`, `tests/BombRedone.UI.Tests/Screens/{Score*,Shop*,PlayfieldRound*}`,
+  `tools/reverse-engineering/{folge,feld_schuss}.py`, `docs/analyse/{zug,feld}.md`, `docs/anforderungen/wertung-einkauf.md`; nur soweit
+  ein Issue es verlangt. Probe-Hashes und bisherige Sollwerte bleiben unverändert (nur Ergänzungen).
+- **Abnahme:** je Issue roter Test bzw. Beleg vorher, grün nachher; `tools/pruefen.sh --schnell` mit Originaldaten.
+- **Modell:** Claude Opus 5.5.
 
 ### Restlücken aus Runde 2 (übernommen)
 
 - **Erledigt durch Spuren dieser Runde:** Lenkung, Repulser, übrige Einschläge, Bestand (`waffen`); Desktop-Zug ohne Kopfzeile
   (`zug`); Satzmischung #71 (`spielfolge`); Todesexplosion in `s3_06`/`s3_07` (`runde`); BGI-`Circle` nur Radius 1 (`waffen`).
 - **Nach Sitzung 4:** Palettenrotation, Stände Nr. 2–8, `TIME`, `PV`/#39 (Folgespuren).
-- **Aus Welle 1 (Review #162 P3-3, #165):** CRI-Liste `DS:E820` je Spielfeld statt global – über mehrere Runden im Spielzustand
-  führen (`runde`).
+- **Aus Welle 1 (Review #162 P3-3, #165):** CRI-Liste `DS:E820` je Spielfeld statt global – erledigt durch `runde` (#170, #176);
+  Spielerfarbe/Name nach Satz (#153) erledigt durch `runde`; NumLock-Verdacht (#160) → `p3-runde-3`.
 - **Bleiben `[APPROX]`:** Spurpunkt/Erdrutsch jenseits 64000 Byte, 15 ms je Flugtick, DAC 0..15 Grundpalette.
 - **Runde 4:** Computer (`runde.md` §6.5, offen §6.6), Speichern und Laden, Ton (E5).
 
@@ -182,6 +200,7 @@ Integrationsfolge: `waffen` → `zug` → `spielfolge`. Gemeinsame Dateien: Absc
 ### Status waffen
 
 - 15.11.2026: Teile 1–6 fertig (Claude Code, ein geplanter Lauf, PR #147): Probe `feld_schuss.py waffen` (182 Schüsse), alle Waffen samt Laser, MIRV, Lenkung, Abwehr in `Core/Shot` bitgleich zur Probe, `BgiDraw.Circle`, `Real48.ArcTan`, Bestand im Panzer mit `TakeStock`/`ReturnStock`, Darstellung und `bombtool`. Wartet auf Erstreview.
+- 16.11.2026 (Leitstelle): Review #162 ja, gemergt (#147); P3 #163–#165.
 
 ### Status zug
 
@@ -194,6 +213,7 @@ Integrationsfolge: `waffen` → `zug` → `spielfolge`. Gemeinsame Dateien: Absc
   (nach Merge von `waffen` #147).
 - 16.11.2026: Fixlauf 2: auf `main` mit `waffen`; P2-3 (Option A): Bestand, Lenkung und Ziel nur noch in `PlayfieldTank`,
   Abzug je Schuss nur in Core/Shot; MIRV-Dialog über `WeaponShot.Fire` angebunden.
+- 16.11.2026 (Leitstelle): Review #154 nein → Fixläufe 1/2, Delta-Prüfung, gemergt (#148); offen P3 #160.
 
 ### Status spielfolge
 
@@ -201,6 +221,7 @@ Integrationsfolge: `waffen` → `zug` → `spielfolge`. Gemeinsame Dateien: Absc
 - Teil 1 fertig: Probe `tools/reverse-engineering/folge.py` (Tausch, Mischen, Wertung, Teamwertung, Bonus, Einkauf, Schlacht mit Testdouble der Runde).
 - Teil 2 fertig: `Core/Battle` (`BattleRecords`: Tausch, Mischen, Wertungssortierung, Siegerbonus, Einkaufsfolge), `RoundSequence` mischt die Sätze (#71); Teamwertung gegen die Probe geprüft.
 - Teil 3 fertig: `BattleSequence` (Ablauf je Spiel gegen die Schlachtfälle der Probe, Runde als `IBattleRound`), `ScoreBattleFlow` (Wertung, Teamwertung, Einkauf je Satz); Spur fertig – Review.
+- 16.11.2026 (Leitstelle): Review #150 ja, gemergt (#149, Integrationstest auf `main` + PR); P3 #151–#153.
 
 ### Status runde
 
@@ -210,3 +231,6 @@ Integrationsfolge: `waffen` → `zug` → `spielfolge`. Gemeinsame Dateien: Absc
 - Teil 3 fertig: alle sieben Todesbilder `O5` und der Blitz `O6:14C5`; alle 26 Runden der Probe bitgleich bis zum Ende ([analyse/feld.md](analyse/feld.md) §9.3).
 - Teil 4 fertig: Anbindung an `Core/Battle` (`RoundGame`: `TakeStock`/`ReturnStock` #147, CRI-Liste über Runden #165, Farbteiler #153; Rundenschritt in `BattleSequence`), `PlayfieldRoundScreen`, Desktop: ganze Partie vom Titel über Runden, Wertung und Einkauf bis zum Endergebnis (§9.4). Offen: Bildvergleich `s3_06`/`s3_07` am toten Panzer und Wertung gegen `s3_08` (Übergabe).
 - Fixlauf 1 (Review #171): `s3_07` pixelgleich am Ende des Todesbilds, Rest erklärt (Bodenlinie `O7:0364`), `s3_08` bis auf Mauszeiger, P3-2 und DAC 0 (#172); Schaden an Nachbarn in Runden 26–31 der Probe (#173); CRI-Liste über Schlachten (#176); Doku-Kommentare (#177). Offen: P3-1 (#174, Score-Bildschirm), P3-2 (#175, `p3-runde-3`).
+- 16.11.2026 (Leitstelle): Review #171 nein → Fixlauf 1, Delta-Prüfung, gemergt (#170); offen P3 #174, #175.
+
+### Status p3-runde-3
