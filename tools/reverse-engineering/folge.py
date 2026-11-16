@@ -366,6 +366,11 @@ CASES = [
          {"winner": 1, "players": {"Player 1": [1, 1500, 0], "Player 3": [0, 0, 0], "Player 2": [0, -1000, 0]}},
          {"winner": 3, "players": {"Player 5": [1, 4500, 0]}},
      ]},
+    # appended (spur p3-runde-3, #152): bonus with remainder, 7000 div 3 = 2333 and 5000 div 3 = 1666 (idiv truncates)
+    {"kind": "bonus", "players": 7, "winner": 1, "teams": [1, 2, 1, 3, 1, 2, 3], "alive": [1, 1, 0, 1, 1, 0, 0],
+     "score": [10, 20, 30, 40, 50, 60, 70], "wins": [0, 1, 2, 0, 1, 2, 0]},
+    {"kind": "bonus", "players": 5, "winner": 2, "teams": [2, 1, 2, 2, 1], "alive": [0, 1, 1, 1, 0],
+     "score": [-100, 0, 100, 0, 0], "wins": [0] * 5},
 ]
 
 
