@@ -516,3 +516,20 @@ bitgleich**, mit und ohne Ton (`RoundProbeTests`). Aus dem Code (Ergänzung zu `
   Satz → Satz 0, `Random(10)` → 1–4 Explosionen der Waffen 1..k am Panzer; `O5:28DE` (5) wie §9.2.
 - Blitz wie `runde.md` §5.9 K13; das Produkt (y − 189) · o ist ein 16-Bit-`mul` mit `cwd` danach, die zweite Bahn rechnet
   o · ((y − 189) / 189); Schaden 3 auf den Schild, Explosion Waffe (Blitze div 3, 0 → 11) bei (x₁, 189) mit Satz 0.
+
+### 9.4 Schlacht und Desktop (Teil 4)
+
+- `Core/Round/RoundGame`: Runde auf den Sätzen der Schlacht. `Prepare` baut das Spielfeld mit den Farbteilern der Spieler (#153),
+  Wind und Startspieler (Zähler +72h), übergibt je Satz Bestand (`TakeStock`, #147), Punkte, Team, Waffe, Lenkung und die Zähler
+  +68h..+70h an den Panzer und reicht die CRI-Liste der vorigen Runde weiter (`Playfield.TakeOverCriList`, #165); `Finish` gibt
+  alles zurück (`ReturnStock`) samt „lebt“ für die Siege. `InitializeRecords`: Bestand neuer Sätze wie `O2:0216` (`[APPROX]` das
+  Original setzt ihn einmal beim Programmstart, hier bei jeder Schlacht).
+- `BattleSequence` ohne `IBattleRound` meldet nach dem Mischen `BattleStepKind.Round`; der Aufrufer spielt die Runde und meldet das
+  Siegerteam mit `CompleteRound`. `RoundPlay.Steps()` meldet `TurnStart` nach Z1; der Zug setzt `NextTurn`.
+- UI: `PlayfieldRoundScreen` (Züge über `PlayfieldTurnDriver`, aus `PlayfieldTurnScreen` gelöst; Bilder zwischen zwei Zügen wie
+  `PlayfieldShotScreen`; Name des Toten in der Kopfzeile `PlayfieldTurnView.DeathStarted`). `ScoreBattleFlow` erhält den
+  Rückruf `playRound` (gemeinsame Datei, minimal). Desktop: Titel → Menü → Spielerwahl → je Spiel Runde, Wertung, Teamwertung,
+  Einkauf → nach dem letzten Spiel zurück ins Menü; das Endergebnis (`ScoreResults`, `O3[1]`) beim Programmende auf der Konsole.
+  `[APPROX]` Computer schießen sofort mit Winkel und Kraft ihres Satzes (Runde 4), kein Ton.
+- Test: `PlayfieldRoundScreenTests` (Runde zweier Computer: Bilder abgespielt, Ende, Sieger, `RandSeed` und Feld gleich Core
+  allein; Schlachtfolge über den Rückruf), `RoundGameTests`.

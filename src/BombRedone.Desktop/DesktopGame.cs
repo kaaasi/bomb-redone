@@ -1,5 +1,8 @@
+using BombRedone.Core.Battle;
+using BombRedone.Core.Economy;
 using BombRedone.Core.Numerics;
 using BombRedone.Core.Playfield;
+using BombRedone.Core.Round;
 using BombRedone.Core.Setup;
 using BombRedone.Core.Turn;
 using BombRedone.Formats;
@@ -40,6 +43,12 @@ public sealed class DesktopGame : Game
     private KeyboardState _previousKeys;
     private readonly List<ushort> _typed = [];
     private bool _aspectCorrection = true;
+
+    /// <summary>
+    /// The end result of the last battle (O3[1], <see cref="ScoreResults"/>), printed when the program ends like the original
+    /// in text mode; here on the console.
+    /// </summary>
+    public static IReadOnlyList<TextLine> Results { get; private set; } = [];
 
     public DesktopGame()
     {
@@ -115,8 +124,9 @@ public sealed class DesktopGame : Game
 
     /// <summary>
     /// Main menu after the title. Without the original files (fonts in BOMB.EXE) a placeholder stays. Game Options open
-    /// the options screen, START the player selection; Sound Options and loading follow later (the menu stays or a
-    /// placeholder), after the player selection a preview of the round (playfield, a key for the next one).
+    /// the options screen, START the player selection and then the battle: rounds, status screens, shop, until the last
+    /// game; then back to the menu (the end result is printed when the program ends). Sound Options and loading follow
+    /// later (the menu stays).
     /// </summary>
     private static IScreen CreateMenu()
     {
@@ -132,6 +142,7 @@ public sealed class DesktopGame : Game
         }
 
         var fonts = MenuFonts.Load(gameData, BitmapFontSource.Load().Font);
+        var shopFonts = ShopFonts.Load(gameData, BitmapFontSource.Load().Font);
         var configPath = gameData.Find("BOMB.CFG");
         var config = configPath is null ? null : GameConfig.Load(configPath);
         // Without BOMB.CFG the defaults of BOMBCFG.EXE apply (R1-D5 = C); the original halts instead.
@@ -140,53 +151,74 @@ public sealed class DesktopGame : Game
         var random = TurboPascalRandom.FromClock(DateTime.Now);
         var roster = new PlayerRoster();
         var teams = new PlayerSelectTeams(options, BgiFontLibrary.Load(gameData)[BgiFontLibrary.Tiny]);
-        IScreen Round(GameSetup setup)
-        {
-            var mask = (config ?? GameConfig.BombCfgDefaults).UserBackgroundMask;
-            var rounds = new RoundSequence(new PlayfieldOptions(setup.Players.Count, (int)options.Walls, options.Background, mask,
-                (int)options.Wind, options.InvisibleShot), random);
-            return RoundPreview(fonts, config, options, random, setup, rounds);
-        }
 
         return new MenuScreen(fonts, settings, random.Next, (choice, menu) => choice switch
         {
             MenuChoice.GameOptions => new OptionsScreen(menu, options),
             MenuChoice.SoundOptions => menu,
-            MenuChoice.Start => new PlayerSelectScreen(menu, roster, random.Next, setup => Round(setup), teams),
+            MenuChoice.Start => new PlayerSelectScreen(menu, roster, random.Next,
+                setup => Battle(fonts, shopFonts, config ?? GameConfig.BombCfgDefaults, options, random, setup, menu), teams),
             _ => new PlaceholderScreen(),
         });
     }
 
     /// <summary>
-    /// A round after the player selection: the next round of <paramref name="rounds"/> (shuffle steps with records not
-    /// swapped, R2-D4; playfield with the game options, wind, start player with the counters of the battle, issue #111);
-    /// then the turns (spur zug, <see cref="PlayfieldTurnScreen"/>); F2 builds the next round until spur runde ends rounds.
+    /// A battle after the player selection (O3[0], spur spielfolge and runde): new records (O2:0216 stocks), per game the
+    /// shuffle, the round (<see cref="PlayfieldRoundScreen"/> on <see cref="RoundGame"/>), the status screens and the shop
+    /// (<see cref="ScoreBattleFlow"/>); after the last game the end result and back to <paramref name="menu"/>.
     /// </summary>
-    private static IScreen RoundPreview(MenuFonts fonts, GameConfig? config, OptionsSettings options, TurboPascalRandom random,
-        GameSetup setup, RoundSequence rounds)
+    private static IScreen? Battle(MenuFonts fonts, ShopFonts shopFonts, GameConfig cfg, OptionsSettings options,
+        TurboPascalRandom random, GameSetup setup, IScreen menu)
     {
-        var round = rounds.NextRound();
-        var screen = new PlayfieldScreen(fonts, round.Field, round.Wind, setup.Players.Select(p => p.Name).ToArray());
-        var view = new PlayfieldTurnView(screen, fonts, round.Wind, teamPlay: options.TeamPlay);
-        var players = round.Field.Tanks.Select(t => new TurnPlayer(t, setup.Players[t.Number - 1].Name)).ToList();
-        foreach (var p in players)
-            p.SetDefaultStocks();
-        foreach (var team in options.TeamPlay ? setup.Teams : [])
+        var records = BattleRecords.FromSetup(setup);
+        RoundGame.InitializeRecords(records);
+        var battle = new BattleSequence(records, Math.Max(1, cfg.GamesToPlay), options.TeamPlay, random, null,
+            ItemCatalog.Original);
+        var teamNames = setup.Teams.ToDictionary(t => t.Number, t => t.Name);
+        Playfield? previous = null;
+
+        IScreen? PlayRound(Func<int, IScreen?> complete)
         {
-            foreach (var member in team.Members)
-                players[member - 1].TeamName = team.Name;
+            var playfieldOptions = new PlayfieldOptions(records.Count, (int)options.Walls, options.Background,
+                cfg.UserBackgroundMask, (int)options.Wind, options.InvisibleShot);
+            var game = RoundGame.Prepare(records, playfieldOptions, random, previous);
+            previous = game.Field;
+            if (options.TeamPlay)
+            {
+                for (var i = 0; i < records.Count; i++)
+                    game.Players[i].TeamName = teamNames.GetValueOrDefault(records.InOrder[i].Team, "");
+            }
+
+            var screen = new PlayfieldScreen(fonts, game.Field, game.Wind, game.Players.Select(p => p.Name).ToArray());
+            var view = new PlayfieldTurnView(screen, fonts, game.Wind, teamPlay: options.TeamPlay);
+            // The pictures draw their Random numbers with the sound option (DS:E8B3) as in the original. [APPROX] No sound
+            // output yet; the turn yields no tones (TurnSettings.Sound false).
+            var roundSettings = new RoundSettings(cfg.ShotSpeed, game.Wind.Value, options.CrumblePercent, options.TanksFall,
+                cfg.SoundEffects, options.TrailVisible);
+            var turn = new TurnSettings(Sound: false, Delay: cfg.TurretSpeed, TeamPlay: options.TeamPlay);
+            return new PlayfieldRoundScreen(screen, view, game.Players, [.. records.InOrder.Select(r => r.Control)],
+                game.Start, HeldScancodes, roundSettings, random, ShotTiming.FromOptions(cfg.ExplosionSpeed, cfg.FallSpeed),
+                turn, winner =>
+                {
+                    game.Finish();
+                    return complete(winner);
+                });
         }
 
-        var cfg = config ?? GameConfig.BombCfgDefaults;
-        var settings = new Core.Shot.ShotSettings(cfg.ShotSpeed, round.Wind.Value, options.TrailVisible, cfg.SoundEffects);
+        var flow = new ScoreBattleFlow(shopFonts, battle, ItemCatalog.Original, setup.AllComputers, RecordColor,
+            t => teamNames.GetValueOrDefault(t, ""), () =>
+            {
+                Results = ScoreResults.Build(records.InOrder.Select(r => r.Account), battle.Game);
+                return menu;
+            }, PlayRound);
+        return flow.Start();
+    }
 
-        // TS from BOMB.CFG (DS:E8C4, GameConfig.TurretSpeed), team play from the game options (DS:E8BC, loaded from
-        // BOMB.CFG). [APPROX] Sound off: the desktop has no sound output yet, so the turn yields no tones.
-        var turn = new TurnSettings(Sound: false, Delay: cfg.TurretSpeed, TeamPlay: options.TeamPlay);
-        return new PlayfieldTurnScreen(screen, view, players, setup.Players.Select(p => p.Control).ToArray(), round.Start.Player,
-            round.Start.Pass, HeldScancodes, settings, options.CrumblePercent, options.TanksFall, random,
-            ShotTiming.FromOptions(cfg.ExplosionSpeed, cfg.FallSpeed), turn,
-            () => RoundPreview(fonts, config, options, random, setup, rounds));
+    /// <summary>6-bit colour of a record at full energy (O10:01AC with the divisors of its player, #153).</summary>
+    private static (int Red, int Green, int Blue) RecordColor(BattlePlayer record)
+    {
+        var (r, g, b) = Playfield.ColorDivisors[record.Account.Number - 1];
+        return (63 / r, 63 / g, 63 / b);
     }
 
     /// <summary>
@@ -228,7 +260,6 @@ public sealed class DesktopGame : Game
         Keys.LeftAlt => Scancode.Alt,
         Keys.RightAlt => Scancode.RightAlt,
         Keys.Space => Scancode.Space,
-        Keys.F2 => PlayfieldTurnScreen.NextRoundKey,
         Keys.NumPad8 => Scancode.PadUp,
         Keys.NumPad9 => Scancode.PadPageUp,
         Keys.NumPad4 => Scancode.PadLeft,

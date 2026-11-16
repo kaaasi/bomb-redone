@@ -73,6 +73,20 @@ public sealed class PlayfieldTurnView : ITurnView
         _text.SetTextJustify(HorizontalJustify.Left, VerticalJustify.Top);
     }
 
+    /// <summary>
+    /// [ORIGINAL] O4:4BB8–4C07: a record died: Bar (109, 0)–(211, 7) in black, its name in colour 19 + n centred at (160, 0).
+    /// </summary>
+    public void DeathStarted(TurnPlayer player)
+    {
+        ArgumentNullException.ThrowIfNull(player);
+        Refresh();
+        MenuGraphics.Bar(Target, 109, 0, 211, 7, 0);
+        _text.Color = player.Tank.Color;
+        _text.SetTextJustify(HorizontalJustify.Center, VerticalJustify.Top);
+        _text.OutTextXY(Target, 160, 0, player.Name);
+        _text.SetTextJustify(HorizontalJustify.Left, VerticalJustify.Top);
+    }
+
     /// <summary>[ORIGINAL] O7:0424–0537: colour 14, left/top; each field Bar in black, then the value.</summary>
     public void DrawFields(TurnPlayer player)
     {
