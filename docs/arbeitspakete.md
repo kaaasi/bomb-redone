@@ -183,6 +183,16 @@ Integrationsfolge: `waffen` → `zug` → `spielfolge`. Gemeinsame Dateien: Absc
 
 ### Status zug
 
+- 15.11.2026: Teil 1 (Probe) fertig: `tools/reverse-engineering/zug.py` (40 Züge, 5 Zugfolgen), [analyse/zug.md](analyse/zug.md);
+  Korrektur `runde.md` §6.3 (Alt umgekehrt, Schummeltaste nur Ziffernblock).
+- 15.11.2026: Teil 2 (`Core/Turn`) fertig: 40 Züge und 5 Zugfolgen bitgleich zur Probe.
+- 15.11.2026: Teil 3 (UI) fertig: Bildschirm an jeder Abfragestelle aller 40 Züge gleich der Probe.
+- 15.11.2026: Teil 4 (Desktop) fertig: `PlayfieldTurnScreen` statt Vorschau. Spur fertig – Review.
+- 15.11.2026: Fixlauf 1: P2-1 (Warten auf Loslassen, Option A), P2-2 (TS, Teamspiel), P3-1, P3-2, P3-4 behoben; P2-3 offen
+  (nach Merge von `waffen` #147).
+- 16.11.2026: Fixlauf 2: auf `main` mit `waffen`; P2-3 (Option A): Bestand, Lenkung und Ziel nur noch in `PlayfieldTank`,
+  Abzug je Schuss nur in Core/Shot; MIRV-Dialog über `WeaponShot.Fire` angebunden.
+
 ### Status spielfolge
 
 ### Status runde
