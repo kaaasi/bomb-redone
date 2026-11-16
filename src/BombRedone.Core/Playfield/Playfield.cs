@@ -61,6 +61,9 @@ public sealed class Playfield
     /// <summary>DAC; <see cref="VgaPalette.IsWritten"/> marks the entries the set-up wrote.</summary>
     public VgaPalette Palette { get; } = new();
 
+    /// <summary>Optional observer of impacts and damage (tests against the probe); null in the game.</summary>
+    public Shot.IShotTrace? Trace { get; set; }
+
     /// <summary>Wall of the round DS:47EC.</summary>
     public WallKind Wall { get; private set; }
 

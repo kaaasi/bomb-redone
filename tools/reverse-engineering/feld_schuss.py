@@ -444,6 +444,12 @@ def weapon_shots():
     for w in (12, 17):
         for crumble in (0, 10, 100):
             add(A, weapon=w, crumble=crumble)
+    # appended (spur p3-runde-3, #164): MIRV pattern 4 with warheads that land apart, so the sign of vy of part 3 shows
+    add(A, weapon=7, angle=60, power=250, pattern=4, detonation=0)
+    add(A, weapon=7, angle=75, power=300, pattern=4, detonation=0)
+    # appended (#163): Herb from above (shooter 2 stands higher than its target 1), so the bound dy <= 4 decides the path
+    add(A, shooter=2, angle=135, power=250, guidance=1, target=1)
+    add(A, shooter=2, angle=120, power=300, guidance=1, target=1)
     return t
 
 
@@ -476,13 +482,24 @@ def weapon_row(p, i):
         q = out["post"]
         cols += ["%08X" % q["randseed"], q["random_n"], q["random_real"], sha(field_crop(q["screen"])), sha(q["background"]),
                  sha(q["records_raw"])]
+    cols.append(stock_after(a["records_raw"], n, shot["weapon"]))
     return "\t".join(str(c) for c in cols)
+
+
+def stock_after(raw, players, weapon):
+    """Power +1Bh, Herb +2Ah, Vick +2Ch and the stock of the fired weapon +2Eh + 2w of every record after the shot (signed
+    words, #163): "power,herb,vick,stock" per player."""
+    out = []
+    for i in range(players):
+        r = raw[i * feld.RECORD_SIZE:(i + 1) * feld.RECORD_SIZE]
+        out.append("%d,%d,%d,%d" % tuple(struct.unpack_from("<h", r, o)[0] for o in (0x1B, 0x2A, 0x2C, 0x2E + 2 * weapon)))
+    return " ".join(out)
 
 
 WEAPON_HEADER = "nr\tseed\tplayers\twall\tbackground\twind_opt\tshooter\tangle\tpower\tweapon\tguidance\ttarget\t" \
     "pattern\tdetonation\tsound\tcrumble\tdefense\tstock\tss\twind\tseed_before\tsteps\tpath\timpacts\tdamage\t" \
     "randseed\trandom_n\trandom_real\tscreen_field\tbackground_buffer\tdac_set\tdac_set_hex\trecords_raw\trecords\t" \
-    "post_randseed\tpost_random_n\tpost_random_real\tpost_screen_field\tpost_background\tpost_records_raw"
+    "post_randseed\tpost_random_n\tpost_random_real\tpost_screen_field\tpost_background\tpost_records_raw\tstock_after"
 
 _worker = {}
 
@@ -539,6 +556,7 @@ def cmd_waffen_cs(p, args):
             r["random_n"], r["random_real"], q(r["screen_field"]), q(r["background_buffer"]), q(r["dac_set"]),
             q(r["records"]), q(r["post_randseed"]), q(r["post_screen_field"]), q(r["post_background"]),
             "false" if WEAPON_SHOTS[int(r["nr"])][1].get("randseed") is None else "true"]))
+    stock = "\n".join('        "%s",' % r["stock_after"] for r in rows)
     text = """namespace BombRedone.Core.Tests.Shot;
 
 /// <summary>
@@ -552,8 +570,14 @@ internal static class WeaponProbeData
     [
 %s
     ];
+
+    /// <summary>Per case (index = nr): power, Herb, Vick and the stock of the fired weapon of every record after the shot.</summary>
+    public static readonly string[] StockAfter =
+    [
+%s
+    ];
 }
-""" % "\n".join(lines)
+""" % ("\n".join(lines), stock)
     out = os.path.join(root, "tests", "BombRedone.Core.Tests", "Shot", "WeaponProbeData.cs")
     with open(out, "w") as f:
         f.write(text)

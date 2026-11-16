@@ -69,6 +69,7 @@ public static partial class Impact
         ArgumentNullException.ThrowIfNull(shooter);
         ArgumentNullException.ThrowIfNull(settings);
         ArgumentNullException.ThrowIfNull(random);
+        field.Trace?.Impact(shooter, color, x, y);
         if (shooter.Weapon == 0)
         {
             // O6:010F–017D (Q10): 5 damage on a tank, 10 points per energy lost for another team.
