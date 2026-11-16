@@ -1,3 +1,4 @@
+using System.Buffers.Binary;
 using System.Security.Cryptography;
 using BombRedone.Core.Numerics;
 using BombRedone.Core.Playfield;
@@ -9,9 +10,11 @@ namespace BombRedone.Core.Tests.Shot;
 /// All weapons against the original code run in the probe (spur waffen, docs/analyse/feld.md section 8). Expected values
 /// from <c>python3 -I tools/reverse-engineering/feld_schuss.py waffen</c> and <c>waffen-cs</c>: the playfield of a feld.py
 /// case up to the start player, then one shot through the entry of O4:44A7 (laser O4:3426, MIRV O4:13D4, else O4:01B7).
-/// Compared: RandSeed before and after the shot, the flight path (O4:01B7 only), frame and field of the screen, the
-/// background buffer, the written DAC entries and energy, points, shield, inertia, repulser and hits of every record.
-/// Only the cases of the parts ported so far run (<see cref="IsPorted"/>); the others follow with the next parts.
+/// Compared: RandSeed before and after the shot, the flight path and its steps (O4:01B7 only; laser and MIRV have none),
+/// the impacts O6:00E0 and the damage O10:0000 in call order, frame and field of the screen, the background buffer, the
+/// written DAC entries, energy, points, shield, inertia, repulser and hits of every record, and power, Herb, Vick and the
+/// stock of the fired weapon of every record (#163). Only the cases of the parts ported so far run
+/// (<see cref="IsPorted"/>); the others follow with the next parts.
 /// </summary>
 public sealed class WeaponProbeTests
 {
@@ -66,7 +69,37 @@ public sealed class WeaponProbeTests
 
     private static string Sha(ReadOnlySpan<byte> bytes) => Convert.ToHexStringLower(SHA256.HashData(bytes));
 
+    /// <summary>Records the calls in the format of the probe columns impacts and damage.</summary>
+    private sealed class Trace : IShotTrace
+    {
+        public List<string> Impacts { get; } = [];
+
+        public List<string> Damages { get; } = [];
+
+        private static string Hex(Real48 value)
+        {
+            var bytes = new byte[6];
+            value.WriteBytes(bytes);
+            return Convert.ToHexStringLower(bytes);
+        }
+
+        public void Impact(PlayfieldTank shooter, int color, Real48 x, Real48 y) =>
+            Impacts.Add($"{color},{Hex(x)},{Hex(y)},{shooter.Number}");
+
+        public void Damage(PlayfieldTank tank, int amount, int defense, int lost) =>
+            Damages.Add($"{(short)amount}/{defense & 0xFF}/{tank.Number}/{lost}");
+    }
+
+    private sealed record TracedShot(Core.Playfield.Playfield Field, TurboPascalRandom Random, string SeedBefore, int Steps,
+        string Path, Trace Trace);
+
     private static (Core.Playfield.Playfield Field, TurboPascalRandom Random, string SeedBefore) Fire(WeaponCase c)
+    {
+        var shot = FireTraced(c);
+        return (shot.Field, shot.Random, shot.SeedBefore);
+    }
+
+    private static TracedShot FireTraced(WeaponCase c)
     {
         var random = new TurboPascalRandom(Convert.ToUInt32(c.Seed, 16));
         var field = Core.Playfield.Playfield.Build(
@@ -77,12 +110,21 @@ public sealed class WeaponProbeTests
         if (c.SeedSet)
             random = new TurboPascalRandom(Convert.ToUInt32(c.SeedBefore, 16));  // the probe sets RandSeed before the shot
 
+        // the stocks of new records as in the probe (O2:0216, TurnPlayer.SetDefaultStocks): Lead Ball 100, weapon 1 30,
+        // weapon 11 100
+        foreach (var tank in field.Tanks)
+            (tank.Stock[0], tank.Stock[1], tank.Stock[11]) = (100, 30, 100);
         var shooter = field.Tanks[c.Shooter - 1];
         shooter.Aim(c.Angle, c.Power);
         shooter.Weapon = c.Weapon;
         shooter.Stock[c.Weapon] = c.Stock ?? (c.Weapon == 5 ? c.Power : Math.Max(1, shooter.Stock[c.Weapon]));
         shooter.Guidance = c.Guidance;
         shooter.GuidanceTarget = c.Guidance == 0 ? 0 : c.Target;
+        // the probe gives the shooter at least one Herb / Vick for the guidance it uses (feld_schuss.py run_shot)
+        if ((c.Guidance & 1) != 0)
+            shooter.Herbs = Math.Max(1, shooter.Herbs);
+        if ((c.Guidance & 2) != 0)
+            shooter.Vicks = Math.Max(1, shooter.Vicks);
         foreach (var (player, shield, inertia, repulser) in ParseDefense(c.Defense))
         {
             var tank = field.Tanks[player - 1];
@@ -92,9 +134,65 @@ public sealed class WeaponProbeTests
         }
 
         field.Palette.ClearWritten();
-        WeaponShot.Fire(field, shooter, new ShotSettings(c.SubSteps, c.Wind, Sound: c.Sound, Crumble: c.Crumble), random,
-            (MirvPattern)c.Pattern, (MirvDetonation)c.Detonation);
-        return (field, random, seedBefore);
+        var trace = new Trace();
+        field.Trace = trace;
+        var settings = new ShotSettings(c.SubSteps, c.Wind, Sound: c.Sound, Crumble: c.Crumble);
+        using var path = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
+        var steps = 0;
+        if (c.Weapon is 5 or 7)
+        {
+            WeaponShot.Fire(field, shooter, settings, random, (MirvPattern)c.Pattern, (MirvDetonation)c.Detonation);
+        }
+        else
+        {
+            // the same entry WeaponShot.Fire takes, with the steps of the loop head O4:060A as in ShotProbeTests
+            var record = new byte[30];
+            BallisticShot.Fire(field, shooter, settings, random, step =>
+            {
+                step.X.WriteBytes(record);
+                step.Y.WriteBytes(record.AsSpan(6));
+                step.Vx.WriteBytes(record.AsSpan(12));
+                step.Vy.WriteBytes(record.AsSpan(18));
+                BinaryPrimitives.WriteInt16LittleEndian(record.AsSpan(24), (short)step.SubStep);
+                BinaryPrimitives.WriteInt32LittleEndian(record.AsSpan(26), step.Ticks);
+                path.AppendData(record);
+                steps++;
+            });
+        }
+
+        field.Trace = null;
+        return new TracedShot(field, random, seedBefore, steps, Convert.ToHexStringLower(path.GetHashAndReset()), trace);
+    }
+
+    private static string? Joined(List<string> items) => items.Count == 0 ? null : string.Join(" ", items);
+
+    [Theory]
+    [MemberData(nameof(Cases))]
+    public void Flight_impacts_and_damage_match_the_original(WeaponCase c)
+    {
+        var shot = FireTraced(c);
+        if (c.PostSeed is not null)
+        {
+            // the probe keeps recording through its post phase (falling O7:0020: inertia damage)
+            shot.Field.Trace = shot.Trace;
+            AfterShot.Run(shot.Field, 0, true, shot.Random);
+            shot.Field.Trace = null;
+        }
+
+        Assert.Equal(c.Steps, shot.Steps);
+        Assert.Equal(c.Path, shot.Path);
+        Assert.Equal(c.Impacts, Joined(shot.Trace.Impacts));
+        Assert.Equal(c.Damage, Joined(shot.Trace.Damages));
+    }
+
+    [Theory]
+    [MemberData(nameof(Cases))]
+    public void Power_guidance_and_stock_after_the_shot_match_the_original(WeaponCase c)
+    {
+        var shot = FireTraced(c);
+
+        Assert.Equal(WeaponProbeData.StockAfter[c.Nr], string.Join(" ", shot.Field.Tanks.Select(t =>
+            $"{t.Power},{t.Herbs},{t.Vicks},{t.Stock[c.Weapon]}")));
     }
 
     [Theory]
@@ -112,7 +210,9 @@ public sealed class WeaponProbeTests
     [Fact]
     public void The_probe_list_covers_every_weapon()
     {
-        Assert.Equal(182, WeaponProbeData.All.Length);
+        Assert.Equal(186, WeaponProbeData.All.Length);
+        Assert.Equal(WeaponProbeData.All.Length, WeaponProbeData.StockAfter.Length);
+        Assert.Equal(Enumerable.Range(0, WeaponProbeData.All.Length), WeaponProbeData.All.Select(c => c.Nr));
         Assert.Equal(Enumerable.Range(0, 18), WeaponProbeData.All.Select(c => c.Weapon).Distinct().Order());
     }
 

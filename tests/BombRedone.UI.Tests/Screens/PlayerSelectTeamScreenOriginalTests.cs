@@ -94,11 +94,11 @@ public class PlayerSelectTeamScreenOriginalTests
 
     private static readonly Dictionary<(int, string), string> Expected = new()
     {
-        [(3, "")] = "dc5ebf8b67a734f683d30e21b1c482b46e99c804118cdb64659cd3c5157be53c",
-        [(10, "")] = "09bbf7ab89849e81bfca3239c7c7c29308bd0fa16460288d0a352bef8cb363a7",
-        [(3, "moved")] = "ddc84dc5a3fae35c6d51f199ba2f1164fec69c9048e68be65ae8ba665f53779e",
-        [(3, "cancel")] = "dacfa377deb218107233f718de42e7037f792646875668b7e6dc8c42f92566f1",
-        [(3, "names")] = "349260f74e454fec466ff0f536990f3fb23e5062581fcc1b5307679eb075f62e",
+        [(3, "")] = "13894ca5847b0c95c9228ffa00bacbf25fa75e5b68312215350234816430125b",
+        [(10, "")] = "b7ad6bdab722e48cd705e806a6ad0207f05f8ed8396b727eb19a4c93569417eb",
+        [(3, "moved")] = "75ce09e90a76b83dc98810dca55d5e55a007419c8d110f22be288ec7a2f2a33a",
+        [(3, "cancel")] = "5921691454eb8e2e50c3208790d071044744eaf227912d4a33e5a9f450ab318b",
+        [(3, "names")] = "a5137c4c5c49dd2b2b562c4643543302f3289e84daf89533b74a39d891719777",
     };
 
     [GameDataFact]

@@ -28,8 +28,8 @@ public class MenuScreenOriginalTests
     }
 
     [GameDataTheory]
-    [InlineData(0, "a8c28cc2a08c0babfd002580b285cfbfc1f7f71f7e77bd5fcb7e5c15f7c10876")]
-    [InlineData(1, "425b4711b271b474bee58af1e11e0b2ea31d6beef90dd8dec9d9d77f10d55d50")]
+    [InlineData(0, "b3d8bfa2b48b8753addafa0c107ff88e0470124865d83ba2e915730c75176f00")]
+    [InlineData(1, "92cb551e899a437ecf2a69867a9beb5b7cb5291acc536bb509c48ef3508a15b6")]
     public void ScreenMatchesTheRecordedChecksum(int pick, string sha)
     {
         Assert.Equal(sha, Sha(Create(pick).Screen.Pixels));

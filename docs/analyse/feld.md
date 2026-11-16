@@ -342,15 +342,20 @@ Schütze) und `O10:0000` (Schaden d, Abwehr k, Satz, Rückgabe = verlorene Energ
 |---|---|
 | `… befunde` | zusätzlich `O4:1379–3425` (MIRV mit Dialogtexten), `O4:3426–44A6` (Laser), O10 ganz; 9/9 ok |
 | `… run … [--guidance G --target T] [--pattern M --detonation D] [--defense S:schild,inertia,repulser …]` | ein Schuss |
-| `… waffen [--only I …] [--jobs N]` | feste Liste (182 Schüsse, `weapon_shots()`) → `analyse/feld/waffen-hashes.tsv`, mit `--jobs 2` etwa 10 min |
+| `… waffen [--only I …] [--jobs N]` | feste Liste (186 Schüsse, `weapon_shots()`) → `analyse/feld/waffen-hashes.tsv`, mit `--jobs 2` etwa 10 min |
 
 Die Liste: je Waffe 0..17 Gelände neben Panzer 2, Volltreffer, Kraft 400 gegen jede Wandart 1–4 und mit Ton (126); Laser durch
 Gelände, gegen Panzer 2 ohne, mit verbrauchtem und mit ausreichendem Schild, mit Ton, Bestand unter der Kraft, Wände, nach links
 (11); MIRV je Muster 0..4 und Detonation 0..2, dazu mit Ton (16); Herb, Vick, beide, Wand 0 mit Lenkung, Ziel = Schütze (9);
 Abwehr: Schild teilweise und ganz, Inertia beim Fallen (mit `post`), Repulser lenkt ab (auch zurück auf den Schützen) und nutzt sich
-ab (`Random:Real` < Rest / 40) (14); Erdrutsch nach Sonic Blaster und Xplosive Dirt bei Crumble 0, 10, 100 (6). Spalten: Fall,
-Schuss, `RandSeed` vorher, Pfad (nur `O4:01B7`), Einschläge, Schäden, `RandSeed`/Zufallsaufrufe danach, `screen_field`, Puffer,
-DAC (Hash und Einträge), Sätze (Hash der Rohbytes und Kurzform), bei `post` dasselbe nach Erdrutsch und Fallen.
+ab (`Random:Real` < Rest / 40) (14); Erdrutsch nach Sonic Blaster und Xplosive Dirt bei Crumble 0, 10, 100 (6). Angehängt
+(`p3-runde-3`): MIRV-Muster 4 mit getrennt landenden Teilen (2, #164) und Herb von oben – Schütze 2 steht höher als sein Ziel 1,
+so entscheidet die Grenze `dy ≤ 4` den Pfad (2, #163). Spalten: Fall, Schuss, `RandSeed` vorher, Pfad (nur `O4:01B7`),
+Einschläge, Schäden, `RandSeed`/Zufallsaufrufe danach, `screen_field`, Puffer, DAC (Hash und Einträge), Sätze (Hash der Rohbytes
+und Kurzform), bei `post` dasselbe nach Erdrutsch und Fallen, zuletzt `stock_after` (Kraft `+1Bh`, Herb `+2Ah`, Vick `+2Ch` und
+Bestand der Waffe `+2Eh + 2w` je Satz). `WeaponProbeTests` vergleicht alle Spalten außer den Rohbyte-Hashes, Pfad und Schritte über
+`BallisticShot.Fire`, Einschläge und Schäden über `IShotTrace` (`Playfield.Trace`, Eintritt `O6:00E0`, Rückkehr `O10:0000`;
+bei `post` einschließlich Fallen).
 
 Befunde der Probe: Die bisherigen Hashes (`hashes`, `post`; alle Werte in `ShotProbeData.cs` und `AfterShotProbeTests.cs`) bleiben
 gleich. Der MIRV ruft kein `Random:Real` für den Selbstschaden (§5.1 gilt nur für `O4:01B7` und den Laser). Sonic Blaster ruft den
@@ -418,7 +423,7 @@ Hintergrund (`U431:0594`, Adressen 64000..1, also nicht Pixel 0). Abnahme: alle 
   an ihrer Stelle mit ihrer Geschwindigkeit, geändert je Muster (§5.11 `runde.md`, Vorzeichen jetzt geklärt). Während Teile fliegen,
   ist SS je Tick SS div (fliegende Teile), aufgerundet. Detonation 0 explodiert jedes Teil bei seinem Ende (auch außerhalb des
   Felds), 1 alle fünf am Schluss, 2 keine; nach jeder Explosion alle Panzer neu. Abnahme: alle 23 MIRV-Fälle der Liste bitgleich –
-  damit laufen alle 182 Fälle der Probe (`WeaponProbeTests`).
+  damit laufen alle 182 Fälle der Probe (`WeaponProbeTests`; seit `p3-runde-3` 186).
 
 ### 8.6 Darstellung, `bombtool`, Bestand (Teil 6)
 

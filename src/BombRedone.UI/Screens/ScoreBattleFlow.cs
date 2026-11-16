@@ -1,5 +1,6 @@
 using BombRedone.Core.Battle;
 using BombRedone.Core.Economy;
+using BombRedone.Core.Graphics;
 
 namespace BombRedone.UI.Screens;
 
@@ -22,6 +23,7 @@ public sealed class ScoreBattleFlow
     private readonly Func<int, string> _teamName;
     private readonly Func<IScreen?> _finished;
     private readonly Func<Func<int, IScreen?>, IScreen?>? _playRound;
+    private readonly Func<VgaPalette?>? _roundPalette;
     private ScoreScreen? _rating;
 
     /// <param name="fonts">Fonts from BOMB.EXE.</param>
@@ -35,9 +37,13 @@ public sealed class ScoreBattleFlow
     /// For a battle without round object (<see cref="BattleStepKind.Round"/>, spur runde): the screen of the round; it calls
     /// the given function with the winning team when the round is over.
     /// </param>
+    /// <param name="roundPalette">
+    /// The palette of the last round (null before the first): the status screen starts from the DAC the round left
+    /// (<see cref="ScoreScreen"/>, #174). Without it the status screen starts from <see cref="MenuGraphics.DefaultColors"/>.
+    /// </param>
     public ScoreBattleFlow(ShopFonts fonts, BattleSequence battle, ItemCatalog catalog, bool allComputers,
         Func<BattlePlayer, (int Red, int Green, int Blue)> color, Func<int, string> teamName, Func<IScreen?> finished,
-        Func<Func<int, IScreen?>, IScreen?>? playRound = null)
+        Func<Func<int, IScreen?>, IScreen?>? playRound = null, Func<VgaPalette?>? roundPalette = null)
     {
         ArgumentNullException.ThrowIfNull(fonts);
         ArgumentNullException.ThrowIfNull(battle);
@@ -53,6 +59,23 @@ public sealed class ScoreBattleFlow
         _teamName = teamName;
         _finished = finished;
         _playRound = playRound;
+        _roundPalette = roundPalette;
+    }
+
+    /// <summary>
+    /// DAC on the screen after the round: the 16 colours of the VGA BIOS (<see cref="MenuGraphics.DefaultColors"/>) with
+    /// every entry the round set (<see cref="VgaPalette.IsDefined"/>); empty without a round palette.
+    /// </summary>
+    public static byte[] DacAfter(VgaPalette? palette)
+    {
+        if (palette is null)
+            return [];
+        var dac = new byte[3 * VgaPalette.Entries];
+        MenuGraphics.DefaultColors.CopyTo(dac);
+        for (var i = 0; i < VgaPalette.Entries; i++)
+            if (palette.IsDefined(i))
+                palette.Rgb.Slice(3 * i, 3).CopyTo(dac.AsSpan(3 * i));
+        return dac;
     }
 
     /// <summary>Plays the first round and returns its status screen.</summary>
@@ -68,7 +91,8 @@ public sealed class ScoreBattleFlow
             case BattleStepKind.Rating:
                 // [ORIGINAL] O3:5AFD: after the last game the status screen always has its buttons.
                 _rating = new ScoreScreen(_fonts, [.. records.InOrder.Select(r => new ScoreLine(r.Account, _color(r)))],
-                    _battle.Game, _battle.Games, !_allComputers || _battle.Game == _battle.Games, Choose);
+                    _battle.Game, _battle.Games, !_allComputers || _battle.Game == _battle.Games, Choose,
+                    DacAfter(_roundPalette?.Invoke()));
                 return _rating;
             case BattleStepKind.TeamRating:
                 var teams = records.InOrder.GroupBy(r => r.Team)

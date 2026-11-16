@@ -15,8 +15,10 @@ public sealed record RoundSetup(Playfield Field, Wind Wind, StartPlayer Start);
 /// </summary>
 /// <remarks>
 /// [ORIGINAL] The shuffle swaps the records (<see cref="BattleRecords.Shuffle"/>, issue #71, R2-D4 = A), so the rounds as
-/// start player (+72h, R4) move with the player and are kept for the whole battle (issue #111). [APPROX] The random calls
-/// between two rounds (computer players) are missing until round 4.
+/// start player (+72h, R4) move with the player and are kept for the whole battle (issue #111): +72h is set to 0 only with
+/// new records (O2:0216, BOMB.OVR 0x007FE; O2:3D49, BOMB.OVR 0x04331) and only incremented at O4:4766 (BOMB.OVR 0x1546B,
+/// <c>inc word [di+40A0h]</c>); the only other accesses to DS:40A0h + 74h · n in BOMB.OVR are the reads of O4:4732–473F
+/// (0x15437, 0x15444) (#140). [APPROX] The random calls between two rounds (computer players) are missing until round 4.
 /// </remarks>
 public sealed class RoundSequence
 {

@@ -56,6 +56,32 @@ public class GraphTextTests
     }
 
     [Fact]
+    public void StrokesRunFromTheNewPointBackToThePen()
+    {
+        // #175: Draw at BOMB.EXE 0x1330A passes the new point in AX/BX, the driver line starts there. A "v" with slopes
+        // 2 : 4 has ties, so the direction decides the pixels (s3_08, "v" of "Save").
+        var font = BgiFont.Parse(SyntheticFont.Build("SYNV", 'v', [new G(5, ('M', 0, 4), ('D', 2, 0), ('D', 4, 4))],
+            top: 4, bottom: 0));
+        var text = new GraphText { Color = 9 };
+        text.SetTextStyle(font, TextDirection.Horizontal, 1);
+        text.SetUserCharSize(1, 1, 1, 1);
+        text.SetTextJustify(HorizontalJustify.Left, VerticalJustify.Bottom);
+        var surface = new Surface(40, 40);
+        text.OutTextXY(surface, 10, 20, "v");
+
+        static List<(int, int)> Lines(params (int X0, int Y0, int X1, int Y1)[] lines)
+        {
+            var expected = new Surface(40, 40);
+            foreach (var (x0, y0, x1, y1) in lines)
+                Core.Graphics.BgiDraw.Line(expected.Pixels, 40, 40, x0, y0, x1, y1, 9);
+            return SetPixels(expected);
+        }
+
+        Assert.Equal(Lines((12, 20, 10, 16), (14, 16, 12, 20)), SetPixels(surface));
+        Assert.NotEqual(Lines((10, 16, 12, 20), (12, 20, 14, 16)), SetPixels(surface));
+    }
+
+    [Fact]
     public void UserCharSizeAppliesAtSizeZeroAndTreatsDivisorZeroAsOne()
     {
         var text = Stroked(4);

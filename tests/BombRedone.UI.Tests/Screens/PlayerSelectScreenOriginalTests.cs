@@ -62,10 +62,10 @@ public class PlayerSelectScreenOriginalTests
 
     private static readonly Dictionary<(int, string), string> Expected = new()
     {
-        [(2, "")] = "e9863b3fee6bf98e166278beb805c951b893eb499ca832016eda5570e27a66ca",
-        [(10, "")] = "d9a3d234bbb7a25853b8ad5695d3f53d8acc133e36eb516632e1480aa71c7cb9",
-        [(2, "c")] = "9688b4877bfe2eed5eb3e444604073618bba4c641b37c184a0fc02fe2df222e9",
-        [(2, "n")] = "4031da7a231101b652414911f2802fa75fba8a2dc54648beee11f64bb4f5c843",
+        [(2, "")] = "cb95386a206ad0992acbb30108636675826966db8b6391cdb239e0e2ce13330b",
+        [(10, "")] = "f9535ad09bcb38244e02dc5276474c9a61f07bd0ac5a6853cf16c5ed7614ae2f",
+        [(2, "c")] = "4b0b3bc237a874b9c059199aee519f277a63fbd57f0135e79904a87cd4b4b966",
+        [(2, "n")] = "d593c9f1f16666f1f64e50cfed1cec5341c05c5eef15d6eb372b0f936a21a59c",
     };
 
     [GameDataFact]

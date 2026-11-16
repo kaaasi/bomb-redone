@@ -44,7 +44,9 @@ public static class Damage
             field.UpdateColor(tank);
         }
 
-        return unchecked((short)(before - tank.Energy));
+        var lost = unchecked((short)(before - tank.Energy));
+        field.Trace?.Damage(tank, amount, defense, lost);
+        return lost;
     }
 
     /// <summary>Points. [ORIGINAL] O10:018B (BOMB.OVR 0x1F2AE): +13h (LongInt) += the word, sign-extended.</summary>

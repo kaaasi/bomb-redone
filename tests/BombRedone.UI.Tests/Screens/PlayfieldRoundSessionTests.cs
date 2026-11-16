@@ -33,13 +33,6 @@ public sealed class PlayfieldRoundSessionTests
     private static bool InPointer(int i) => i % 320 is >= 165 and <= 175 && i / 320 is >= 154 and <= 169;
 
     /// <summary>
-    /// The glyphs "5" of "50" (x 259, y 110/111) and "a" of "Save" (x 236..240, y 135/137) of the status screen font differ
-    /// by one pixel (review P3-2, #175, spur p3-runde-3; not this spur).
-    /// </summary>
-    private static bool InKnownGlyphs(int i) =>
-        (i % 320 == 259 && i / 320 is 110 or 111) || (i % 320 is >= 236 and <= 240 && i / 320 is 135 or 137);
-
-    /// <summary>
     /// Record 2 dies with Random(7) = 1 (particles O5:0DA0, RandSeed 7C99828F before the choice). At the last frame of the
     /// picture the field equals s3_07; after the frame O7:0364 (bottom line y = 189 drawn anew) and O7:03C1 only the 30 pixels
     /// of the bottom line differ: the picture shows the background buffer there, the remake terrain colour 2. The probe
@@ -80,8 +73,9 @@ public sealed class PlayfieldRoundSessionTests
 
     /// <summary>
     /// Status screen after game 1: "Player 2" 1 win, 4490 points, "Player 1" 0 and 50 as in s3_08 and ablauf1-GAME1.TWS.
-    /// Equal pixel for pixel but the mouse pointer and the two glyphs of P3-2; the DAC of every used colour is equal except
-    /// colour 0 (review P3-1, #174: the original keeps DAC 0 of the round over the change of screens).
+    /// Equal pixel for pixel but the mouse pointer, the glyphs "5" of "50" and "v" of "Save" included (strokes from the new
+    /// point to the pen, #175); the DAC of every used colour is equal, colour 0 included: the original keeps DAC 0 of the
+    /// round over the change of screens (review P3-1, #174).
     /// </summary>
     [GameDataFact]
     public void The_status_screen_after_game_1_matches_s3_08()
@@ -93,12 +87,11 @@ public sealed class PlayfieldRoundSessionTests
 
         var (pixels, palette) = PlayfieldSession.ReadPicture(PlayfieldSession.PicturePath("s3_08_status-nach-runde-1.png"));
         var differences = Enumerable.Range(0, 320 * 200).Where(i => pixels[i] != score.Screen.Pixels[i]).ToList();
-        Assert.Equal(8, differences.Count(InKnownGlyphs));
-        Assert.All(differences, i => Assert.True(InPointer(i) || InKnownGlyphs(i), $"x {i % 320}, y {i / 320}"));
+        Assert.All(differences, i => Assert.True(InPointer(i), $"x {i % 320}, y {i / 320}"));
 
         var used = Enumerable.Range(0, 320 * 200).Where(i => !InPointer(i)).Select(i => (int)pixels[i]).Distinct().ToList();
         Assert.Contains(0, used);
-        Assert.All(used.Where(c => c != 0), c => Assert.Equal(palette.AsSpan(3 * c, 3).ToArray(),
+        Assert.All(used, c => Assert.Equal(palette.AsSpan(3 * c, 3).ToArray(),
             PlayfieldSession.Rgb8(score.Dac.Slice(3 * c, 3))));
         Assert.Equal(palette.AsSpan(0, 3).ToArray(), PlayfieldSession.Rgb8(run.Field.Palette.Rgb.Slice(0, 3)));
     }
@@ -183,7 +176,7 @@ public sealed class PlayfieldRoundSessionTests
             {
                 rating = PlayRound(complete);
                 return rating;
-            });
+            }, () => field?.Palette);
         var started = flow.Start();
         Assert.Same(rating, started);
         return new Run(points, seedBeforeChoice, pictureEnd, dac, afterDeath, field!, rating);

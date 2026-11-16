@@ -136,6 +136,14 @@ Tasten (MIRV-Dialog, Schummelschleife) bleiben gesperrt, bis der Spieler sie los
 aus dem Tastaturzustand (F2: nächste Runde) und übergibt TS aus `BOMB.CFG` (`GameConfig.TurretSpeed`) und das Teamspiel der
 Spieloptionen samt Teamnamen; Ton ausdrücklich aus (`[APPROX]`, P2-2). Restlücke R2 „Desktop-Zug ohne Kopfzeile“ damit erledigt.
 
+**Ziffernblock und NumLock** (#160, `p3-runde-3`): MonoGame 3.8.6 DesktopGL übersetzt SDL-Tastencodes (`SDL_Keycode`), keine
+Scancodes: `KeyboardUtil._map` (per Reflexion aus `MonoGame.Framework.dll` gelesen) bildet `SDLK_KP_0` (`0x40000062`) auf
+`Keys.NumPad0`, `SDLK_KP_PERIOD` (`0x40000063`) auf `Keys.Decimal` und `SDLK_INSERT` (`0x40000049`) bzw. `SDLK_DELETE` (`0x7F`) auf
+`Keys.Insert`/`Keys.Delete` ab; `DesktopGame.ToScancode` macht daraus 52h/53h bzw. E0 52h/53h. Ob SDL 2.32 (`MonoGame.Library.SDL`)
+für den Ziffernblock bei NumLock aus `SDLK_KP_*` oder `SDLK_INSERT`/`SDLK_DELETE` meldet, entscheidet SDL; das ist im Code dieses
+Repos nicht belegbar. `[APPROX]`: Die Schummeltaste kann bei NumLock aus am Desktop wirkungslos sein (dann wie die grauen Tasten);
+mit NumLock an gilt die Zuordnung oben. Eine Unterscheidung nach Scancode bietet `KeyboardState` nicht.
+
 `[APPROX]` bis zur Spur `runde` bzw. Runde 4: kein Tod und kein Rundenende (Energie 0 zählt als ausgeschieden, unter zwei Panzern
 folgt die nächste Runde), Waffen ohne Core-Schuss (Laser, Roller, Sonic, MIRV-Teilung, Repulser im Feld) überspringen den Schuss,
 der Bestand sinkt je Schuss hier um 1 (später `O4:01B7` in Core/Shot – beim Integrieren mit `waffen` nicht doppelt zählen),

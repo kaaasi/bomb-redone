@@ -3,7 +3,7 @@ namespace BombRedone.Core.Graphics;
 /// <summary>
 /// Palette-indexed 320 x 200 pixel buffer of the game core, laid out like segment A000h in mode 13h
 /// (address = y * 320 + x). The playfield keeps its screen and background buffer in this form because the rules
-/// of the original read pixels back (docs/arbeitspakete.md, spur gelaende; Review #104 P2-2).
+/// of the original read pixels back (docs/archiv/runde-2.md, spur gelaende; Review #104 P2-2).
 /// </summary>
 public sealed class IndexBuffer
 {

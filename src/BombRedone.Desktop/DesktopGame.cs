@@ -216,7 +216,7 @@ public sealed class DesktopGame : Game
             {
                 Results = ScoreResults.Build(records.InOrder.Select(r => r.Account), battle.Game);
                 return menu;
-            }, PlayRound);
+            }, PlayRound, () => _lastField?.Palette);
         return flow.Start();
     }
 
@@ -229,8 +229,11 @@ public sealed class DesktopGame : Game
 
     /// <summary>
     /// The held-key table DS:452A of the keyboard handler U0C48:0008 from the keyboard state (scancodes, E0 keys + 100h).
-    /// [APPROX] The window layer does not tell the keypad Enter from Enter; the keypad keys count as keypad keys (52h, 53h:
-    /// cheat key Ins + Del) whatever NumLock says.
+    /// [APPROX] The window layer does not tell the keypad Enter from Enter. MonoGame maps SDL key codes, not scancodes
+    /// (KeyboardUtil: SDLK_KP_0 → NumPad0, SDLK_KP_PERIOD → Decimal, SDLK_INSERT/SDLK_DELETE → Insert/Delete; read by
+    /// reflection, docs/analyse/zug.md section 7, #160). Whether SDL reports the keypad keys with NumLock off as SDLK_KP_* or
+    /// as SDLK_INSERT/SDLK_DELETE is up to SDL: in the latter case the cheat key (keypad Ins + Del, 52h/53h) does not work,
+    /// like the grey keys in the original.
     /// </summary>
     private static bool[] HeldScancodes()
     {
