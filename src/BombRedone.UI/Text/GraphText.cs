@@ -214,8 +214,12 @@ public sealed class GraphText
 
     /// <summary>
     /// [ORIGINAL] BOMB.EXE 0x13289: the pen starts at the origin; Move and Draw scale each point on its own
-    /// (0x133BE: multiply, then divide with truncation towards zero), Draw draws a line from the previous scaled point
-    /// (0x134B1, y upwards). The origin advances by the last scaled point (0x132D9), not by the width table.
+    /// (0x133BE: multiply, then divide with truncation towards zero), Draw draws the line between the previous and the new
+    /// scaled point (0x134B1, y upwards). The origin advances by the last scaled point (0x132D9), not by the width table.
+    /// [ORIGINAL] Direction of the line: Draw (0x1330A) passes the new point in AX/BX and the previous one in CX/DX
+    /// (<c>xchg cx,[1602h]</c>, <c>xchg dx,[1604h]</c>); 0x134B1 hands them unchanged to driver function 0Ch, which like Graph
+    /// Line (BOMB.EXE 0x11586: AX = x1, BX = y1) starts the symmetric Bresenham at AX/BX. So every stroke runs from the new
+    /// point back to the pen, which decides the pixels of ties (s3_08: "5" of "50", "v" of "Save", #175).
     /// </summary>
     private void DrawGlyph(Surface surface, BgiGlyph glyph, ref int originX, ref int originY, bool vertical)
     {
@@ -229,9 +233,9 @@ public sealed class GraphText
             if (stroke.Op == BgiStrokeOp.Draw)
             {
                 if (vertical)
-                    LineRasterizer.Draw(surface, originX - penY, originY - penX, originX - nextY, originY - nextX, Color);
+                    LineRasterizer.Draw(surface, originX - nextY, originY - nextX, originX - penY, originY - penX, Color);
                 else
-                    LineRasterizer.Draw(surface, originX + penX, originY - penY, originX + nextX, originY - nextY, Color);
+                    LineRasterizer.Draw(surface, originX + nextX, originY - nextY, originX + penX, originY - penY, Color);
             }
 
             penX = nextX;

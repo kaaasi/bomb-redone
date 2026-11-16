@@ -41,7 +41,7 @@ public class OptionsScreenOriginalTests
     [GameDataFact]
     public void ScreenMatchesTheRecordedChecksum()
     {
-        Assert.Equal("6277d56b14de8f32d1a03a929105ab3772432aa036486c97599a15b9692f775c", Sha(Create().Menu.Screen.Pixels));
+        Assert.Equal("55bc0e4907580de5ba7d81c6bbd40f5595b06d7c01926438dd452e692f72de08", Sha(Create().Menu.Screen.Pixels));
     }
 
     [GameDataFact]

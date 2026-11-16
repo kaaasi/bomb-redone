@@ -52,6 +52,6 @@ public class ScoreTeamScreenOriginalTests
     public void ScreenMatchesTheRecordedChecksum()
     {
         var hash = Convert.ToHexString(SHA256.HashData(Create().Screen.Pixels)).ToLowerInvariant();
-        Assert.Equal("ed709d4f88469d7a6207752e172522439856c9f673ed600956f8109d4036569a", hash);
+        Assert.Equal("f0bf32bb26d6ff271253374586ca805f465396aa419859b383a0870cabdc6e52", hash);
     }
 }

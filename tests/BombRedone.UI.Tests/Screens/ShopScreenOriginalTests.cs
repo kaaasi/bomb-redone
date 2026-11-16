@@ -74,6 +74,6 @@ public class ShopScreenOriginalTests
     {
         var surface = new Surface();
         Create().Draw(surface);
-        Assert.Equal("29fd93c97b5ade7577b0971372dd567fd22c3953686d425bdbcb96004f72802e", Sha(surface.Pixels));
+        Assert.Equal("058157023c7b258bc2eecbe5ee23e7dbf29a8678d79584af7208e1e57d730ae6", Sha(surface.Pixels));
     }
 }
