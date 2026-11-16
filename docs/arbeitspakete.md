@@ -236,3 +236,4 @@ Integrationsfolge: `waffen` → `zug` → `spielfolge`. Gemeinsame Dateien: Absc
 ### Status p3-runde-3
 
 - 16.11.2026: begonnen (Claude Code, geplanter Lauf), Branch `paket/p3-runde-3`, Base `68615cb`.
+- 16.11.2026: Teile 1–3 fertig (ein Lauf, PR #180): Bonus mit Rest (#152), Einkaufsfarbe 19 + Satz (#151), `WeaponProbeTests` mit Pfad, Einschlägen, Schäden und Bestand samt vier neuen Probefällen (#163, #164); Wertungsbild mit DAC der Runde (#174) und Strichrichtung der Schrift (#175) – `s3_08` bis auf Mauszeiger pixelgleich; NumLock belegt bzw. `[APPROX]` (#160); Kommentare #140, #141, `IndexBuffer.cs`. Spur fertig – Review.

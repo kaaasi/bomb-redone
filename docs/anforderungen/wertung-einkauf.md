@@ -87,6 +87,11 @@ Taste → weiter. Maus: Zeile (45 < x < 275) → Statistik nach dem Loslassen; K
 letzten Spiel immer mit Knöpfen) geht es nach 2000 ms von selbst weiter. Statistik (`O3:2508`), Dialog „# TO ADD:“ (`O3:5717`)
 und Sichern (`O3:46DE`) sind nicht Teil der Spur: der Bildschirm meldet nur die Wahl.
 
+DAC: `O3:5AEF` setzt nur Rahmenfarben, Hintergrund 30..59 und die Spielerfarben 19 + i; alle anderen Einträge bleiben, wie die
+Runde sie hinterließ (`s3_08`: Knopftexte in Farbe 0 mit der DAC der Runde, #174). `ScoreBattleFlow` gibt dem `ScoreScreen`
+dafür die 16 BIOS-Farben plus alle von der Runde gesetzten Einträge mit. Schrift: Jede Linie der Strichschrift läuft vom neuen
+Punkt zum Stift zurück (`BOMB.EXE 0x1330A`, #175); damit ist `s3_08` bis auf den Mauszeiger pixelgleich.
+
 `[APPROX]`: Palettenrotation des Hintergrunds (`UC79:003D`) und die Abschlussblende (`O3:65D1`, `UCC8:0AC0`) fehlen. Vergleich mit
 LP 00064: Lage, Texte und Farben stimmen nach Lage und Form.
 
