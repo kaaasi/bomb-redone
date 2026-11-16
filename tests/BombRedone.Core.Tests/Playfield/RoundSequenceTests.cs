@@ -36,6 +36,12 @@ public sealed class RoundSequenceTests
         Assert.All(rounds.RoundsStarted, n => Assert.Equal(1, n));
     }
 
+    /// <summary>
+    /// Consistency check, not original values (review #139 P3-2, #141): the test repeats the calls of the sequence (shuffle,
+    /// playfield, wind, start player with the counters per player) and compares. Against the original the parts are checked
+    /// on their own: the shuffle per game in BattleProbeTests (folge.py battle), playfield, wind and the start player of a
+    /// first round in RoundProbeTests (tod.py). Together with the first test it catches the mutations M9 and M10 of that review.
+    /// </summary>
     [Fact]
     public void Rounds_follow_shuffle_playfield_wind_and_start_player_with_kept_counters()
     {
