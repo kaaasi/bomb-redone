@@ -204,6 +204,6 @@ public sealed class RoundProbeTests
         var complete = RoundProbeData.Cases.Where(c => Run(c).Complete).Select(c => c.Nr).ToList();
 
         // Pictures 0, 2, 4, 5, 6 and the lightning are ported; 1 and 3 (O5:0DA0) follow.
-        Assert.Equal("0,1,3,5,6,7,8,10,11,12,13,14,15,16,17,18,19,24,25", string.Join(",", complete));
+        Assert.Equal("0,1,3,5,6,7,8,10,11,12,13,14,15,16,17,18,19,23,24,25", string.Join(",", complete));
     }
 }
