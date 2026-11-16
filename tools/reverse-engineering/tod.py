@@ -421,6 +421,8 @@ A = (0x12345678, 2, 0, 0, 0xFFFF, 2, False, False)    # tanks (33, 123) and (300
 B = (0x9E3779B9, 4, 0, 0, 0xFFFF, 2, False, False)    # tanks (33, 129), (115, 158), (197, 152), (279, 171), start 3
 KILL = "45,230,1"                                     # player 2 hits next to player 1 (Baby Missile)
 DEATH_SEEDS = [seed_for(7, k, 0x1000 * (k + 1)) for k in range(7)]
+NEXT = "45,100,1"                                      # player 3 (case B) shoots past its neighbour
+NEIGHBOUR = ["2:energy=0", "3:x=125", "3:y=158"]      # record 3 next to record 2, which dies in the first death loop
 
 
 def R(case, turns, sets=(), **kw):
@@ -453,6 +455,17 @@ ROUNDS = [
     #                                                                                23 splinters may kill more
     R(A[:7] + (True,), KILL, ["1:energy=5"], crumble=0),                           # 24 no falling, Crumble 0
     R(A, "45,230,5;45,262,7,0,0,2,0;45,230,8", ["1:energy=60", "2:energy=60"]),    # 25 laser, MIRV, CRI in a round
+] + [
+    # Review P2-2 (#173): the pictures damage living neighbours. Record 2 starts dead (energy 0), record 3 stands next to it
+    # (x 125 instead of 197) and shoots first; the shot only grazes it.
+    R(B, NEXT, NEIGHBOUR + extra, death_seeds=[DEATH_SEEDS[k]]) for k, extra in (
+        (0, []),                                                                   # 26 splinters: neighbour 91 -> 22
+        (1, []),                                                                   # 27 particles: 91 -> 29
+        (2, []),                                                                   # 28 splinters at once: also record 1
+        (3, []),                                                                   # 29 sparks: neighbour dies, splinters
+        (0, ["3:energy=40"]),                                                      # 30 splinters kill the neighbour
+        (1, ["3:shield=30"]),                                                      # 31 particles on a shield
+    )
 ]
 
 

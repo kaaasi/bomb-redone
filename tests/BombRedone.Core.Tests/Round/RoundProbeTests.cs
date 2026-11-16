@@ -77,16 +77,24 @@ public sealed class RoundProbeTests
         return string.Join("/", v.Select(x => x.ToString(CultureInfo.InvariantCulture)));
     }));
 
-    /// <summary>--set FIELD=V of tod.py on the record (fields beyond <see cref="TurnHarness.Apply"/>: team).</summary>
+    /// <summary>
+    /// --set FIELD=V of tod.py on the record (fields beyond <see cref="TurnHarness.Apply"/>: team, x, y). Like the probe, x and
+    /// y only move the record: the old tank stays on the screen until something draws over it.
+    /// </summary>
     private static void Apply(List<TurnPlayer> players, int start, string set)
     {
-        if (set.Contains("team=", StringComparison.Ordinal))
+        var name = set[(set.IndexOf(':', StringComparison.Ordinal) + 1)..set.IndexOf('=', StringComparison.Ordinal)];
+        if (name is "team" or "x" or "y")
         {
             var who = set.Contains(':', StringComparison.Ordinal)
                 ? int.Parse(set[..set.IndexOf(':', StringComparison.Ordinal)], CultureInfo.InvariantCulture)
                 : start;
-            players[who - 1].Tank.Team = int.Parse(set[(set.IndexOf('=', StringComparison.Ordinal) + 1)..],
-                CultureInfo.InvariantCulture);
+            var value = int.Parse(set[(set.IndexOf('=', StringComparison.Ordinal) + 1)..], CultureInfo.InvariantCulture);
+            var tank = players[who - 1].Tank;
+            if (name == "team")
+                tank.Team = value;
+            else
+                TurnHarness.SetInternal(tank, name == "x" ? nameof(tank.X) : nameof(tank.Y), value);
             return;
         }
 
