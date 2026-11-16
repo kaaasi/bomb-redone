@@ -42,7 +42,10 @@ public static class LaserShot
     /// beam steps (<see cref="Beam"/>). At the end colour 254 = black and every pixel of colour 254 (the beam and the barrel)
     /// from the background buffer (U431:0594).
     /// </summary>
-    public static void Fire(Playfield.Playfield field, PlayfieldTank shooter, ShotSettings settings, TurboPascalRandom random)
+    /// <returns>The last position of the beam (DS:4796, DS:479C; the round loop logs it), null for power 0 (nothing fired,
+    /// the shot state keeps its value).</returns>
+    public static (Real48 X, Real48 Y)? Fire(Playfield.Playfield field, PlayfieldTank shooter, ShotSettings settings,
+        TurboPascalRandom random)
     {
         ArgumentNullException.ThrowIfNull(field);
         ArgumentNullException.ThrowIfNull(shooter);
@@ -51,7 +54,7 @@ public static class LaserShot
         var contact = new bool[field.Tanks.Count + 1];
         contact[shooter.Number] = true;
         if (shooter.Power == 0)
-            return;
+            return null;
         if (shooter.Power > (short)shooter.Stock[Weapon])
             shooter.Power = (short)shooter.Stock[Weapon];
         shooter.Stock[Weapon] = unchecked((short)(shooter.Stock[Weapon] - shooter.Power));
@@ -59,7 +62,7 @@ public static class LaserShot
 
         // O4:34E2 (O10:021C): v = 63 · energy div 100 divided by the colour divisors, without the check for energy > 0.
         var v = (short)(63 * shooter.Energy) / 100;
-        var (dr, dg, db) = Playfield.Playfield.ColorDivisors[shooter.Number - 1];
+        var (dr, dg, db) = shooter.ColorDivisors;
         int red = v / dr, green = v / dg, blue = v / db;
         field.Palette.Set(BeamColor, red, green, blue);
 
@@ -110,15 +113,16 @@ public static class LaserShot
 
         for (var i = 1; i <= field.Tanks.Count; i++)
         {
-            var (r, g, b) = Playfield.Playfield.ColorDivisors[i - 1];
+            var (r, g, b) = field.Tanks[i - 1].ColorDivisors;
             field.Palette.Set(100 - i, 32 / r, 32 / g, 32 / b);
         }
 
-        Beam(field, shooter, contact, energy, x, y, vx, vy, settings, random);
+        var end = Beam(field, shooter, contact, energy, x, y, vx, vy, settings, random);
 
         field.Palette.Set(BeamColor, 0, 0, 0);
         RestoreColor(screen, field.Background.Pixels, BeamColor, BeamColor);
         settings.Frame?.Invoke(ShotFrame.Crater);
+        return end;
     }
 
     private static void SetRamp(Playfield.Playfield field, (int R, int G, int B) c, ShotSettings settings)
@@ -136,8 +140,8 @@ public static class LaserShot
     /// and then taken back from the background, 3 damage (shield first) and one step back. Then Delay(LS) and sound
     /// Random(12 · E); walls; the tip in 254 unless the beam ended; end at E ≤ 0.
     /// </summary>
-    private static void Beam(Playfield.Playfield field, PlayfieldTank shooter, bool[] contact, short energy, Real48 x,
-        Real48 y, Real48 vx, Real48 vy, ShotSettings settings, TurboPascalRandom random)
+    private static (Real48 X, Real48 Y) Beam(Playfield.Playfield field, PlayfieldTank shooter, bool[] contact, short energy,
+        Real48 x, Real48 y, Real48 vx, Real48 vy, ShotSettings settings, TurboPascalRandom random)
     {
         var screen = field.Screen.Pixels.AsSpan();
         var background = field.Background.Pixels;
@@ -254,6 +258,7 @@ public static class LaserShot
                 stop = true;
         }
         while (!stop);
+        return (x, y);
     }
 
     private static bool InWindow(int x, int y) => x is >= 11 and <= 309 && y is >= 31 and <= 189;

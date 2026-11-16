@@ -40,6 +40,13 @@ public sealed class PlayfieldTank
     /// <summary>Word +5Eh, set to 0 (meaning not derived, docs/formate/spielstand.md).</summary>
     public int Field5E { get; internal set; }
 
+    /// <summary>
+    /// Colour divisors of the record (+60h, +62h, +64h): DAC <see cref="Color"/> = (v div R, v div G, v div B) with
+    /// v = 63 · energy div 100 (O10:01AC); trail colour 100 − n = 32 div each (O4:0541). They travel with the record when
+    /// the records are shuffled, the colour index stays the position (#153).
+    /// </summary>
+    public (int R, int G, int B) ColorDivisors { get; internal set; } = (1, 1, 1);
+
     // Fields used by the shot (spur schuss, docs/analyse/runde.md sections 5.5 and 5.6). They belong to the player record
     // and survive rounds; until the game flow exists (round 3) a playfield starts them like O2:0216 without team play.
 
@@ -54,6 +61,12 @@ public sealed class PlayfieldTank
 
     /// <summary>Hits on tanks of other teams (+6Ch).</summary>
     public int Hits { get; set; }
+
+    /// <summary>Kills of tanks of other teams (+6Eh); the round loop counts them (O4:4CEF).</summary>
+    public int Kills { get; set; }
+
+    /// <summary>Round sum (+68h): 100 − energy per round end, 100 for energy outside 0..100 (O4:4E87).</summary>
+    public int RoundSum { get; set; }
 
     /// <summary>Weapon chosen for the shot (+24h, index into ItemCatalog.WeaponTable).</summary>
     public int Weapon { get; set; }
@@ -103,6 +116,40 @@ public sealed class PlayfieldTank
         account.SetStock(ItemKind.Guidance, 1, Vicks);
         for (var d = 0; d < Defense.Length; d++)
             account.SetStock(ItemKind.Defense, d, Defense[d]);
+    }
+
+    /// <summary>
+    /// Record 0 (DS:402E): the shooter of the explosions of the death picture O5:29A0 and of the lightning; never on the field.
+    /// </summary>
+    public static PlayfieldTank CreateRecordZero() => new(0) { Team = 0 };
+
+    /// <summary>
+    /// The record copy of O5:2A76 (12CE:0A81, 74h bytes): the fields the shot uses (position, energy, team, score, weapon,
+    /// guidance, defense, stocks, colour divisors).
+    /// </summary>
+    internal void CopyFrom(PlayfieldTank other)
+    {
+        X = other.X;
+        Y = other.Y;
+        Angle = other.Angle;
+        Power = other.Power;
+        Direction = other.Direction;
+        Energy = other.Energy;
+        Active = other.Active;
+        Field5E = other.Field5E;
+        ColorDivisors = other.ColorDivisors;
+        Team = other.Team;
+        Score = other.Score;
+        Hits = other.Hits;
+        Kills = other.Kills;
+        RoundSum = other.RoundSum;
+        Weapon = other.Weapon;
+        Guidance = other.Guidance;
+        GuidanceTarget = other.GuidanceTarget;
+        Herbs = other.Herbs;
+        Vicks = other.Vicks;
+        other.Defense.CopyTo(Defense, 0);
+        other.Stock.CopyTo(Stock, 0);
     }
 
     /// <summary>Sets the barrel and the power for the next shot (the turn input of O7:040C, Teil 3 of runde.md).</summary>

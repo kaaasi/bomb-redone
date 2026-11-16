@@ -321,7 +321,7 @@ Crumble > 0, Fallen.
 Ende: `0431:0000`, je Satz +68h += 100 − Energie (Energie außerhalb 0..100: 100), Tastatur zurück (`0C48:0269`). Sonst nächster Zug
 ab `O4:4770` (§2).
 
-**Todesexplosionen O5** (K15, K16, Bild nur `[APPROX]` nicht ausgewertet): `O5:001F` und `O5:1BDE` Splitter mit Wind (Wind / 5000),
+**Todesexplosionen O5** (K15, K16; ausgewertet und gegen die Probe geprüft in [feld.md](feld.md) §9.3, Spur `runde`): `O5:001F` und `O5:1BDE` Splitter mit Wind (Wind / 5000),
 Schaden `Random(10) + 5` bzw. `Random(10) + 10` je getroffenem Panzer (`0E26:1FCC`, `[APPROX]` GetPixel); `O5:0DA0` Teilchen über
 `O5:09EC`/`O5:0C6C`, `Random(3) + 1` je getroffenem Panzerpixel; `O5:2662`, `O5:28DE` ohne Schaden; `O5:29A0`: Panzer flackert
 (`Random(2)` = 1 → ohne Verzögerung), Satz wird nach Satz 0 kopiert, `Random(10)` → k = 1 (0–1), 2 (2–4), 3 (5–7), 4 (8–9), dann

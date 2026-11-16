@@ -116,7 +116,7 @@ public static class BallisticShot
         var subSteps = (short)settings.SubSteps;
         for (var i = 1; i <= tanks.Count; i++)
         {
-            var (r, g, b) = Playfield.Playfield.ColorDivisors[i - 1];
+            var (r, g, b) = tanks[i - 1].ColorDivisors;
             field.Palette.Set(100 - i, 32 / r, 32 / g, 32 / b);
         }
 

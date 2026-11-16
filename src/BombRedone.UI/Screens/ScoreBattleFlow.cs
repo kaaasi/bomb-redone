@@ -21,6 +21,7 @@ public sealed class ScoreBattleFlow
     private readonly Func<BattlePlayer, (int Red, int Green, int Blue)> _color;
     private readonly Func<int, string> _teamName;
     private readonly Func<IScreen?> _finished;
+    private readonly Func<Func<int, IScreen?>, IScreen?>? _playRound;
     private ScoreScreen? _rating;
 
     /// <param name="fonts">Fonts from BOMB.EXE.</param>
@@ -30,8 +31,13 @@ public sealed class ScoreBattleFlow
     /// <param name="color">6-bit colour of a player (O10:01AC, from the record).</param>
     /// <param name="teamName">Name of a team number (team records DS:4838, Team Play only).</param>
     /// <param name="finished">Screen after the last game (end result O3[1]); null quits.</param>
+    /// <param name="playRound">
+    /// For a battle without round object (<see cref="BattleStepKind.Round"/>, spur runde): the screen of the round; it calls
+    /// the given function with the winning team when the round is over.
+    /// </param>
     public ScoreBattleFlow(ShopFonts fonts, BattleSequence battle, ItemCatalog catalog, bool allComputers,
-        Func<BattlePlayer, (int Red, int Green, int Blue)> color, Func<int, string> teamName, Func<IScreen?> finished)
+        Func<BattlePlayer, (int Red, int Green, int Blue)> color, Func<int, string> teamName, Func<IScreen?> finished,
+        Func<Func<int, IScreen?>, IScreen?>? playRound = null)
     {
         ArgumentNullException.ThrowIfNull(fonts);
         ArgumentNullException.ThrowIfNull(battle);
@@ -46,6 +52,7 @@ public sealed class ScoreBattleFlow
         _color = color;
         _teamName = teamName;
         _finished = finished;
+        _playRound = playRound;
     }
 
     /// <summary>Plays the first round and returns its status screen.</summary>
@@ -76,6 +83,8 @@ public sealed class ScoreBattleFlow
                 return Next();
             case BattleStepKind.Finished:
                 return _finished();
+            case BattleStepKind.Round when _playRound is not null:
+                return _playRound(winner => ScreenFor(_battle.CompleteRound(winner)));
             default:
                 throw new InvalidOperationException(step.Kind.ToString());
         }

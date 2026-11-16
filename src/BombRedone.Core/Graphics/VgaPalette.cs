@@ -11,6 +11,7 @@ public sealed class VgaPalette
 
     private readonly byte[] _rgb = new byte[Entries * 3];
     private readonly bool[] _written = new bool[Entries];
+    private readonly bool[] _defined = new bool[Entries];
 
     /// <summary>R, G, B of every entry (6 bits each), entry i at 3 i.</summary>
     public ReadOnlySpan<byte> Rgb => _rgb;
@@ -29,7 +30,11 @@ public sealed class VgaPalette
         _rgb[3 * index + 1] = (byte)(g & 0x3F);
         _rgb[3 * index + 2] = (byte)(b & 0x3F);
         _written[index] = true;
+        _defined[index] = true;
     }
+
+    /// <summary>Whether the entry was ever set (unlike <see cref="IsWritten"/> not reset by <see cref="ClearWritten"/>).</summary>
+    public bool IsDefined(int index) => _defined[index];
 
     public void ClearWritten() => Array.Clear(_written);
 

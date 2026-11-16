@@ -25,6 +25,9 @@ public sealed class TurboPascalRandom(uint seed)
         return new TurboPascalRandom((dx << 16) | cx);
     }
 
+    /// <summary>RandSeed := <paramref name="seed"/> (System.RandSeed, DS:3AD6); the probes set it at fixed points.</summary>
+    public void SetSeed(uint seed) => _seed = seed;
+
     /// <summary>
     /// Random(n) for a Word range. [ORIGINAL] BOMB.EXE 0x159F5 (12CE:1675): high word of the new seed mod n,
     /// 0 for n = 0.

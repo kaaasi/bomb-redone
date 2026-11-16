@@ -44,6 +44,30 @@ public sealed class BattlePlayer
     /// <summary>Rounds as start player (+72h, docs/analyse/runde.md section 2, R4).</summary>
     public int RoundsStarted { get; set; }
 
+    // Record fields the round carries from game to game (spur runde, Core/Round/RoundGame); the record is one in the
+    // original (DS:402E + 74h · n), here they live between the rounds.
+
+    /// <summary>Chosen weapon (+24h); 1 for a new record (O2:0216).</summary>
+    public int Weapon { get; set; } = 1;
+
+    /// <summary>Guidance (+26h) and its target (+28h).</summary>
+    public int Guidance { get; set; }
+
+    /// <summary>Target of the guidance (+28h).</summary>
+    public int GuidanceTarget { get; set; }
+
+    /// <summary>Hits on tanks of other teams (+6Ch).</summary>
+    public int Hits { get; set; }
+
+    /// <summary>Kills of tanks of other teams (+6Eh).</summary>
+    public int Kills { get; set; }
+
+    /// <summary>Round sum (+68h).</summary>
+    public int RoundSum { get; set; }
+
+    /// <summary>Turns taken (+70h).</summary>
+    public int Turns { get; set; }
+
     /// <summary>Name of the player (record +01h).</summary>
     public string Name => Account.Name;
 }

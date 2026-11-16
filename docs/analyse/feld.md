@@ -320,7 +320,7 @@ Je ein Schritt in Winkel oder Kraft ändert die Spur (Test `Neighbouring_angles_
 - **Schuss 4 (`s3_06`, `s3_07`):** trifft Satz 2 (Energie 0). Flug, Spur, Krater und Fallen (Panzer nach (277, 150)) gleich. Alle
   Abweichungen (371 bzw. 1371 Pixel, x 211..309, y 141..189) zeigen im Bild Hintergrund, wo wir Gelände (2) oder die unterste
   Körperzeile (21) haben: die **Todesexplosion** `O5` (§5.9, Runde 3). Nach dem Schuss gibt unser `RandSeed` `7C99828F` für
-  `Random(7)` den Wert 0 (`O5[0]`) – Hinweis für den Bildvergleich der Todesexplosionen, nicht geprüft.
+  `Random(7)` den Wert **1** (`O5:0DA0` Teilchen; `Random(n)` = hohes Wort mod n – hier früher irrtümlich 0); Bildvergleich in §9.5.
 - Kopfzeile und Waffenleiste nicht verglichen (Zug, Teil 3 von `runde.md`, nicht umgesetzt).
 
 Kein Befund in `Core/Shot` oder `Core/Playfield`, also kein Fix.
@@ -431,3 +431,125 @@ Hintergrund (`U431:0594`, Adressen 64000..1, also nicht Pixel 0). Abnahme: alle 
   Lenkkörper ab (Q1), der MIRV die Waffe, der Laser die Kraft. Übertrag `TakeStock(PlayerAccount)` beim Rundenbeginn und
   `ReturnStock(PlayerAccount)` beim Rundenende über die öffentliche API von `PlayerAccount` (unverändert); aufrufen müssen ihn
   `spielfolge`/`runde`, im Original sind Konto und Panzer derselbe Satz.
+
+## 9. Rundenablauf (Spur `runde`, Stand 16.11.2026)
+
+### 9.1 Probe `tod.py` (Teil 1)
+
+`tools/reverse-engineering/tod.py` setzt einen Fall von `feld.py` bei **S** (`O4:479A`) fort und lässt `O4:44A7` bis zu seinem
+`retf` (`O4:4EF2`) laufen: Zugbeginn Z1, Waffe (`O4:01B7`, Laser `O4:3426`, MIRV `O4:13D4` mit Dialog über die Tastaturflags wie
+`feld_schuss.py`), Panzer, Crumble und Fallen (K11), Schussprotokoll `DS:4A80`, Todesschleife K12 mit den Todesexplosionen `O5`
+(K15, K16), Blitz `O6:14C5` (K13), Rundenende K14. **Nicht** läuft der Zug `O7:040C` selbst (Spur `zug`, [zug.md](zug.md)): beim
+Aufruf `O4:4960` schreibt die Probe das Ergebnis des Zugs aus dem Skript (Winkel +1Dh, Kraft +1Bh, Waffe +24h, Lenkung +26h/+28h,
+Bestand der Waffe mindestens 1 bzw. beim Laser die Kraft) und springt nach `O4:4965`. `Crt.Delay` wird übersprungen und gezählt.
+
+| Aufruf | Ergebnis |
+|---|---|
+| `python3 -I tools/reverse-engineering/tod.py befunde` | SHA-256 von `O4:4704–4A0A` (Zugfolge, Z1, Waffenwahl), `O4:4A0B–4EF2` (Schussprotokoll bis Rundenende), O5 ganz, O6 ganz, O7 `0000–040B`, O10 `0000–02A3`, `U431:0000–000B`; 7/7 ok |
+| `… run --seed <hex> [Fall wie feld.py] --turns "W,K[,Waffe[,Lenkung,Ziel[,Muster,Detonation]]];…" [--set [N:]FELD=W …] [--sound] [--crumble C] [--pass P] [--death-seed HEX,…] [--lightning-seed HEX,…] [--json]` | eine Runde nach `analyse/feld/runde-…/` (`result.json`, Bildschirm, Puffer, DAC und Sätze je Messpunkt) |
+| `… runden [--only I …] [--jobs N]` | feste Liste (26 Runden, `ROUNDS`) → `analyse/feld/runden-hashes.tsv` (eine Zeile je Messpunkt) und `runden-hashes.json` (Züge, Tode, Blitze, Einschläge, Schäden); mit `--jobs 2` etwa 13 min |
+
+`--set` schreibt Felder der Sätze bei S (vor Z1 des ersten Zugs; ohne `N:` der Startspieler), `--pass` den Durchgangszähler
+`DS:47EA` bei S, `--death-seed` setzt `RandSeed` vor dem `Random(7)` des j-ten Tods (`O4:4C10`), `--lightning-seed` vor dem j-ten
+Blitz (`O4:4D9A`). **Messpunkte:** `turn` (`O4:4960`, Zugergebnis geschrieben, nach Z1), `post` (`O4:4A0B`, nach Waffe, Panzern,
+Crumble, Fallen), `death` (`O4:4D50`, nach einem Tod samt Bild, Punkten, Rahmen, `O7:03C1` und Fallen), `bolt` (`O4:4D9F`, nach
+einem Blitz), `next` (`O4:4E68`, Runde geht weiter), `end` (`O4:4EF2`, nach K14), `exhausted` (Skript ohne Zug). Je Messpunkt:
+`RandSeed`, Zahl der `Random(n)`/`Random:Real` seit S, Rahmen und Feld (`field_crop` wie §5.2), Puffer `DS:E5C0`, seit S gesetzte
+DAC-Einträge, Rohbytes aller Sätze und Kurzform (x, y, Energie, lebt, Punkte, Abwehr, +5Eh, Treffer +6Ch, Tode +6Eh, Züge +70h,
+Rundensumme +68h, Waffe), Schussprotokoll, Durchgang, Spieler am Zug, Siegerteam `DS:47E0`, Zahl und Summe der Delays.
+
+**Liste** (`ROUNDS`): Fall A (2 Spieler, Startspieler 2) – Tod durch Baby Missile mit der Wahl des Originals (0), jede der sieben
+Todesexplosionen über `--death-seed` (1–7), dieselben mit Ton für die Wahl 0, 1, 2, 5, 6 (8–12), Selbstmord (13), Tod im eigenen
+Team (14), zehn Züge bis zum Tod mit Punkten +1500 (15), Blitze bei Durchgang 40–61 ohne und mit Ton und bei Energie 3 (16–18),
+Durchgang 9 bis 16 mit `Random(100)` ohne Blitz (19), kein Fallen und Crumble 0 (24), Laser, MIRV und CRI in einer Runde (25); Fall
+B (4 Spieler, Startspieler 3) – zwei Tote durch eine Nuke, niemand bleibt (Sieger 0, 20), Nuke mit Selbsttod, die Runde geht
+weiter (21), Teams zu zweit mit zweimal −1000 (22), vier Panzer mit Energie 1 und Splittern (23). Die Läufe sind byte-gleich
+wiederholbar; 14 Runden enden mit `end`, 7 laufen bis zum Ende ihres Skripts (`exhausted`).
+
+**Befunde** (Ergänzung zu [runde.md](runde.md) §5.9, alles aus Code und Probe):
+
+- Ein Tod: `U431:07BA(Satz)`, Kopfzeile `Bar(109, 0, 211, 7)` mit dem Namen zentriert bei x = 160 in Farbe Satz + 19 (BGI,
+  außerhalb des Felds), `Random(7)`, Bild, Punkte, `O7:0364`, `O7:03C1` (Rahmen,
+  `Random:Real · 100 ≤ Crumble`, also **ein `Random:Real` je Tod**), Fallen. Bei einem Panzer, der nach dem Schuss Energie ≤ 0 hat, aber nicht mehr lebt (+23h = 0), passiert nichts.
+- Zufallsaufrufe der Bilder ohne Ton (einschließlich `Random(7)`, ohne `O7:03C1`): `O5:001F` 2032, `O5:0DA0(0)` 22.897,
+  `O5:1BDE` 1064, `O5:0DA0(1)` 25.537, `O5:2662` 14.759, `O5:28DE` keiner, `O5:29A0` 2 + Explosionen; mit Ton mehr. `O5:001F`
+  und `O5:1BDE` ziehen außerdem 22 `Random:Real`. Delays: `O5:001F` 245, `O5:1BDE` 285, `O5:28DE` 202, `O5:29A0` 436 Aufrufe
+  (Summe 1960, 2280, 1616, 264 ms bei ES/FS des Beispiels), `O5:0DA0` und `O5:2662` keine.
+- Rundenende: `DS:4744` = Team des letzten lebenden Satzes, `DS:4813` = 1, solange alle lebenden dasselbe Team haben – auch wenn
+  keiner lebt (dann Team 0); Runde aus bei `DS:4813` = 1, Sieger `DS:47E0`. Rundensumme +68h += 100 − Energie, bei Energie < 0 oder
+  > 100 aber + 100 (Fall 13: Energie 84 → 16; Tote mit −1 → 100).
+- Der Blitz wiederholt sich, solange kein Tod folgt und `Random(100)` < Durchgang ist (bei Durchgang ≥ 100 also bis zum ersten Tod).
+
+### 9.2 Rundenschleife `Core/Round` (Teil 2)
+
+`RoundPlay` (`Core/Round/RoundPlay.cs`) spielt `O4:44A7` ab dem Startspieler: Z1 über `TurnSession.Begin`, der Zug als Rückruf
+(setzt Winkel, Kraft, Waffe, Lenkung am Panzer, gibt die MIRV-Wahl zurück), Waffe wie `O4:4977`, `AfterShot.Run`, Schussprotokoll
+(`ShotLog`, Einträge wie §9.1; x über 32767 → 7FFFh; der MIRV lässt den Schusszustand stehen, der Laser setzt ihn auf das Ende des
+Strahls), `WeaponBar.SetColors` (`O4:0000`), Todesschleife, Blitzprüfung, Rundenende mit Rundensumme. `RoundPoint` meldet die
+Messpunkte der Probe, dazu `DeathStart` vor `Random(7)` (Name in der Kopfzeile; dort setzt der Test `--death-seed` über
+`TurboPascalRandom.SetSeed`). Neu am Panzer: `Kills` (+6Eh), `RoundSum` (+68h), `ColorDivisors` (+60h..+64h, #153: der Index der
+Farbe folgt der Lage, die RGB-Teiler wandern mit dem Satz; `Playfield.Build(…, divisors)`).
+
+Abnahme (`RoundProbeTests`): zum Stand von Teil 2 alle 26 Runden bis zum ersten noch nicht portierten Bild bitgleich (Art,
+`RandSeed`, Rahmen und Feld, Puffer, DAC, Schussprotokoll, Durchgang, Spieler am Zug, Sieger, Sätze); vollständig die Runden ohne
+Tod und die mit Todesbild 5 (`O5:28DE`: Energie 0..100..0 über `O10:0171`, dann −1 und Panzer aus dem Puffer `U431:08D7`).
+
+### 9.3 Todesbilder und Blitz (Teil 3)
+
+`Core/Round/DeathExplosion` (alle sieben Wahlen von `Random(7)`) und `Core/Round/Lightning`; Satz 0 (`DS:402E`) ist ein eigener
+Panzer (`RoundPlay.RecordZero`), Schütze der Explosionen von `O5:29A0` und des Blitzes. Abnahme: **alle 26 Runden bis zum Ende
+bitgleich**, mit und ohne Ton (`RoundProbeTests`). Aus dem Code (Ergänzung zu `runde.md` §5.9 K15/K16):
+
+- `O5:001F` (0) Splitter: Rampen 130..134/140..144/150..154, 104-mal `O5:0000` (Panzerfarbe := drei Bytes des Speichers ab
+  `0000:Random(65535)` – `[APPROX]` hier aus dem Zufallswert, am Ende überschrieben); Fenster 11..309 × 31..189, x/y des Satzes
+  relativ; 11 Splitter nacheinander im Schusszustand `DS:4796–47AC` (vx = 0,5 − R, vy = 0,1 − R, vy + 0,007, vx := Wind/5000 + vx),
+  Panzerpixel `Random(10) + 5` Schaden, je Ende ein Ringbündel; 15 Doppelringe; Ausblenden mit `Random(63) · n div 16`; danach
+  steht der Schusszustand auf dem letzten Splitter (relativ zum Fenster) – für das Schussprotokoll eines späteren MIRV.
+  `Graph.GetPixel` `[APPROX]` als Fensterursprung + (x, y) in 16 Bit, jenseits 64000 null (Treiber 2Eh nicht zerlegt).
+- `O5:1BDE` (2) wie 0, aber alle Splitter zugleich (ein `O5:0000` je Durchgang), `Random(10) + 10`, Grenze 0..298 × 0..158, ohne
+  Schusszustand, Einzelringe, Ton `Random(200)`, am Ende Farben 130..154 aus dem Puffer.
+- `O5:0DA0` (1 Teilchen, 3 Funken): DAC 200..215 := DAC 0..15 (`UCC8:0C20`, `[APPROX]` nie gesetzte Einträge 0..15 = Modell der
+  BIOS-Palette wie die Probe), `Random(5) + 5` Wellen zu `Random(390) + 2` Teilchen in fünf Schritten und acht Formen
+  (`Random(8) + 1`), einmal ins Fenster gespiegelt; `O5:09EC` Farben 1..14 Schritt für Schritt, `O5:0C6C` Farben 201..214 (202 wird
+  Gelände); Panzerpixel `Random(3) + 1`; am Ende Farben 201..220 aus dem Puffer.
+- `O5:2662` (4) Erdfontäne `Random(30) + 30` Ringe zu `Random(400)` Körnern Farbe 2; `O5:29A0` (6) dreimal Energie 0..100,
+  Satz → Satz 0, `Random(10)` → 1–4 Explosionen der Waffen 1..k am Panzer; `O5:28DE` (5) wie §9.2.
+- Blitz wie `runde.md` §5.9 K13; das Produkt (y − 189) · o ist ein 16-Bit-`mul` mit `cwd` danach, die zweite Bahn rechnet
+  o · ((y − 189) / 189); Schaden 3 auf den Schild, Explosion Waffe (Blitze div 3, 0 → 11) bei (x₁, 189) mit Satz 0.
+
+### 9.4 Schlacht und Desktop (Teil 4)
+
+- `Core/Round/RoundGame`: Runde auf den Sätzen der Schlacht. `Prepare` baut das Spielfeld mit den Farbteilern der Spieler (#153),
+  Wind und Startspieler (Zähler +72h), übergibt je Satz Bestand (`TakeStock`, #147), Punkte, Team, Waffe, Lenkung und die Zähler
+  +68h..+70h an den Panzer und reicht die CRI-Liste der vorigen Runde weiter (`Playfield.TakeOverCriList`, #165); `Finish` gibt
+  alles zurück (`ReturnStock`) samt „lebt“ für die Siege. `InitializeRecords`: Bestand neuer Sätze wie `O2:0216` (`[APPROX]` das
+  Original setzt ihn einmal beim Programmstart, hier bei jeder Schlacht).
+- `BattleSequence` ohne `IBattleRound` meldet nach dem Mischen `BattleStepKind.Round`; der Aufrufer spielt die Runde und meldet das
+  Siegerteam mit `CompleteRound`. `RoundPlay.Steps()` meldet `TurnStart` nach Z1; der Zug setzt `NextTurn`.
+- UI: `PlayfieldRoundScreen` (Züge über `PlayfieldTurnDriver`, aus `PlayfieldTurnScreen` gelöst; Bilder zwischen zwei Zügen wie
+  `PlayfieldShotScreen`; Name des Toten in der Kopfzeile `PlayfieldTurnView.DeathStarted`). `ScoreBattleFlow` erhält den
+  Rückruf `playRound` (gemeinsame Datei, minimal). Desktop: Titel → Menü → Spielerwahl → je Spiel Runde, Wertung, Teamwertung,
+  Einkauf → nach dem letzten Spiel zurück ins Menü; das Endergebnis (`ScoreResults`, `O3[1]`) beim Programmende auf der Konsole.
+  `[APPROX]` Computer schießen sofort mit Winkel und Kraft ihres Satzes (Runde 4), kein Ton.
+- Test: `PlayfieldRoundScreenTests` (Runde zweier Computer: Bilder abgespielt, Ende, Sieger, `RandSeed` und Feld gleich Core
+  allein; Schlachtfolge über den Rückruf), `RoundGameTests`.
+
+### 9.5 Abnahme gegen Sitzung 3 (Fixlauf 1, Review #171)
+
+- **`s3_07`** (`PlayfieldRoundSessionTests`): Schlacht über `BattleSequence` → `RoundGame.Prepare` → `RoundPlay` mit den vier Schüssen
+  aus §7. Nach dem Mischen `RandSeed` `D2E3BA6E`, Wind −92, Startspieler 2; Schuss 4 tötet Satz 2, `Random(7)` mit `7C99828F` = 1
+  (`O5:0DA0`). Am letzten Bild des Todesbilds ist das Feld **pixelgleich** zu `s3_07`, die DAC aller vom Spiel gesetzten Feldfarben
+  gleich (Farben 2 und 13 setzt das Spiel nie: BIOS-Farben). Nach `O7:0364`/`O7:03C1` bleiben 30 Pixel, alle in y = 189,
+  x 219..307: das Bild zeigt den Hintergrundpuffer, wir die neu gezeichnete Bodenlinie (2). Die Probe zeichnet sie ebenso neu
+  (`tod.py run … --set 1:energy=5 1:y=150`: am Messpunkt `death` in y = 189 nur Farbe 2) – `s3_07` ist der Stand zwischen Bild und
+  `O7:0364`, kein Fehler. `s3_06` liegt mitten im Bild (nicht vergleichbar).
+- **`s3_08`**: Wertung nach Spiel 1 über `ScoreBattleFlow` – „Player 2“ 1 Sieg, 4490 Punkte, „Player 1“ 0 und 50. Bild gleich bis auf
+  den Mauszeiger (x 165..175, y 154..169) und 8 Pixel in den Glyphen „5“ und „a“ (P3-2, #175, Spur `p3-runde-3`); DAC aller
+  benutzten Farben gleich außer Farbe 0: das Original behält DAC 0 = (14, 9, 10) der Runde über den Bildschirmwechsel, unser
+  `ScoreScreen` setzt Schwarz (P3-1, #174, offen: braucht einen DAC-Eingang des Score-Bildschirms, Welle 1).
+- **Schaden an Nachbarn** (P2-2, #173): Runden 26–31 der Liste (Fall B, Satz 2 mit Energie 0, Satz 3 auf x = 125 daneben) – Splitter
+  (0, 2), Teilchen (1) und Funken (3) treffen den lebenden Nachbarn (91 → 22/29/41, bei 2 auch Satz 1), Folgetod durch Funken bzw.
+  Splitter (29, 30) mit −1000 für den eigenen Satz, Teilchen auf einem Schild (31: Schild 30 → 25). Die Mutationen `+ 5` → `+ 6`,
+  `+ 10` → `+ 11`, `+ 1` → `+ 2` und `Damage.Apply` → nur `Random(3)` fallen damit rot.
+- **CRI-Liste** (P3-3, #176): der Desktop reicht sie über alle Schlachten des Programmlaufs weiter; alle Zugriffe auf `DS:E820`
+  liegen im CRI (`BOMB.OVR 0x19964–0x19D35`).
