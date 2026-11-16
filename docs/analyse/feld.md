@@ -490,7 +490,29 @@ Messpunkte der Probe, dazu `DeathStart` vor `Random(7)` (Name in der Kopfzeile; 
 `TurboPascalRandom.SetSeed`). Neu am Panzer: `Kills` (+6Eh), `RoundSum` (+68h), `ColorDivisors` (+60h..+64h, #153: der Index der
 Farbe folgt der Lage, die RGB-Teiler wandern mit dem Satz; `Playfield.Build(…, divisors)`).
 
-Abnahme (`RoundProbeTests`): alle 26 Runden bis zum ersten noch nicht portierten Bild bitgleich (Art, `RandSeed`, Rahmen und Feld,
-Puffer, DAC, Schussprotokoll, Durchgang, Spieler am Zug, Sieger, Sätze); vollständig bis zum Ende die Runden ohne Tod und die mit
-Todesbild 5 (`O5:28DE`: Energie 0..100..0 über `O10:0171`, dann −1 und Panzer aus dem Puffer `U431:08D7`). Die übrigen Bilder und der
-Blitz folgen mit Teil 3.
+Abnahme (`RoundProbeTests`): zum Stand von Teil 2 alle 26 Runden bis zum ersten noch nicht portierten Bild bitgleich (Art,
+`RandSeed`, Rahmen und Feld, Puffer, DAC, Schussprotokoll, Durchgang, Spieler am Zug, Sieger, Sätze); vollständig die Runden ohne
+Tod und die mit Todesbild 5 (`O5:28DE`: Energie 0..100..0 über `O10:0171`, dann −1 und Panzer aus dem Puffer `U431:08D7`).
+
+### 9.3 Todesbilder und Blitz (Teil 3)
+
+`Core/Round/DeathExplosion` (alle sieben Wahlen von `Random(7)`) und `Core/Round/Lightning`; Satz 0 (`DS:402E`) ist ein eigener
+Panzer (`RoundPlay.RecordZero`), Schütze der Explosionen von `O5:29A0` und des Blitzes. Abnahme: **alle 26 Runden bis zum Ende
+bitgleich**, mit und ohne Ton (`RoundProbeTests`). Aus dem Code (Ergänzung zu `runde.md` §5.9 K15/K16):
+
+- `O5:001F` (0) Splitter: Rampen 130..134/140..144/150..154, 104-mal `O5:0000` (Panzerfarbe := drei Bytes des Speichers ab
+  `0000:Random(65535)` – `[APPROX]` hier aus dem Zufallswert, am Ende überschrieben); Fenster 11..309 × 31..189, x/y des Satzes
+  relativ; 11 Splitter nacheinander im Schusszustand `DS:4796–47AC` (vx = 0,5 − R, vy = 0,1 − R, vy + 0,007, vx := Wind/5000 + vx),
+  Panzerpixel `Random(10) + 5` Schaden, je Ende ein Ringbündel; 15 Doppelringe; Ausblenden mit `Random(63) · n div 16`; danach
+  steht der Schusszustand auf dem letzten Splitter (relativ zum Fenster) – für das Schussprotokoll eines späteren MIRV.
+  `Graph.GetPixel` `[APPROX]` als Fensterursprung + (x, y) in 16 Bit, jenseits 64000 null (Treiber 2Eh nicht zerlegt).
+- `O5:1BDE` (2) wie 0, aber alle Splitter zugleich (ein `O5:0000` je Durchgang), `Random(10) + 10`, Grenze 0..298 × 0..158, ohne
+  Schusszustand, Einzelringe, Ton `Random(200)`, am Ende Farben 130..154 aus dem Puffer.
+- `O5:0DA0` (1 Teilchen, 3 Funken): DAC 200..215 := DAC 0..15 (`UCC8:0C20`, `[APPROX]` nie gesetzte Einträge 0..15 = Modell der
+  BIOS-Palette wie die Probe), `Random(5) + 5` Wellen zu `Random(390) + 2` Teilchen in fünf Schritten und acht Formen
+  (`Random(8) + 1`), einmal ins Fenster gespiegelt; `O5:09EC` Farben 1..14 Schritt für Schritt, `O5:0C6C` Farben 201..214 (202 wird
+  Gelände); Panzerpixel `Random(3) + 1`; am Ende Farben 201..220 aus dem Puffer.
+- `O5:2662` (4) Erdfontäne `Random(30) + 30` Ringe zu `Random(400)` Körnern Farbe 2; `O5:29A0` (6) dreimal Energie 0..100,
+  Satz → Satz 0, `Random(10)` → 1–4 Explosionen der Waffen 1..k am Panzer; `O5:28DE` (5) wie §9.2.
+- Blitz wie `runde.md` §5.9 K13; das Produkt (y − 189) · o ist ein 16-Bit-`mul` mit `cwd` danach, die zweite Bahn rechnet
+  o · ((y − 189) / 189); Schaden 3 auf den Schild, Explosion Waffe (Blitze div 3, 0 → 11) bei (x₁, 189) mit Satz 0.

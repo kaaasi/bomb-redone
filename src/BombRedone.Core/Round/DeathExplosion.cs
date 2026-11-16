@@ -13,9 +13,6 @@ public static class DeathExplosion
     /// <summary>Number of pictures the Random(7) of O4:4C10 chooses from.</summary>
     public const int Choices = 7;
 
-    /// <summary>Whether <paramref name="choice"/> is ported (the others follow with part 3 of spur runde).</summary>
-    public static bool IsSupported(int choice) => choice is 0 or 2 or 4 or 5 or 6;
-
     /// <summary>
     /// Runs picture <paramref name="choice"/> (0..6) for the dead <paramref name="tank"/>. <paramref name="record0"/> is
     /// record 0 (DS:402E), the shooter of the explosions of O5:29A0 and of the lightning.
@@ -33,6 +30,10 @@ public static class DeathExplosion
         {
             case 0:
                 return Splinters(field, tank, settings, random);
+            case 1:
+            case 3:
+                Particles(field, tank, choice == 3, settings, random);
+                break;
             case 2:
                 Cluster(field, tank, settings, random);
                 break;
@@ -46,7 +47,7 @@ public static class DeathExplosion
                 Blast(field, tank, record0, settings, random);
                 break;
             default:
-                throw new NotSupportedException($"Death picture {choice} is not ported yet.");
+                throw new ArgumentOutOfRangeException(nameof(choice), choice, "Death pictures are 0..6.");
         }
 
         return null;
@@ -368,6 +369,155 @@ public static class DeathExplosion
         Shot.LaserShot.RestoreColor(screen, background, tank.Color, tank.Color);
         Shot.LaserShot.RestoreColor(screen, background, 130, last);
         settings.Frame?.Invoke(Shot.ShotFrame.Crater);
+    }
+
+    /// <summary>
+    /// [APPROX] DAC 0..15 after mode 13h where the game never sets them: the EGA colours of the VGA BIOS (the model of the
+    /// probe, feld_machine.vga_default_dac); O5:0DA0 copies DAC 0..15 to 200..215.
+    /// </summary>
+    private static readonly (int R, int G, int B)[] BiosColors =
+    [
+        (0, 0, 0), (0, 0, 42), (0, 42, 0), (0, 42, 42), (42, 0, 0), (42, 0, 42), (42, 21, 0), (42, 42, 42),
+        (21, 21, 21), (21, 21, 63), (21, 63, 21), (21, 63, 63), (63, 21, 21), (63, 21, 63), (63, 63, 21), (63, 63, 63),
+    ];
+
+    private const int Waves = 5, MaxParticles = 400;
+
+    /// <summary>
+    /// [ORIGINAL] O5:0DA0(record, mode) (BOMB.OVR 0x16EDC), particles (mode 0) or sparks (mode 1): DAC 200..215 := DAC 0..15
+    /// (UCC8:0C20, SetPal); Random(5) + 5 waves; each wave n = Random(390) + 2 particles in 5 steps k and a shape Random(8) + 1;
+    /// per k and particle a = Random(10 · k), d = Trunc(Random(a + 10) − a / 2 − 5) and the point (shape 1: x + d, y − a;
+    /// 2: x + d, y + a; 3: x + a, y − d; 4: x − a, y − d; 5: x + d + a, y − a; 6: x + d − a, y − a; 7: x + d + a, y + a;
+    /// 8: x + d − a, y + a), mirrored once into 11..309 × 31..189; then O5:09EC (mode 0: colours Random(14) + 1 step by step,
+    /// the previous step from the background) or O5:0C6C (mode 1: colours Random(14) + 201, 202 becomes terrain), a tank pixel
+    /// takes Random(3) + 1 on the shield; at the end all tanks U431:07BA, the dead tank away and colours 201..220 from the
+    /// background.
+    /// </summary>
+    private static void Particles(Playfield.Playfield field, PlayfieldTank tank, bool sparks, RoundSettings settings,
+        TurboPascalRandom random)
+    {
+        var screen = field.Screen.Pixels.AsSpan();
+        var background = field.Background.Pixels;
+        for (var i = 0; i < 16; i++)
+        {
+            var (r, g, b) = field.Palette.IsDefined(i) ? field.Palette[i] : BiosColors[i];
+            field.Palette.Set(200 + i, r, g, b);
+        }
+
+        var px = new short[Waves + 1, MaxParticles + 1];
+        var py = new short[Waves + 1, MaxParticles + 1];
+        var waves = random.Next(5) + 5;
+        for (var wave = 1; wave <= waves; wave++)
+        {
+            var n = random.Next(390) + 2;
+            var shape = random.Next(8) + 1;
+            for (var k = 1; k <= Waves; k++)
+            {
+                var spread = (ushort)(10 * k);
+                for (var i = 1; i <= n; i++)
+                {
+                    var a = (short)random.Next(spread);
+                    var d = (short)(Real48.FromInt32(random.Next((ushort)(a + 10))) - Real48.FromInt32(a) / Two - Five).Trunc();
+                    (px[k, i], py[k, i]) = shape switch
+                    {
+                        1 => ((short)(tank.X + d), (short)(tank.Y - a)),
+                        2 => ((short)(tank.X + d), (short)(tank.Y + a)),
+                        3 => ((short)(tank.X + a), (short)(tank.Y - d)),
+                        4 => ((short)(tank.X - a), (short)(tank.Y - d)),
+                        5 => ((short)(tank.X + d + a), (short)(tank.Y - a)),
+                        6 => ((short)(tank.X + d - a), (short)(tank.Y - a)),
+                        7 => ((short)(tank.X + d + a), (short)(tank.Y + a)),
+                        _ => ((short)(tank.X + d - a), (short)(tank.Y + a)),
+                    };
+                }
+            }
+
+            for (var k = 1; k <= Waves; k++)
+            {
+                for (var i = 1; i <= n; i++)
+                {
+                    if (px[k, i] > 309)
+                        px[k, i] = (short)(618 - px[k, i]);
+                    if (py[k, i] > 189)
+                        py[k, i] = (short)(378 - py[k, i]);
+                    if (py[k, i] < 31)
+                        py[k, i] = (short)(62 - py[k, i]);
+                    if (px[k, i] < 11)
+                        px[k, i] = (short)(22 - px[k, i]);
+                }
+            }
+
+            if (sparks)
+                Sparks(field, px, py, n, settings, random);
+            else
+                Trails(field, px, py, n, settings, random);
+        }
+
+        foreach (var t in field.Tanks)
+            field.DrawTank(t);
+        Erase(field, tank);
+        Shot.LaserShot.RestoreColor(screen, background, 201, 220);
+        settings.Frame?.Invoke(Shot.ShotFrame.Crater);
+    }
+
+    /// <summary>
+    /// [ORIGINAL] O5:09EC: step 1, then steps 2..5: per particle (sound Random(500 · k) + 100) the pixel there (a tank 20..29:
+    /// O10:0000(Random(3) + 1, shield)), the particle in colour Random(14) + 1 and the previous step from the background; at
+    /// the end step 5 from the background.
+    /// </summary>
+    private static void Trails(Playfield.Playfield field, short[,] px, short[,] py, int n, RoundSettings settings,
+        TurboPascalRandom random)
+    {
+        var screen = field.Screen.Pixels.AsSpan();
+        var background = field.Background.Pixels;
+        for (var k = 1; k <= Waves; k++)
+        {
+            for (var i = 1; i <= n; i++)
+            {
+                if (settings.Sound)
+                    random.Next((ushort)(500 * k));
+                HitTank(field, Pixels.Get(screen, px[k, i], py[k, i]), random);
+                Pixels.Put(screen, px[k, i], py[k, i], (byte)(random.Next(14) + 1));
+                if (k > 1)
+                    Pixels.Copy(background, screen, px[k - 1, i], py[k - 1, i]);
+            }
+
+            settings.Frame?.Invoke(Shot.ShotFrame.Explosion);
+        }
+
+        for (var i = 1; i <= n; i++)
+            Pixels.Copy(background, screen, px[Waves, i], py[Waves, i]);
+    }
+
+    /// <summary>
+    /// [ORIGINAL] O5:0C6C: steps 1..5: per particle (sound Random(500 · k) + 100) the pixel there (a tank: O10:0000(Random(3) +
+    /// 1, shield)), then the spark in colour Random(14) + 201; 202 becomes terrain (colour 2) and stays.
+    /// </summary>
+    private static void Sparks(Playfield.Playfield field, short[,] px, short[,] py, int n, RoundSettings settings,
+        TurboPascalRandom random)
+    {
+        var screen = field.Screen.Pixels.AsSpan();
+        for (var k = 1; k <= Waves; k++)
+        {
+            for (var i = 1; i <= n; i++)
+            {
+                if (settings.Sound)
+                    random.Next((ushort)(500 * k));
+                HitTank(field, Pixels.Get(screen, px[k, i], py[k, i]), random);
+                var color = random.Next(14) + 201;
+                if (color == 202)
+                    color = Playfield.Playfield.TerrainColor;
+                Pixels.Put(screen, px[k, i], py[k, i], (byte)color);
+            }
+
+            settings.Frame?.Invoke(Shot.ShotFrame.Explosion);
+        }
+    }
+
+    private static void HitTank(Playfield.Playfield field, byte color, TurboPascalRandom random)
+    {
+        if (color is >= 20 and <= 29)
+            Shot.Damage.Apply(field, field.Tanks[color - 20], random.Next(3) + 1, Shot.Damage.Shield, random);
     }
 
     /// <summary>

@@ -13,9 +13,6 @@ public static class Lightning
     // [ORIGINAL] O6:1543: 189 (Real48 88 00 00 00 00 3D).
     private static readonly Real48 Bottom = Real48.FromInt32(189);
 
-    /// <summary>Whether the lightning is ported.</summary>
-    public static bool IsSupported => true;
-
     /// <summary>
     /// [ORIGINAL] O6:14C5(0) (BOMB.OVR 0x1A3F1), called by O4:4D9A: DAC 200 = (63, 63, 63), 201 = (0, 0, 50); top
     /// x₀ = Random(300) + 10, bottom x₁ = Random(300) + 10, slope s = (x₁ − x₀) / 189; path for y = 31..189 with

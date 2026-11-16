@@ -207,3 +207,4 @@ Integrationsfolge: `waffen` → `zug` → `spielfolge`. Gemeinsame Dateien: Absc
 - 16.11.2026: begonnen (Claude Code, geplanter Lauf), Branch `paket/runde`, Base `28ffb8d`, PR #170.
 - Teil 1 fertig: Probe `tools/reverse-engineering/tod.py` (26 Runden ab S bis `retf` von `O4:44A7`: alle sieben Todesbilder, Blitz, Teams, Rundenende), [analyse/feld.md](analyse/feld.md) §9.
 - Teil 2 fertig: `Core/Round/RoundPlay` (Schussprotokoll, Todesschleife, Rundenende) gegen die 26 Runden bitgleich bis zum ersten offenen Bild; Farbteiler je Satz (#153).
+- Teil 3 fertig: alle sieben Todesbilder `O5` und der Blitz `O6:14C5`; alle 26 Runden der Probe bitgleich bis zum Ende ([analyse/feld.md](analyse/feld.md) §9.3).

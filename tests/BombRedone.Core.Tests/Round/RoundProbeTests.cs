@@ -14,8 +14,7 @@ namespace BombRedone.Core.Tests.Round;
 /// values from <c>python3 -I tools/reverse-engineering/tod.py runden</c> and <c>runden-cs</c>: the playfield of a feld.py
 /// case up to the start player, the fields of <c>--set</c>, then the round with the turn results of the script. At every
 /// measuring point: kind, RandSeed, frame and field of the screen, background buffer, DAC entries written since the start
-/// player, shot log, pass, player to move, winner and the record fields. Rounds with a death picture or a lightning not yet
-/// ported are compared up to that point (<see cref="DeathExplosion.IsSupported"/>, <see cref="Lightning.IsSupported"/>).
+/// player, shot log, pass, player to move, winner and the record fields.
 /// </summary>
 public sealed class RoundProbeTests
 {
@@ -94,7 +93,7 @@ public sealed class RoundProbeTests
         TurnHarness.Apply(players, start, set);
     }
 
-    /// <summary>Runs the round like the probe; stops at the first picture or lightning not ported yet.</summary>
+    /// <summary>Runs the round like the probe; stops at a picture or lightning that is not ported (none since part 3).</summary>
     internal static (List<ProbePoint> Points, bool Complete) Run(RoundCase c)
     {
         var random = new TurboPascalRandom(Convert.ToUInt32(c.Seed, 16));
@@ -177,7 +176,7 @@ public sealed class RoundProbeTests
 
     [Theory]
     [MemberData(nameof(Cases))]
-    public void Round_matches_the_original_up_to_the_first_picture_not_ported(RoundCase c)
+    public void Round_matches_the_original_at_every_measuring_point(RoundCase c)
     {
         var expected = RoundProbeData.Points.Where(p => p.Nr == c.Nr).ToList();
         var (points, complete) = Run(c);
@@ -199,11 +198,10 @@ public sealed class RoundProbeTests
     }
 
     [Fact]
-    public void Rounds_without_unported_pictures_run_to_the_end()
+    public void Every_round_of_the_probe_runs_to_its_end()
     {
-        var complete = RoundProbeData.Cases.Where(c => Run(c).Complete).Select(c => c.Nr).ToList();
+        var incomplete = RoundProbeData.Cases.Where(c => !Run(c).Complete).Select(c => c.Nr);
 
-        // Pictures 0, 2, 4, 5, 6 and the lightning are ported; 1 and 3 (O5:0DA0) follow.
-        Assert.Equal("0,1,3,5,6,7,8,10,11,12,13,14,15,16,17,18,19,23,24,25", string.Join(",", complete));
+        Assert.Empty(incomplete);
     }
 }
