@@ -320,7 +320,7 @@ Je ein Schritt in Winkel oder Kraft ändert die Spur (Test `Neighbouring_angles_
 - **Schuss 4 (`s3_06`, `s3_07`):** trifft Satz 2 (Energie 0). Flug, Spur, Krater und Fallen (Panzer nach (277, 150)) gleich. Alle
   Abweichungen (371 bzw. 1371 Pixel, x 211..309, y 141..189) zeigen im Bild Hintergrund, wo wir Gelände (2) oder die unterste
   Körperzeile (21) haben: die **Todesexplosion** `O5` (§5.9, Runde 3). Nach dem Schuss gibt unser `RandSeed` `7C99828F` für
-  `Random(7)` den Wert 0 (`O5[0]`) – Hinweis für den Bildvergleich der Todesexplosionen, nicht geprüft.
+  `Random(7)` den Wert **1** (`O5:0DA0` Teilchen; `Random(n)` = hohes Wort mod n – hier früher irrtümlich 0); Bildvergleich in §9.5.
 - Kopfzeile und Waffenleiste nicht verglichen (Zug, Teil 3 von `runde.md`, nicht umgesetzt).
 
 Kein Befund in `Core/Shot` oder `Core/Playfield`, also kein Fix.
@@ -533,3 +533,23 @@ bitgleich**, mit und ohne Ton (`RoundProbeTests`). Aus dem Code (Ergänzung zu `
   `[APPROX]` Computer schießen sofort mit Winkel und Kraft ihres Satzes (Runde 4), kein Ton.
 - Test: `PlayfieldRoundScreenTests` (Runde zweier Computer: Bilder abgespielt, Ende, Sieger, `RandSeed` und Feld gleich Core
   allein; Schlachtfolge über den Rückruf), `RoundGameTests`.
+
+### 9.5 Abnahme gegen Sitzung 3 (Fixlauf 1, Review #171)
+
+- **`s3_07`** (`PlayfieldRoundSessionTests`): Schlacht über `BattleSequence` → `RoundGame.Prepare` → `RoundPlay` mit den vier Schüssen
+  aus §7. Nach dem Mischen `RandSeed` `D2E3BA6E`, Wind −92, Startspieler 2; Schuss 4 tötet Satz 2, `Random(7)` mit `7C99828F` = 1
+  (`O5:0DA0`). Am letzten Bild des Todesbilds ist das Feld **pixelgleich** zu `s3_07`, die DAC aller vom Spiel gesetzten Feldfarben
+  gleich (Farben 2 und 13 setzt das Spiel nie: BIOS-Farben). Nach `O7:0364`/`O7:03C1` bleiben 30 Pixel, alle in y = 189,
+  x 219..307: das Bild zeigt den Hintergrundpuffer, wir die neu gezeichnete Bodenlinie (2). Die Probe zeichnet sie ebenso neu
+  (`tod.py run … --set 1:energy=5 1:y=150`: am Messpunkt `death` in y = 189 nur Farbe 2) – `s3_07` ist der Stand zwischen Bild und
+  `O7:0364`, kein Fehler. `s3_06` liegt mitten im Bild (nicht vergleichbar).
+- **`s3_08`**: Wertung nach Spiel 1 über `ScoreBattleFlow` – „Player 2“ 1 Sieg, 4490 Punkte, „Player 1“ 0 und 50. Bild gleich bis auf
+  den Mauszeiger (x 165..175, y 154..169) und 8 Pixel in den Glyphen „5“ und „a“ (P3-2, #175, Spur `p3-runde-3`); DAC aller
+  benutzten Farben gleich außer Farbe 0: das Original behält DAC 0 = (14, 9, 10) der Runde über den Bildschirmwechsel, unser
+  `ScoreScreen` setzt Schwarz (P3-1, #174, offen: braucht einen DAC-Eingang des Score-Bildschirms, Welle 1).
+- **Schaden an Nachbarn** (P2-2, #173): Runden 26–31 der Liste (Fall B, Satz 2 mit Energie 0, Satz 3 auf x = 125 daneben) – Splitter
+  (0, 2), Teilchen (1) und Funken (3) treffen den lebenden Nachbarn (91 → 22/29/41, bei 2 auch Satz 1), Folgetod durch Funken bzw.
+  Splitter (29, 30) mit −1000 für den eigenen Satz, Teilchen auf einem Schild (31: Schild 30 → 25). Die Mutationen `+ 5` → `+ 6`,
+  `+ 10` → `+ 11`, `+ 1` → `+ 2` und `Damage.Apply` → nur `Random(3)` fallen damit rot.
+- **CRI-Liste** (P3-3, #176): der Desktop reicht sie über alle Schlachten des Programmlaufs weiter; alle Zugriffe auf `DS:E820`
+  liegen im CRI (`BOMB.OVR 0x19964–0x19D35`).
