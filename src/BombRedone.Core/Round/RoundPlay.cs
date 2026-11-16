@@ -178,7 +178,8 @@ public sealed class RoundPlay
                 _field.DrawTank(tank);
                 yield return new RoundPoint(RoundPointKind.DeathStart, count, tank.Number);  // O4:4BB8: name in the header
                 var choice = _random.Next(DeathExplosion.Choices);
-                DeathExplosion.Run(choice, _field, tank, RecordZero, _settings, _random);
+                if (DeathExplosion.Run(choice, _field, tank, RecordZero, _settings, _random) is { } position)
+                    ShotPosition = position;
                 var mover = Record(ToMove).Tank;
                 if (mover.Team != tank.Team)
                 {
