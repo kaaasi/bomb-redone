@@ -56,6 +56,9 @@ public sealed class RoundPlay
     /// <summary>Whether the round is over (DS:4813 after O4:4DAE).</summary>
     public bool Over { get; private set; }
 
+    /// <summary>Record 0 (DS:402E), shooter of the explosions of O5:29A0 and of the lightning; it keeps its state.</summary>
+    public PlayfieldTank RecordZero { get; init; } = PlayfieldTank.CreateRecordZero();
+
     /// <summary>The shot log DS:4A80.</summary>
     public ShotLog Log { get; }
 
@@ -175,7 +178,7 @@ public sealed class RoundPlay
                 _field.DrawTank(tank);
                 yield return new RoundPoint(RoundPointKind.DeathStart, count, tank.Number);  // O4:4BB8: name in the header
                 var choice = _random.Next(DeathExplosion.Choices);
-                DeathExplosion.Run(choice, _field, tank, _settings, _random);
+                DeathExplosion.Run(choice, _field, tank, RecordZero, _settings, _random);
                 var mover = Record(ToMove).Tank;
                 if (mover.Team != tank.Team)
                 {
@@ -199,7 +202,7 @@ public sealed class RoundPlay
                 var value = _random.Next(100);
                 if (Pass > value)
                 {
-                    Lightning.Run(_field, _settings, _random);
+                    Lightning.Run(_field, RecordZero, _settings, _random);
                     again = true;
                     yield return new RoundPoint(RoundPointKind.Lightning, count);
                 }

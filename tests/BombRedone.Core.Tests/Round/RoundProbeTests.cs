@@ -203,8 +203,7 @@ public sealed class RoundProbeTests
     {
         var complete = RoundProbeData.Cases.Where(c => Run(c).Complete).Select(c => c.Nr).ToList();
 
-        Assert.Contains(6, complete);   // death picture 5 (O5:28DE)
-        Assert.Contains(19, complete);  // fourteen turns, Random(100) from pass 11 on without a lightning
-        Assert.Contains(25, complete);  // laser, MIRV and CRI in one round
+        // Pictures 4, 5, 6 and the lightning are ported; 0, 1, 2, 3 follow.
+        Assert.Equal("0,5,6,7,11,12,14,15,16,17,18,19,24,25", string.Join(",", complete));
     }
 }

@@ -119,6 +119,40 @@ public sealed class PlayfieldTank
     }
 
     /// <summary>Sets the barrel and the power for the next shot (the turn input of O7:040C, Teil 3 of runde.md).</summary>
+    /// <summary>
+    /// Record 0 (DS:402E): the shooter of the explosions of the death picture O5:29A0 and of the lightning; never on the field.
+    /// </summary>
+    public static PlayfieldTank CreateRecordZero() => new(0) { Team = 0 };
+
+    /// <summary>
+    /// The record copy of O5:2A76 (12CE:0A81, 74h bytes): the fields the shot uses (position, energy, team, score, weapon,
+    /// guidance, defense, stocks, colour divisors).
+    /// </summary>
+    internal void CopyFrom(PlayfieldTank other)
+    {
+        X = other.X;
+        Y = other.Y;
+        Angle = other.Angle;
+        Power = other.Power;
+        Direction = other.Direction;
+        Energy = other.Energy;
+        Active = other.Active;
+        Field5E = other.Field5E;
+        ColorDivisors = other.ColorDivisors;
+        Team = other.Team;
+        Score = other.Score;
+        Hits = other.Hits;
+        Kills = other.Kills;
+        RoundSum = other.RoundSum;
+        Weapon = other.Weapon;
+        Guidance = other.Guidance;
+        GuidanceTarget = other.GuidanceTarget;
+        Herbs = other.Herbs;
+        Vicks = other.Vicks;
+        other.Defense.CopyTo(Defense, 0);
+        other.Stock.CopyTo(Stock, 0);
+    }
+
     public void Aim(int angle, int power)
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(angle, 0);
