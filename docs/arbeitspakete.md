@@ -7,7 +7,7 @@ Den Status pflegt jede Spur nur in ihrem eigenen Abschnitt. Abgeschlossene Runde
 **Koordination:** Die Leitstelle verteilt Pakete, prüft und mergt Pull Requests und pflegt Plan und Doku
 (Rollen: [prozess/zusammenarbeit.md](prozess/zusammenarbeit.md)). **Spuren starten erst nach dem Go des Nutzers.**
 
-## Aktuelle Runde: Runde 3 – spielbare Partie (Plan 15.11.2026, R3-D1/D2 entschieden 15.11.2026, noch kein Go)
+## Aktuelle Runde: Runde 3 – spielbare Partie (Plan 15.11.2026, R3-D1/D2 entschieden 15.11.2026, Go Welle 1 15.11.2026; Welle 1 gemergt 16.11.2026)
 
 Runde 2 abgeschlossen: [archiv/runde-2.md](archiv/runde-2.md). Grundlagen: [analyse/runde.md](analyse/runde.md) (Spielfolge §1,
 Rundenbeginn §2, Waffen §5, Zug und Eingaben §6), [analyse/feld.md](analyse/feld.md) (Probe, Bildvergleich),
@@ -53,7 +53,7 @@ ergänzt um Zug, Panzerinfo, Zielwahl, MIRV-Dialog, Wertung nach Toten. Kurzaufr
 
 > Repo kaaasi/bomb-redone. Arbeite nach `docs/vorlagen/dosbox-aufnahme.md`. Aufnahme: `runde-1`, Sitzung 4.
 
-### Welle 1 (parallel, eigenes Go)
+### Welle 1 (parallel, eigenes Go) – gemergt 16.11.2026: #147, #148, #149
 
 Integrationsfolge: `waffen` → `zug` → `spielfolge`. Gemeinsame Dateien: Abschnitt „Zuständigkeit“ unten.
 
@@ -157,6 +157,8 @@ Integrationsfolge: `waffen` → `zug` → `spielfolge`. Gemeinsame Dateien: Absc
 - **Erledigt durch Spuren dieser Runde:** Lenkung, Repulser, übrige Einschläge, Bestand (`waffen`); Desktop-Zug ohne Kopfzeile
   (`zug`); Satzmischung #71 (`spielfolge`); Todesexplosion in `s3_06`/`s3_07` (`runde`); BGI-`Circle` nur Radius 1 (`waffen`).
 - **Nach Sitzung 4:** Palettenrotation, Stände Nr. 2–8, `TIME`, `PV`/#39 (Folgespuren).
+- **Aus Welle 1 (Review #162 P3-3, #165):** CRI-Liste `DS:E820` je Spielfeld statt global – über mehrere Runden im Spielzustand
+  führen (`runde`).
 - **Bleiben `[APPROX]`:** Spurpunkt/Erdrutsch jenseits 64000 Byte, 15 ms je Flugtick, DAC 0..15 Grundpalette.
 - **Runde 4:** Computer (`runde.md` §6.5, offen §6.6), Speichern und Laden, Ton (E5).
 
