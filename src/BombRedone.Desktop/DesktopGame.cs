@@ -216,7 +216,7 @@ public sealed class DesktopGame : Game
             {
                 Results = ScoreResults.Build(records.InOrder.Select(r => r.Account), battle.Game);
                 return menu;
-            }, PlayRound);
+            }, PlayRound, () => _lastField?.Palette);
         return flow.Start();
     }
 

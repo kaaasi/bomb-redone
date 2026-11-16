@@ -1,4 +1,5 @@
 using BombRedone.Core.Economy;
+using BombRedone.Core.Graphics;
 using BombRedone.UI.Screens;
 
 namespace BombRedone.UI.Tests.Screens;
@@ -24,6 +25,26 @@ public class ScoreScreenTests
 
     private static IScreen? Press(ScoreScreen screen, ushort key) =>
         screen.Update(TimeSpan.Zero, new ScreenInput(KeyPressed: true) { Keys = [key] });
+
+    [Fact]
+    public void TheDacOfTheRoundStaysWhereTheScreenSetsNothing()
+    {
+        // #174: the round left DAC 0 = (14, 9, 10) and entry 200; the status screen sets neither.
+        var round = new VgaPalette();
+        round.Set(0, 14, 9, 10);
+        round.Set(200, 1, 2, 3);
+        var dac = ScoreBattleFlow.DacAfter(round);
+        Assert.Equal(new byte[] { 0, 0, 42 }, dac.AsSpan(3, 3).ToArray()); // BIOS colour 1, not set by the round
+
+        var lines = new List<ScoreLine> { Line(1, "P1", 0, 100), Line(2, "P2", 0, 200) };
+        var screen = new ScoreScreen(ShopScreenTests.Fonts, lines, 1, 10, true, (_, _, s) => s, dac);
+
+        Assert.Equal(new byte[] { 14, 9, 10 }, screen.Dac[..3].ToArray());
+        Assert.Equal(new byte[] { 1, 2, 3 }, screen.Dac.Slice(200 * 3, 3).ToArray());
+        Assert.Equal(new byte[] { 63, 0, 0 }, screen.Dac.Slice(20 * 3, 3).ToArray());
+        Assert.Equal(new byte[] { 0, 0, 0 }, Create().Dac[..3].ToArray());
+        Assert.Empty(ScoreBattleFlow.DacAfter(null));
+    }
 
     [Theory]
     [InlineData(1, 80, 120)]

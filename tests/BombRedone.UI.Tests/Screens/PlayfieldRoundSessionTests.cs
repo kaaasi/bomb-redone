@@ -80,8 +80,8 @@ public sealed class PlayfieldRoundSessionTests
 
     /// <summary>
     /// Status screen after game 1: "Player 2" 1 win, 4490 points, "Player 1" 0 and 50 as in s3_08 and ablauf1-GAME1.TWS.
-    /// Equal pixel for pixel but the mouse pointer and the two glyphs of P3-2; the DAC of every used colour is equal except
-    /// colour 0 (review P3-1, #174: the original keeps DAC 0 of the round over the change of screens).
+    /// Equal pixel for pixel but the mouse pointer and the two glyphs of P3-2; the DAC of every used colour is equal,
+    /// colour 0 included: the original keeps DAC 0 of the round over the change of screens (review P3-1, #174).
     /// </summary>
     [GameDataFact]
     public void The_status_screen_after_game_1_matches_s3_08()
@@ -98,7 +98,7 @@ public sealed class PlayfieldRoundSessionTests
 
         var used = Enumerable.Range(0, 320 * 200).Where(i => !InPointer(i)).Select(i => (int)pixels[i]).Distinct().ToList();
         Assert.Contains(0, used);
-        Assert.All(used.Where(c => c != 0), c => Assert.Equal(palette.AsSpan(3 * c, 3).ToArray(),
+        Assert.All(used, c => Assert.Equal(palette.AsSpan(3 * c, 3).ToArray(),
             PlayfieldSession.Rgb8(score.Dac.Slice(3 * c, 3))));
         Assert.Equal(palette.AsSpan(0, 3).ToArray(), PlayfieldSession.Rgb8(run.Field.Palette.Rgb.Slice(0, 3)));
     }
@@ -183,7 +183,7 @@ public sealed class PlayfieldRoundSessionTests
             {
                 rating = PlayRound(complete);
                 return rating;
-            });
+            }, () => field?.Palette);
         var started = flow.Start();
         Assert.Same(rating, started);
         return new Run(points, seedBeforeChoice, pictureEnd, dac, afterDeath, field!, rating);

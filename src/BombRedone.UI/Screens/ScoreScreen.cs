@@ -58,8 +58,13 @@ public sealed class ScoreScreen : IScreen
     /// flag after the last game (O3:5AFD).
     /// </param>
     /// <param name="choose">Called with the choice and, for statistics, the line (1-based); returns the next screen.</param>
+    /// <param name="dac">
+    /// 6-bit DAC on the screen before (768 bytes, the round's palette); empty: <see cref="MenuGraphics.DefaultColors"/>.
+    /// [ORIGINAL] O3:5AEF sets only the frame colours, the background ramp and the player colours; every other entry stays
+    /// as the round left it (s3_08: colour 0 of the buttons has the DAC of the round, #174).
+    /// </param>
     public ScoreScreen(ShopFonts fonts, IReadOnlyList<ScoreLine> lines, int gamesPlayed, int gamesTotal, bool buttons,
-        Func<ScoreChoice, int, ScoreScreen, IScreen?> choose)
+        Func<ScoreChoice, int, ScoreScreen, IScreen?> choose, ReadOnlySpan<byte> dac = default)
     {
         ArgumentNullException.ThrowIfNull(fonts);
         ArgumentNullException.ThrowIfNull(lines);
@@ -73,7 +78,12 @@ public sealed class ScoreScreen : IScreen
         _standings = Core.Economy.Standings.Rank(lines.Select(l => l.Player));
         (_top, _bottom) = Box(_standings.Count);
 
-        MenuGraphics.DefaultColors.CopyTo(_dac);
+        if (dac.IsEmpty)
+            MenuGraphics.DefaultColors.CopyTo(_dac);
+        else if (dac.Length == _dac.Length)
+            dac.CopyTo(_dac);
+        else
+            throw new ArgumentException("The DAC has 256 × 3 entries.", nameof(dac));
         MenuGraphics.SetFrameColors(_dac);
         // [ORIGINAL] O3:5DA9 → O10[1] (player, 100): entry 19 + line gets the colour of the player at full strength.
         for (var i = 0; i < _standings.Count; i++)
