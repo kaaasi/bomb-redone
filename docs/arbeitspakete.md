@@ -234,3 +234,5 @@ Integrationsfolge: `waffen` → `zug` → `spielfolge`. Gemeinsame Dateien: Absc
 - 16.11.2026 (Leitstelle): Review #171 nein → Fixlauf 1, Delta-Prüfung, gemergt (#170); offen P3 #174, #175.
 
 ### Status p3-runde-3
+
+- 16.11.2026: begonnen (Claude Code, geplanter Lauf), Branch `paket/p3-runde-3`, Base `68615cb`.
