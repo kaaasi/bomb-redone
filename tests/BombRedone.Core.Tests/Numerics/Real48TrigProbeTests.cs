@@ -4,20 +4,24 @@ using BombRedone.Core.Numerics;
 namespace BombRedone.Core.Tests.Numerics;
 
 /// <summary>
-/// Bit-exact comparison of Sin, Cos and Sqrt with the original runtime. Expected hashes from
-/// <c>python3 tools/reverse-engineering/real48.py hashes --count 20000</c> (ops sin, cos, sqrt with the generator of
-/// <see cref="Real48ProbeCases"/>, seeds 12..14) and the line <c>deg</c> (whole degrees -360..720 through Rad, Sin, Cos).
+/// Bit-exact comparison of Sin, Cos, Sqrt and ArcTan with the original runtime. Expected hashes from
+/// <c>python3 tools/reverse-engineering/real48.py hashes --count 20000</c> (ops sin, cos, sqrt, arctan with the generator
+/// of <see cref="Real48ProbeCases"/>, seeds 12..15) and the line <c>deg</c> (whole degrees -360..720 through Rad, Sin, Cos).
 /// </summary>
 public sealed class Real48TrigProbeTests
 {
     private const int Count = 20000;
 
-    private static readonly Dictionary<string, ulong> Seeds = new() { ["sin"] = 12, ["cos"] = 13, ["sqrt"] = 14 };
+    private static readonly Dictionary<string, ulong> Seeds = new()
+    {
+        ["sin"] = 12, ["cos"] = 13, ["sqrt"] = 14, ["arctan"] = 15,
+    };
 
     [Theory]
     [InlineData("sin", "18293f7e141d5c9c99453add547d5a49134ee4b1199b8262fcbcc6c971b4d485")]
     [InlineData("cos", "a6b7a5f25172f7ae5b02cf07be89d6d2fd1867f0c6bdb13640fd57bfe7b26a78")]
     [InlineData("sqrt", "70cb64746e23de834a6477bf3f34b25e0aa415fe982c806edf012ed0592d17e3")]
+    [InlineData("arctan", "78a4dbf8de753f780fb6213546c6d833bb208edab2829f2bc651b9b0acaa0562")]
     public void Matches_original_runtime(string op, string expectedHash)
     {
         var g = new Real48ProbeCases.SplitMix64(Seeds[op]);
@@ -29,6 +33,7 @@ public sealed class Real48TrigProbeTests
             {
                 "sin" => Real48.Sin(a),
                 "cos" => Real48.Cos(a),
+                "arctan" => Real48.ArcTan(a),
                 _ => Real48.Sqrt(a),
             });
             sha.AppendData([(byte)error, (byte)result.Length]);

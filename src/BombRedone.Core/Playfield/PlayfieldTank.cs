@@ -1,3 +1,5 @@
+using BombRedone.Core.Economy;
+
 namespace BombRedone.Core.Playfield;
 
 /// <summary>
@@ -55,6 +57,53 @@ public sealed class PlayfieldTank
 
     /// <summary>Weapon chosen for the shot (+24h, index into ItemCatalog.WeaponTable).</summary>
     public int Weapon { get; set; }
+
+    /// <summary>Guidance of the shot (+26h): 0 none, 1 Herb, 2 Vick, 3 both (docs/analyse/runde.md section 5.12).</summary>
+    public int Guidance { get; set; }
+
+    /// <summary>Target player of the guidance (+28h, 1..10).</summary>
+    public int GuidanceTarget { get; set; }
+
+    /// <summary>Herbs in stock (+2Ah, word).</summary>
+    public int Herbs { get; set; }
+
+    /// <summary>Vicks in stock (+2Ch, word).</summary>
+    public int Vicks { get; set; }
+
+    /// <summary>
+    /// Stock per weapon (+2Eh + 2 · weapon, word; ItemCatalog.WeaponTable). The laser (5) holds energy: its power is
+    /// capped at the stock and taken from it (docs/analyse/runde.md section 5.10).
+    /// </summary>
+    public int[] Stock { get; } = new int[18];
+
+    /// <summary>
+    /// Takes stock, guidance and defences of the player for the round. In the original account and tank are one record
+    /// (+2Ah guidance, +2Eh weapons, +52h defences); the port keeps them apart and copies at the start of the round, the
+    /// shots change only the tank (<see cref="ReturnStock"/> at the end of the round). Uses the public API of
+    /// <see cref="PlayerAccount"/> only.
+    /// </summary>
+    public void TakeStock(PlayerAccount account)
+    {
+        ArgumentNullException.ThrowIfNull(account);
+        for (var w = 0; w < Stock.Length; w++)
+            Stock[w] = account.Stock(ItemKind.Weapon, w);
+        Herbs = account.Stock(ItemKind.Guidance, 0);
+        Vicks = account.Stock(ItemKind.Guidance, 1);
+        for (var d = 0; d < Defense.Length; d++)
+            Defense[d] = account.Stock(ItemKind.Defense, d);
+    }
+
+    /// <summary>Gives stock, guidance and defences back to the player at the end of the round (see <see cref="TakeStock"/>).</summary>
+    public void ReturnStock(PlayerAccount account)
+    {
+        ArgumentNullException.ThrowIfNull(account);
+        for (var w = 0; w < Stock.Length; w++)
+            account.SetStock(ItemKind.Weapon, w, Stock[w]);
+        account.SetStock(ItemKind.Guidance, 0, Herbs);
+        account.SetStock(ItemKind.Guidance, 1, Vicks);
+        for (var d = 0; d < Defense.Length; d++)
+            account.SetStock(ItemKind.Defense, d, Defense[d]);
+    }
 
     /// <summary>Sets the barrel and the power for the next shot (the turn input of O7:040C, Teil 3 of runde.md).</summary>
     public void Aim(int angle, int power)

@@ -281,7 +281,7 @@ Danach Rahmenmarken löschen, Treffer auf einen Panzer eines anderen Teams zähl
 |---|---|---|---|
 | CRI {6, 8, 9, 10} (Satz {5..10}) | Panzer getroffen: `Random(6 · Waffe) + 1` Schaden, Sirene 1000→30000→1000 Hz. Gelände: Astzahl R = 4, 4, 8, 8, 20, 20 für Waffe 5..10; Start senkrecht unter dem Einschlag, bis ein Nachbar (oben, unten, links, rechts) Farbe 2 ist; je Durchgang je Ast die Nachbarn mit Farbe 2 sammeln (Richtung 1 oben, 3 rechts, 5 unten, 7 links; Diagonalen 2, 4, 6, 8 nur für {6, 8, 10} – „/D“), eine davon wählen, Ast dorthin, Pixel aus dem Hintergrund (Gelände frisst sich weg); Ast ohne Nachbarn erlischt und übernimmt die Lage des nächsten lebenden Asts; Ende, wenn alle erloschen | je Schritt und Ast `Random(Anzahl) + 1`, bei Ton `Random(500)` | K5 |
 | Sonic Blaster 12 | Schusspunkt, 100 Takte Farbe 19 = (Random(64), 0, 0), 100 Takte zusätzlich Farbe 2 = 3 × (Random(32) + 32), je `Delay(ES)`; danach Farbe 19 = (63, 63, 63), **Farbe 2 = (0, 42, 0)**, Erdrutsch `0431:0496` (§5.8) – sonst kein Schaden | je Takt 1 bzw. 4 `Random`, bei Ton +1 | K6 |
-| Dirt 13..16 | Radius 10 / 15 / 30 / 60, Farbe 2, je i = 0..R drei Kreise `0E26:11EA` (`[APPROX]` Circle) um (x+1, y), (x−1, y), (x, y) – Erdkugel, kein Schaden | keiner | K7 |
+| Dirt 13..16 | Radius 10 / 15 / 30 / 60, Farbe 2, je i = 0..R drei Kreise `0E26:11EA` um (x+1, y), (x−1, y), (x, y) im Fenster mit Clip, Seitenverhältnis 1 : 1 aus `O8:09F7` (Graph-Ellipse: `feld.md` §8.2) – Erdkugel, kein Schaden | keiner | K7 |
 | Xplosive Dirt 17 | m = `Random(100) + 300` Körner je Ring, k = `Random(8) + 3` Ringe; Ring i, Korn j: r = `Random(20·i)`, Korn bei (x + Trunc(Random(r + 1) − r / 2), y − r + 2) im Fenster; alle Körner Farbe 2 (`PutPixel`), bei Ton `Sound(Random(200) + 100·i)`; danach `Random:Real · 100 < 2 · Crumble` → Erdrutsch | wie links | K8 |
 
 ### 5.8 Erdrutsch und Fallen (K9, K10)
@@ -331,11 +331,11 @@ ersten Schuss (§4).
 
 ### 5.10 Laser `O4:3426` (L1–L3)
 
-Vorab ein Aufladebild mit Verzögerung `LS` (`DS:E8CC`) und den Farben 130.. (`[APPROX]` nicht im Einzelnen ausgewertet). Dann (L1):
+**Bestand als Energie** (Spur `waffen`, Probe 15.11.2026): `O4:3426` bricht bei Kraft 0 ab, begrenzt die Kraft +1Bh auf den Laserbestand +38h (+2Eh + 2 · 5) und zieht sie davon ab (`O4:3456–34AE`, `BOMB.OVR 0x1415B`), danach `O10:014A` und `O10:021C` für den Schützen. Vorab ein Aufladebild mit Verzögerung `LS` (`DS:E8CC`) und den Farben 130.. (`[APPROX]` nicht im Einzelnen ausgewertet). Dann (L1):
 Energie E = 10 · Kraft (+1Bh); Richtung b = a bei r > 0, sonst 180 − a; **`Random:Real` < 0,2 → 1 Schaden am Schützen** (wie §5.1);
 Start (x_P + cos a · 7 · r, y_P − sin a · 7), Schritt (cos b, −sin b) je Takt, keine Schwerkraft, kein Wind.
 
-Je Schritt (L2): Position + Schritt, E − 10, Farbe 254 = Grau Trunc(E · 53 / (10 · Kraft) + 10). Pixel an der Spitze:
+Je Schritt (L2): Position + Schritt, E − 10, Farbe 254 = (g, g, 0) mit g = Trunc(E · 53 / (10 · Kraft) + 10) (Korrektur Spur `waffen`: gelb, nicht grau, `O4:3C3C`). Pixel an der Spitze:
 
 - **Gelände (2):** 15 Funken bei (x − Random(20) · cos b, y − Random(20) · (−sin b)) – im Fenster und nicht Farbe 254 oder Panzer:
   Pixel aus dem Hintergrund; bei Ton `Random(500 · k) + 500`. Der Strahl brennt sich so durch das Gelände.
@@ -352,8 +352,7 @@ E ≤ 0. Danach `0431:0594` und `NoSound` (`[APPROX]` Löschen des Strahls nicht
 Vor dem Abschuss ein Dialog „MIRV Setup“ (Maus `0E11`, Tasten) mit dem Muster (Random, Horizontal, Vertical, + 4 Way, X 4 Way →
 0..4) und „Detonations“ (Impact, Simultanious, None) – Bedienung mit Teil 3. Die Mutter fliegt wie §5.3 und **teilt sich im Scheitel** (vy > 0, M2) in
 fünf Teile mit Lage und Geschwindigkeit der Mutter, verändert je Muster (M1): 0 `vx, vy += Random:Real · 6 − 3` (je Teil zwei
-`Random:Real`), 1 vx += (i − 3) · 1,75, 2 vy += (i − 3) · 1,75, 3 und 4 je Teil ±1,75 in x und y (`[APPROX]` Zuordnung der
-Vorzeichen zu den Teilen nicht ausgewertet). Einschläge über `O6:00E0` (als Waffe 7: Radius 15, §5.5): Detonation 0 (Impact) je Teil bei seinem Einschlag,
+`Random:Real`), 1 vx += (i − 3) · 1,75, 2 vy += (i − 3) · 1,75, 3 (+ 4 Way) vx₁ + 1,75, vx₂ − 1,75, vy₃ − 1,75, vy₄ + 1,75, 4 (X 4 Way) Teil 1 (+, +), 2 (−, −), 3 (+, −), 4 (−, +) in (vx, vy), Teil 5 jeweils unverändert (Spur `waffen`, `O4:31B7–3383`). Einschläge über `O6:00E0` (als Waffe 7: Radius 15, §5.5): Detonation 0 (Impact) je Teil bei seinem Einschlag,
 1 (Simultanious) alle zusammen am Ende, 2 (None) keine Explosion (M2).
 
 ### 5.12 Lenkung und Gelände im Flug (G1, G2)
@@ -371,7 +370,7 @@ fliegt dann durch das Gelände (`[ORIGINAL]` so im Code; die Höchstkraft ist 10
 
 ### 5.13 Offen in Teil 2
 
-Bilder `O5` im Einzelnen (`[APPROX]`, nur für die Darstellung nötig); Zuordnung der Vorzeichen bei MIRV-Muster 3 und 4.
+Bilder `O5` im Einzelnen (`[APPROX]`, nur für die Darstellung nötig). MIRV-Muster 3 und 4: geklärt in §5.11 (Spur `waffen`).
 
 ## 6. Zug, Kopfzeile, Eingaben (Teil 3)
 

@@ -44,6 +44,15 @@ O6_IMPACT = 0x00E0
 SHOT_STATE = 0x4796  # x, y, vx, vy: 4 x Real48
 SUBSTEP = 0x4740
 SUBSTEPS = 0x4744
+O4_LASER = 0x3426
+O4_MIRV = 0x13D4
+O4_MIRV_PATTERN_LOOP = 0x15BE    # keyboard loop of the pattern choice, selection [bp-102h]
+O4_MIRV_DETONATION_LOOP = 0x18E8  # keyboard loop of the detonation choice, selection [bp-108h]
+O4_MIRV_AFTER_DIALOG = 0x1AD0    # screen restored from DS:E5BC, flight setup follows
+O10_DAMAGE = 0x0000
+O10_DAMAGE_RET = 0x0147          # retf 8 of O10:0000, AX = lost energy
+KEY_ENTER_FLAG = 0x4563          # one of the three "accept" flags polled by the MIRV dialog
+INPUT_MODE = 0xE5A6              # word per player: 1 keyboard, 2 mouse
 
 REGIONS = {
     "O4 Schuss 01B7": ("ovl", 4, 0x01B7, 0x1379),
@@ -52,6 +61,9 @@ REGIONS = {
     "0CC8 PutPixel/GetPixel": ("seg", 0x0CC8, 0x0BB6, 0x0C1F),
     "O7 Fallen, Rahmen, Erdrutsch": ("ovl", 7, 0x0000, 0x040C),
     "O4 nach dem Schuss": ("ovl", 4, 0x4960, 0x4A0B),
+    "O4 MIRV 13D4": ("ovl", 4, 0x1379, 0x3426),
+    "O4 Laser 3426": ("ovl", 4, 0x3426, 0x44A7),
+    "O10 Schaden und Punkte": ("ovl", 10, 0x0000, 0x02A4),
 }
 REGION_HASHES = {
     "O4 Schuss 01B7": "2351a60888e61870751f6c9802b0d33eb970d4a9b87dc26fd8256fc29ac26ffd",
@@ -60,6 +72,9 @@ REGION_HASHES = {
     "0CC8 PutPixel/GetPixel": "a4a9bcc22bfa4ca3ca362ee7f3e41b32f74fac3595909c20b110d9d988161b84",
     "O7 Fallen, Rahmen, Erdrutsch": "55fc0dfa00df9a64ee3436241519c124de7dc5397cac54ac65f09815508d12bf",
     "O4 nach dem Schuss": "a32d2990cddcea807769594c4076fa03c7f3b16f95a20f97053da861a1f4e585",
+    "O4 MIRV 13D4": "2563cd4976f97f0d7a411400e999f0a5e2c549b08bc839ee60913c8cbe9991f5",
+    "O4 Laser 3426": "a9c660d647a06ce798256057fa74d37af60a319b5e0edff0b62cf79d89b1eb66",
+    "O10 Schaden und Punkte": "9fbb21488f10be560df87d927775a021e4f2ad45c4b47d93d4e53262089cf7ae",
 }
 
 FIELDS = (("energy", 0x21, 2, True), ("score", 0x13, 4, True), ("shield", 0x52, 4, True),
@@ -106,9 +121,29 @@ def run_shot(p, case, shot, post=None):
     def after(m, counts, snaps):
         c = m.cpu
         rec = feld.RECORD + feld.RECORD_SIZE * shot["shooter"]
-        for ofs, value in ((0x1D, shot["angle"]), (0x1B, shot["power"]), (0x24, shot["weapon"]), (0x26, 0)):
+        guidance = shot.get("guidance", 0)
+        for ofs, value in ((0x1D, shot["angle"]), (0x1B, shot["power"]), (0x24, shot["weapon"]), (0x26, guidance)):
             p.wds(m, rec + ofs, value)
-        p.wds(m, rec + 0x2E + 2 * shot["weapon"], max(1, p.rds(m, rec + 0x2E + 2 * shot["weapon"])))
+        stock = rec + 0x2E + 2 * shot["weapon"]
+        if shot.get("stock") is not None:
+            p.wds(m, stock, shot["stock"])
+        elif shot["weapon"] == 5:
+            # the laser stock is energy: O4:3426 caps the power at +38h and subtracts it (runde.md 5.10)
+            p.wds(m, stock, max(shot["power"], p.rds(m, stock)))
+        else:
+            p.wds(m, stock, max(1, p.rds(m, stock)))
+        if guidance:
+            # target player (+28h) and at least one Herb (+2Ah) / Vick (+2Ch) for the decrement in O4:01B7 (runde.md 5.1)
+            p.wds(m, rec + 0x28, shot.get("target", 2))
+            for bit, ofs in ((1, 0x2A), (2, 0x2C)):
+                if guidance & bit:
+                    p.wds(m, rec + ofs, max(1, p.rds(m, rec + ofs)))
+        for player, (shield, inertia, repulser) in sorted((shot.get("defense") or {}).items()):
+            r = feld.RECORD + feld.RECORD_SIZE * player
+            for ofs, value in ((0x52, shield), (0x56, inertia), (0x5A, repulser)):
+                p.wds(m, r + ofs, value, 4)
+        if shot["weapon"] == 7:
+            p.wds(m, INPUT_MODE + 2 * shot["shooter"], 1)  # the MIRV dialog is answered through the keyboard flags
         p.wds(m, 0xE8B2, 0, 1)  # fly sound off (it only plays tones)
         p.wds(m, 0xE8B3, 1 if shot.get("sound") else 0, 1)  # sound: Random calls in the explosion picture (runde.md 5.6)
         p.wds(m, 0xE8B5, 1 if shot["trail"] else 0, 1)
@@ -116,11 +151,13 @@ def run_shot(p, case, shot, post=None):
             p.wds(m, 0xE8CA, shot["ss"])
         if shot["wind_value"] is not None:
             p.wds(m, 0xE8A2, shot["wind_value"])
+        if shot.get("crumble") is not None:
+            p.wds(m, 0xE8A4, shot["crumble"])  # Crumble percent: Xplosive Dirt decides the landslide (runde.md 5.7 K8)
         if shot.get("randseed") is not None:
             p.wds(m, feld.RANDSEED, shot["randseed"], 4)
         out["before"] = {"randseed": p.rds(m, feld.RANDSEED, 4), "random_n": counts["random_n"],
                          "random_real": counts["random_real"], "ss": p.rds(m, 0xE8CA),
-                         "wind": p.rds(m, 0xE8A2, signed=True)}
+                         "wind": p.rds(m, 0xE8A2, signed=True), "crumble": p.rds(m, 0xE8A4)}
         m.dac_written.clear()
         path = hashlib.sha256()
         steps = {"n": 0, "first": None}
@@ -155,11 +192,58 @@ def run_shot(p, case, shot, post=None):
                              "x": args[8:14].hex(), "shooter": struct.unpack_from("<H", args, 14)[0]}
             return False
 
-        m.traps[feld.lin(p.ovseg[4], O4_LOOP)] = on_loop
-        m.traps[feld.lin(p.ovseg[4], O4_AFTER_LOOP)] = on_end
-        m.traps[feld.lin(p.ovseg[6], O6_IMPACT)] = on_impact
+        damage = []
+
+        def on_damage(mm):
+            st = feld.lin(mm.cpu.S[SS], mm.cpu.R[SP])
+            ptr, _seg, kind, amount = struct.unpack_from("<HHHh", mm.mem, st + 4)
+            damage.append([amount, kind & 0xFF, (ptr - feld.RECORD) // feld.RECORD_SIZE, None])
+            return False
+
+        def on_damage_ret(mm):
+            v = mm.cpu.R[0]
+            damage[-1][3] = v - 65536 if v & 0x8000 else v
+            return False
+
+        def mirv_choice(local, value):
+            def f(mm):
+                mm.cpu.ww(mm.cpu.S[SS], (mm.cpu.R[BP] - local) & 0xFFFF, value)
+                p.wds(mm, KEY_ENTER_FLAG, 1, 1)
+                return False
+            return f
+
+        def mirv_after_dialog(mm):
+            # The dialog belongs to spur zug; its DAC writes (colours 130..134) are not part of the weapon result.
+            mm.dac_written.clear()
+            p.wds(mm, KEY_ENTER_FLAG, 0, 1)
+            return False
+
+        impacts = []
+
+        def on_any_impact(mm):
+            st = feld.lin(mm.cpu.S[SS], mm.cpu.R[SP])
+            args = bytes(mm.mem[st + 4:st + 4 + 16])
+            impacts.append("%d,%s,%s,%d" % (struct.unpack_from("<H", args, 0)[0], args[8:14].hex(), args[2:8].hex(),
+                                            struct.unpack_from("<H", args, 14)[0]))
+            if not out.get("impact"):
+                on_impact(mm)
+            return False
+
+        o4 = p.ovseg[4]
+        m.traps[feld.lin(o4, O4_LOOP)] = on_loop
+        m.traps[feld.lin(o4, O4_AFTER_LOOP)] = on_end
+        m.traps[feld.lin(p.ovseg[6], O6_IMPACT)] = on_any_impact
+        m.traps[feld.lin(p.ovseg[10], O10_DAMAGE)] = on_damage
+        m.traps[feld.lin(p.ovseg[10], O10_DAMAGE_RET)] = on_damage_ret
+        entry = {5: O4_LASER, 7: O4_MIRV}.get(shot["weapon"], O4_SHOT)
+        if entry == O4_MIRV:
+            m.traps[feld.lin(o4, O4_MIRV_PATTERN_LOOP)] = mirv_choice(0x102, shot.get("pattern", 0))
+            m.traps[feld.lin(o4, O4_MIRV_DETONATION_LOOP)] = mirv_choice(0x108, shot.get("detonation", 0))
+            m.traps[feld.lin(o4, O4_MIRV_AFTER_DIALOG)] = mirv_after_dialog
         n0, r0 = counts["random_n"], counts["random_real"]
-        m.far_call(p.ovseg[4], O4_SHOT, args=(shot["shooter"],), limit=c.steps + 2_000_000_000)
+        m.far_call(o4, entry, args=(shot["shooter"],), limit=c.steps + 4_000_000_000)
+        out["impacts"] = impacts
+        out["damage"] = damage
         out["after"] = snapshot(p, m, case, counts, n0, r0)
         out["path"] = {"steps": steps["n"], "sha": path.hexdigest(), "first": steps["first"]}
         if post is not None:
@@ -182,6 +266,7 @@ def summary(result, out):
     a = out["after"]
     return {
         "before": out["before"], "end": out.get("end"), "impact": out.get("impact"), "path": out["path"],
+        "impacts": out["impacts"], "damage": out["damage"],
         "after": {"randseed": "%08X" % a["randseed"], "random_n": a["random_n"], "random_real": a["random_real"],
                   "screen": sha(a["screen"]), "background": sha(a["background"]), "dac_set": sha(a["dac_set"]),
                   "dac_entries": len(a["dac_set"]) // 4, "records": a["records"]},
@@ -192,7 +277,18 @@ def summary(result, out):
 def parse_shot(args):
     return {"shooter": args.shooter, "angle": args.angle, "power": args.power, "weapon": args.weapon,
             "ss": args.ss, "trail": args.trail, "wind_value": args.wind_value,
-            "randseed": None if args.shot_seed is None else int(args.shot_seed, 16), "sound": args.sound}
+            "randseed": None if args.shot_seed is None else int(args.shot_seed, 16), "sound": args.sound,
+            "guidance": args.guidance, "target": args.target, "pattern": args.pattern, "detonation": args.detonation,
+            "defense": parse_defense(args.defense)}
+
+
+def parse_defense(items):
+    """["2:100,0,3"] -> {2: (shield, inertia, repulser)}"""
+    d = {}
+    for item in items or ():
+        player, values = item.split(":")
+        d[int(player)] = tuple(int(v) for v in values.split(","))
+    return d
 
 
 def cmd_befunde(p, args):
@@ -287,6 +383,184 @@ POST = [
 ]
 
 
+# All weapons (spur waffen, runde.md section 5): feld.py case as in SHOTS, then a dict of shot fields. Keys besides the
+# SHOTS fields: guidance (+26h), target (+28h), pattern / detonation (MIRV dialog), defense {player: (shield, inertia,
+# repulser)}, stock (+2Eh + 2 * weapon), crumble (option, percent), post (crumble percent for O7:03C1, then falling).
+def weapon_shots():
+    t = []
+
+    def add(case, **kw):
+        spec = {"shooter": 1, "angle": 45, "power": 262, "weapon": 0, "ss": None, "trail": False, "wind_value": None}
+        spec.update(kw)
+        t.append((case, spec))
+
+    for w in range(18):
+        add(A, weapon=w)                         # terrain next to tank 2 (laser: up to the right)
+        add(A, weapon=w, power=270)              # direct hit on tank 2 (Lead Ball path)
+        for k in (1, 2, 3, 4):
+            add(wall(k), weapon=w, power=400)    # right wall: Sticky, Elastic, Accelerate, Warp
+        add(A, weapon=w, sound=True)             # sound on: Random calls of the pictures
+    # laser (runde.md 5.10): through the terrain, against tank 2 without and with shield, shield not used up, walls
+    add(A, weapon=5, angle=3, power=500)
+    add(A, weapon=5, angle=4, power=500)
+    add(A, weapon=5, angle=4, power=500, defense={2: (50, 0, 0)})
+    add(A, weapon=5, angle=4, power=500, defense={2: (2000, 0, 0)})
+    add(A, weapon=5, angle=4, power=500, sound=True)
+    add(A, weapon=5, angle=4, power=500, stock=120)  # stock below the power: power capped
+    for k in (1, 2, 3, 4):
+        add(wall(k), weapon=5, angle=30, power=900)
+    add(A, weapon=5, angle=135, power=300)           # wall 0 to the left
+    # MIRV (runde.md 5.11): every pattern and detonation
+    for pattern in range(5):
+        for detonation in range(3):
+            add(A, weapon=7, angle=60, power=300, pattern=pattern, detonation=detonation)
+    add(A, weapon=7, angle=60, power=300, pattern=0, detonation=0, sound=True)
+    # guidance (runde.md 5.12 G1): Herb, Vick, both; wall 0 rule with guidance
+    add(A, angle=45, power=240, guidance=1)
+    add(A, angle=30, power=280, guidance=1)
+    add(A, angle=55, power=320, guidance=2)
+    add(A, angle=65, power=330, guidance=2)
+    add(A, angle=60, power=300, guidance=3)
+    add(A, angle=60, power=320, guidance=3, weapon=3)
+    add(A, angle=45, power=400, guidance=1, wind_value=200)
+    add(A, angle=45, power=400, guidance=2, wind_value=200)
+    add(A, angle=55, power=320, guidance=2, target=1)  # target is the shooter
+    # defense (Q11, Q5): shield partly and fully used, inertia through falling, repulser deflects and wears out
+    add(A, weapon=1, power=270, defense={2: (50, 0, 0)})
+    add(A, weapon=1, power=270, defense={2: (1000, 0, 0)})
+    add(A, weapon=4, power=262, defense={2: (100, 0, 0), 1: (30, 0, 0)})
+    add(A, weapon=1, power=270, defense={2: (0, 40, 0)}, post=0)
+    add(A, weapon=4, power=270, defense={2: (0, 5, 0)}, post=0)
+    add(A, weapon=0, power=270, defense={2: (0, 0, 3)})
+    add(A, weapon=1, power=270, defense={2: (0, 0, 3)})
+    add(A, weapon=0, power=262, defense={2: (0, 0, 1)})
+    add(A, weapon=0, power=262, defense={1: (0, 0, 2)})
+    add(A, weapon=0, angle=89, power=100, defense={1: (0, 0, 2)})
+    add(A, weapon=4, power=270, defense={2: (10, 0, 2)})   # deflected back onto the shooter
+    add(A, weapon=1, angle=89, power=100, defense={1: (0, 0, 2)})   # area damage on a tank with repulser: Random:Real
+    add(A, weapon=4, angle=89, power=100, defense={1: (20, 0, 1)})
+    add(A, weapon=3, angle=89, power=100, defense={1: (0, 0, 5)}, randseed=0)
+    # landslide options of Sonic Blaster and Xplosive Dirt
+    for w in (12, 17):
+        for crumble in (0, 10, 100):
+            add(A, weapon=w, crumble=crumble)
+    return t
+
+
+WEAPON_SHOTS = weapon_shots()
+
+
+def weapon_row(p, i):
+    (seed, n, wall_kind, bg, mask, windopt, inv, nofall), spec = WEAPON_SHOTS[i]
+    case = {"seed": seed, "players": n, "wall": wall_kind, "background": bg, "mask": mask, "wind": windopt,
+            "invisible": inv, "no_fall": nofall}
+    shot = dict(spec)
+    post = None if shot.get("post") is None else {"crumble": shot["post"]}
+    result, out = run_shot(p, case, shot, post=post)
+    a = out["after"]
+    defense = " ".join("%d:%d,%d,%d" % ((k,) + v) for k, v in sorted((shot.get("defense") or {}).items())) or "-"
+    recs = " ".join("%d,%d,%d,%d,%d,%d" % (r["energy"], r["score"], r["shield"], r["inertia"], r["repulser"], r["hits"])
+                    for r in a["records"])
+    cols = [i, "%08X" % seed, n, wall_kind, bg, windopt, shot["shooter"], shot["angle"], shot["power"], shot["weapon"],
+            shot.get("guidance", 0), shot.get("target", 2) if shot.get("guidance") else 0, shot.get("pattern", 0),
+            shot.get("detonation", 0), 1 if shot.get("sound") else 0, out["before"]["crumble"],
+            defense, "-" if shot.get("stock") is None else shot["stock"], out["before"]["ss"], out["before"]["wind"],
+            "%08X" % out["before"]["randseed"], out["path"]["steps"], out["path"]["sha"],
+            " ".join(out["impacts"]) or "-",
+            " ".join("%d/%d/%d/%d" % tuple(d) for d in out["damage"]) or "-",
+            "%08X" % a["randseed"], a["random_n"], a["random_real"], sha(field_crop(a["screen"])), sha(a["background"]),
+            sha(a["dac_set"]), a["dac_set"].hex(), sha(a["records_raw"]), recs]
+    if post is None:
+        cols += ["-"] * 6
+    else:
+        q = out["post"]
+        cols += ["%08X" % q["randseed"], q["random_n"], q["random_real"], sha(field_crop(q["screen"])), sha(q["background"]),
+                 sha(q["records_raw"])]
+    return "\t".join(str(c) for c in cols)
+
+
+WEAPON_HEADER = "nr\tseed\tplayers\twall\tbackground\twind_opt\tshooter\tangle\tpower\tweapon\tguidance\ttarget\t" \
+    "pattern\tdetonation\tsound\tcrumble\tdefense\tstock\tss\twind\tseed_before\tsteps\tpath\timpacts\tdamage\t" \
+    "randseed\trandom_n\trandom_real\tscreen_field\tbackground_buffer\tdac_set\tdac_set_hex\trecords_raw\trecords\t" \
+    "post_randseed\tpost_random_n\tpost_random_real\tpost_screen_field\tpost_background\tpost_records_raw"
+
+_worker = {}
+
+
+def _weapon_job(job):
+    gamedata, font, i = job
+    if "p" not in _worker:
+        _worker["p"] = feld.Probe(gamedata, font)
+    return weapon_row(_worker["p"], i)
+
+
+def cmd_waffen(p, args):
+    selected = list(range(len(WEAPON_SHOTS))) if args.only is None else args.only
+    print(WEAPON_HEADER)
+    rows = []
+    if args.jobs > 1:
+        import multiprocessing
+        with multiprocessing.Pool(args.jobs) as pool:
+            for row in pool.imap(_weapon_job, [(args.gamedata, p.font, i) for i in selected]):
+                rows.append(row)
+                print(row, flush=True)
+    else:
+        for i in selected:
+            row = weapon_row(p, i)
+            rows.append(row)
+            print(row, flush=True)
+    if args.only is None:
+        os.makedirs(args.root_out, exist_ok=True)
+        with open(os.path.join(args.root_out, "waffen-hashes.tsv"), "w") as f:
+            f.write(WEAPON_HEADER + "\n" + "\n".join(rows) + "\n")
+    return 0
+
+
+def cmd_waffen_cs(p, args):
+    """analyse/feld/waffen-hashes.tsv -> tests/BombRedone.Core.Tests/Shot/WeaponProbeData.cs (hashes and numbers only)."""
+    import csv
+    root = os.path.normpath(os.path.join(HERE, "..", ".."))
+    with open(os.path.join(args.root_out, "waffen-hashes.tsv")) as f:
+        rows = list(csv.DictReader(f, delimiter="\t"))
+
+    def q(v):
+        return "null" if v == "-" else '"%s"' % v
+
+    def n(v):
+        return "null" if v == "-" else v
+
+    lines = []
+    for r in rows:
+        lines.append("        new(%s)," % ", ".join([
+            r["nr"], q(r["seed"]), r["players"], r["wall"], r["background"], r["wind_opt"], r["shooter"], r["angle"],
+            r["power"], r["weapon"], r["guidance"], r["target"], r["pattern"], r["detonation"],
+            "true" if r["sound"] == "1" else "false", n(r["crumble"]), q(r["defense"]), n(r["stock"]), r["ss"], r["wind"],
+            q(r["seed_before"]), r["steps"], q(r["path"]), q(r["impacts"]), q(r["damage"]), q(r["randseed"]),
+            r["random_n"], r["random_real"], q(r["screen_field"]), q(r["background_buffer"]), q(r["dac_set"]),
+            q(r["records"]), q(r["post_randseed"]), q(r["post_screen_field"]), q(r["post_background"]),
+            "false" if WEAPON_SHOTS[int(r["nr"])][1].get("randseed") is None else "true"]))
+    text = """namespace BombRedone.Core.Tests.Shot;
+
+/// <summary>
+/// Generated from analyse/feld/waffen-hashes.tsv (<c>python3 -I tools/reverse-engineering/feld_schuss.py waffen</c>, then
+/// <c>waffen-cs</c>); the shots are listed with comments in weapon_shots() of that script. Hashes and numbers only, no bytes
+/// of the originals.
+/// </summary>
+internal static class WeaponProbeData
+{
+    public static readonly WeaponProbeTests.WeaponCase[] All =
+    [
+%s
+    ];
+}
+""" % "\n".join(lines)
+    out = os.path.join(root, "tests", "BombRedone.Core.Tests", "Shot", "WeaponProbeData.cs")
+    with open(out, "w") as f:
+        f.write(text)
+    print(out, len(rows))
+    return 0
+
+
 def cmd_post(p, args):
     header = "nr\tshot\tcrumble\tfall\trandseed\trandom_n\trandom_real\tscreen_field\tbackground_buffer\tdac_set\trecords"
     rows = []
@@ -377,18 +651,28 @@ def main():
     r.add_argument("--wind-value", type=int)
     r.add_argument("--shot-seed", help="RandSeed (hex) set right before O4:01B7")
     r.add_argument("--sound", action="store_true", help="sound effects on (fly sound stays off)")
+    r.add_argument("--guidance", type=int, default=0, help="+26h: 0 none, 1 Herb, 2 Vick, 3 both")
+    r.add_argument("--target", type=int, default=2, help="+28h: target player of the guidance")
+    r.add_argument("--pattern", type=int, default=0, help="MIRV pattern 0..4")
+    r.add_argument("--detonation", type=int, default=0, help="MIRV detonation 0 impact, 1 simultaneous, 2 none")
+    r.add_argument("--defense", nargs="*", help="player:shield,inertia,repulser (LongInt +52h, +56h, +5Ah)")
     r.add_argument("--out")
     h = sub.add_parser("hashes")
     h.add_argument("--only", type=int, nargs="*")
     q = sub.add_parser("post")
     q.add_argument("--only", type=int, nargs="*")
+    wa = sub.add_parser("waffen", help="all weapons -> analyse/feld/waffen-hashes.tsv (spur waffen)")
+    wa.add_argument("--only", type=int, nargs="*")
+    wa.add_argument("--jobs", type=int, default=1)
+    sub.add_parser("waffen-cs", help="waffen-hashes.tsv -> tests/.../Shot/WeaponProbeData.cs")
     args = ap.parse_args()
     font = None
     if os.path.exists(args.font):
         with open(args.font, "rb") as f:
             font = f.read()
     p = feld.Probe(args.gamedata, font)
-    return {"befunde": cmd_befunde, "run": cmd_run, "hashes": cmd_hashes, "post": cmd_post}[args.cmd](p, args)
+    return {"befunde": cmd_befunde, "run": cmd_run, "hashes": cmd_hashes, "post": cmd_post,
+            "waffen": cmd_waffen, "waffen-cs": cmd_waffen_cs}[args.cmd](p, args)
 
 
 if __name__ == "__main__":

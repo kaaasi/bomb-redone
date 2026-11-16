@@ -16,8 +16,8 @@ public sealed record ShotTiming(TimeSpan Tick, TimeSpan Explosion, TimeSpan Fall
 }
 
 /// <summary>
-/// Plays a shot on the playfield (spur schuss, Teil 5): Core runs the shot, the landslide and the falling tanks at once
-/// (<see cref="BallisticShot"/>, <see cref="AfterShot"/>) and reports every picture worth showing; this screen keeps those
+/// Plays a shot on the playfield (spur schuss, Teil 5; every weapon since spur waffen): Core runs the shot, the landslide and
+/// the falling tanks at once (<see cref="WeaponShot"/>, <see cref="AfterShot"/>) and reports every picture worth showing; this screen keeps those
 /// pictures (frame and field, DAC) and shows them one after another. The trail, the explosion with its palette runs, the
 /// crater, the landslide and the falling tanks are therefore exactly the pixels of Core. Drawing never changes the field.
 /// </summary>
@@ -35,7 +35,7 @@ public sealed class PlayfieldShotScreen : IScreen
         _done = done;
     }
 
-    /// <summary>Result of the flight.</summary>
+    /// <summary>Result of the flight (O4:01B7 only; null for laser and MIRV).</summary>
     public ShotResult? Result { get; private set; }
 
     /// <summary>Number of pictures kept.</summary>
@@ -44,9 +44,11 @@ public sealed class PlayfieldShotScreen : IScreen
     /// <summary>
     /// Fires the weapon of <paramref name="shooter"/> on the field of <paramref name="playfield"/>, then the landslide
     /// (<paramref name="crumble"/>) and the falling tanks; <paramref name="done"/> gives the screen after the last picture.
+    /// <paramref name="pattern"/> and <paramref name="detonation"/> are the choice of the MIRV dialog (weapon 7).
     /// </summary>
     public static PlayfieldShotScreen Fire(PlayfieldScreen playfield, PlayfieldTank shooter, ShotSettings settings, int crumble,
-        bool fallDown, TurboPascalRandom random, ShotTiming timing, Func<IScreen?> done)
+        bool fallDown, TurboPascalRandom random, ShotTiming timing, Func<IScreen?> done,
+        MirvPattern pattern = MirvPattern.Random, MirvDetonation detonation = MirvDetonation.Impact)
     {
         ArgumentNullException.ThrowIfNull(playfield);
         ArgumentNullException.ThrowIfNull(settings);
@@ -65,7 +67,7 @@ public sealed class PlayfieldShotScreen : IScreen
             screen._frames.Add(([.. playfield.Screen.Pixels], [.. playfield.Dac], hold));
         }
 
-        screen.Result = BallisticShot.Fire(playfield.Field, shooter, settings with { Frame = Capture }, random);
+        screen.Result = WeaponShot.Fire(playfield.Field, shooter, settings with { Frame = Capture }, random, pattern, detonation);
         AfterShot.Run(playfield.Field, crumble, fallDown, random, Capture);
         Capture(ShotFrame.Flight);
         return screen;

@@ -89,6 +89,12 @@ public sealed class Playfield
     public IReadOnlyList<PlayfieldTank> Tanks => _tanks;
 
     /// <summary>
+    /// Branch list DS:E820 of the CRI (entries 1..20, x = 0 for a dead branch). [APPROX] A global of the original that
+    /// keeps its entries for the whole game; here it starts empty with every playfield.
+    /// </summary>
+    internal (short X, short Y)[] CriList { get; } = new (short X, short Y)[21];
+
+    /// <summary>
     /// Builds the playfield like O8:0984. <paramref name="random"/> holds RandSeed after the shuffle of the records
     /// (docs/analyse/runde.md section 4 no. 2–5) and is advanced exactly as in the original.
     /// </summary>

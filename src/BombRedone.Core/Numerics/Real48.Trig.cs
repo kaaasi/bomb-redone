@@ -173,6 +173,143 @@ public readonly partial struct Real48
     public static Real48 Distance(Real48 first, Real48 second) => Sqrt(Add(Square(first), Square(second)));
 
     /// <summary>
+    /// Coefficients of the ArcTan series in x², highest power first: −1/11, 1/9, −1/7, 1/5, −1/3.
+    /// [ORIGINAL] table 12CE:15E9 (BOMB.EXE 0x15969), 5 entries, used through 12CE:1607.
+    /// </summary>
+    private static readonly Real48[] ArcTanCoefficients =
+    [
+        FromHex("7DE8A28B2EBA"),
+        FromHex("7D8EE3388E63"),
+        FromHex("7E4992244992"),
+        FromHex("7ECDCCCCCC4C"),
+        FromHex("7FABAAAAAAAA"),
+    ];
+
+    // [ORIGINAL] 12CE:1509: below this ArcTan uses the series directly (0.1371456616).
+    private static readonly Real48 ArcTanSeriesLimit = FromHex("7E4A8EE96F0C");
+
+    // [ORIGINAL] table 12CE:15B9 (BOMB.EXE 0x15939): per step limit, tangent and angle (tan 22.5°: 15°; 0.7673: 30°),
+    // then tangent 1 and angle pi/4 for the rest.
+    private static readonly (Real48 Limit, Real48 Tangent, Real48 Angle)[] ArcTanSteps =
+    [
+        (FromHex("7FE7CFCC1354"), FromHex("7FF6F4A23009"), FromHex("7F6AC1910A06")),
+        (FromHex("80B59E8A6F44"), FromHex("80822C3ACD13"), FromHex("806AC1910A06")),
+    ];
+
+    private static readonly Real48 ArcTanLastTangent = FromHex("810000000000");
+    private static readonly Real48 QuarterPi = FromHex("8021A2DA0F49");
+
+    /// <summary>
+    /// ArcTan (radians). [ORIGINAL] 12CE:14D8 (BOMB.EXE 0x15858): zero returns the argument; the sign is taken off;
+    /// x ≥ 1 becomes 1 / x (12CE:107A); below 0.137 the series 12CE:1607 alone, otherwise the first step k with x &lt;
+    /// limit_k (else tangent 1, angle pi/4): series((x − t) / (x · t + 1)) + angle; then pi/2 − result for an inverted
+    /// argument and the sign back. Operand order as in the original (Sub 0EAE, Mul 0F75, Add 0EB2).
+    /// </summary>
+    public static Real48 ArcTan(Real48 value)
+    {
+        if ((byte)value._ax == 0)
+        {
+            return value;
+        }
+
+        var negative = value.IsNegative;
+        var x = new Real48(value._ax, value._bx, (ushort)(value._dx & 0x7FFF));
+        var inverted = false;
+        if (Compare(x, One) >= 0)
+        {
+            x = DivideCore(One._ax, One._bx, One._dx, x._ax, x._bx, x._dx);
+            inverted = true;
+        }
+
+        Real48 result;
+        if (Compare(x, ArcTanSeriesLimit) < 0)
+        {
+            result = Polynomial(x, ArcTanCoefficients);
+        }
+        else
+        {
+            var tangent = ArcTanLastTangent;
+            var angle = QuarterPi;
+            foreach (var step in ArcTanSteps)
+            {
+                if (Compare(x, step.Limit) < 0)
+                {
+                    tangent = step.Tangent;
+                    angle = step.Angle;
+                    break;
+                }
+            }
+
+            var numerator = Subtract(x, tangent);
+            var denominator = Add(Multiply(x, tangent), One);
+            var q = DivideCore(numerator._ax, numerator._bx, numerator._dx, denominator._ax, denominator._bx, denominator._dx);
+            result = Add(Polynomial(q, ArcTanCoefficients), angle);
+        }
+
+        if (inverted)
+        {
+            result = Subtract(HalfPi, result);
+        }
+
+        if (negative)
+        {
+            result = new Real48(result._ax, result._bx, (ushort)(result._dx | 0x8000));
+        }
+
+        return result;
+    }
+
+    private static readonly Lazy<Real48[]> DegreeSines = new(() =>
+    {
+        var table = new Real48[91];
+        for (int a = 0; a <= 90; a++)
+        {
+            table[a] = Sin(Divide(Multiply(FromInt32(a), Pi), Degrees180));
+        }
+
+        return table;
+    });
+
+    /// <summary>
+    /// Sine of whole degrees from the table of the original. [ORIGINAL] 0B25:0000 (BOMB.EXE 0x0C8F0): sign off for
+    /// a &lt; 0, a − 180 with sign flip while a &gt; 180, 180 − a above 90, then entry a of the 91 Real48 values at
+    /// 0B25:00F9 with the sign bit flipped (also for 0). The entries are Sin(a · pi / 180) of the runtime (multiply first,
+    /// then divide; checked against the table in the test with the original data).
+    /// </summary>
+    public static Real48 SinDegrees(int degrees)
+    {
+        var a = (short)degrees;
+        ushort sign = 0;
+        if (a < 0)
+        {
+            a = (short)-a;
+            sign = 0x8000;
+        }
+
+        while (a > 180)
+        {
+            sign ^= 0x8000;
+            a -= 180;
+        }
+
+        if ((ushort)a > 90)
+        {
+            a = (short)(180 - a);
+        }
+
+        var v = DegreeSines.Value[a];
+        return new Real48(v._ax, v._bx, (ushort)(v._dx ^ sign));
+    }
+
+    /// <summary>Cosine of whole degrees. [ORIGINAL] 0B25:005A (BOMB.EXE 0x0C94A): <see cref="SinDegrees"/>(90 − a).</summary>
+    public static Real48 CosDegrees(int degrees) => SinDegrees((short)(90 - degrees));
+
+    /// <summary>
+    /// Radians to degrees: x / pi · 180. [ORIGINAL] 0DBD:011B (BOMB.EXE 0x0F38B), Div 12CE:11CE and Mul 12CE:11C8.
+    /// </summary>
+    public static Real48 RadiansToDegrees(Real48 radians) => Multiply(Divide(radians, Pi), Degrees180);
+
+    /// <summary>
     /// [ORIGINAL] 12CE:160D (BOMB.EXE 0x1598D): t = x · x; s = c0 · t; s = (s + c_k) · t for k = 1..n-1;
     /// result (s + 1) · x. Operand order as in 12CE:1626.
     /// </summary>

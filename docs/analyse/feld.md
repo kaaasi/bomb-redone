@@ -324,3 +324,110 @@ Je ein Schritt in Winkel oder Kraft ändert die Spur (Test `Neighbouring_angles_
 - Kopfzeile und Waffenleiste nicht verglichen (Zug, Teil 3 von `runde.md`, nicht umgesetzt).
 
 Kein Befund in `Core/Shot` oder `Core/Playfield`, also kein Fix.
+
+## 8. Alle Waffen (Spur `waffen`, Stand 15.11.2026)
+
+### 8.1 Probe (Teil 1)
+
+`feld_schuss.py` wählt den Einsprung wie `O4:44A7` (§5.1 `runde.md`): Waffe 5 → `O4:3426` (Laser), 7 → `O4:13D4` (MIRV), sonst
+`O4:01B7`. Zusätzlich setzbar (Satz des Schützen bzw. Option, direkt vor dem Schuss): Lenkung +26h mit Ziel +28h (Herb +2Ah, Vick
++2Ch ≥ 1), Abwehr je Satz (Schild +52h, Inertia +56h, Repulser +5Ah, LongInt), Bestand +2Eh + 2 · Waffe (Laser: mindestens die
+Kraft, denn der Laserbestand begrenzt die Kraft, `runde.md` §5.10), Crumble `E8A4`. Der **MIRV-Dialog** läuft im Original mit:
+Eingabe Tastatur (`DS:E5A6` + 2 · Satz = 1), an den Schleifenköpfen `O4:15BE` (Muster `[bp−102h]`) und `O4:18E8` (Detonation
+`[bp−108h]`) setzt die Probe die Wahl und das Annahme-Flag `DS:4563`; ab `O4:1AD0` (Bild aus `DS:E5BC` zurück) zählen die
+DAC-Einträge – die Dialogfarben 130..134 gehören zu `zug`. Aufgezeichnet werden außerdem alle Aufrufe von `O6:00E0` (Farbe, x, y,
+Schütze) und `O10:0000` (Schaden d, Abwehr k, Satz, Rückgabe = verlorene Energie, Trap am `retf 8` `O10:0147`).
+
+| Aufruf | Ergebnis |
+|---|---|
+| `… befunde` | zusätzlich `O4:1379–3425` (MIRV mit Dialogtexten), `O4:3426–44A6` (Laser), O10 ganz; 9/9 ok |
+| `… run … [--guidance G --target T] [--pattern M --detonation D] [--defense S:schild,inertia,repulser …]` | ein Schuss |
+| `… waffen [--only I …] [--jobs N]` | feste Liste (182 Schüsse, `weapon_shots()`) → `analyse/feld/waffen-hashes.tsv`, mit `--jobs 2` etwa 10 min |
+
+Die Liste: je Waffe 0..17 Gelände neben Panzer 2, Volltreffer, Kraft 400 gegen jede Wandart 1–4 und mit Ton (126); Laser durch
+Gelände, gegen Panzer 2 ohne, mit verbrauchtem und mit ausreichendem Schild, mit Ton, Bestand unter der Kraft, Wände, nach links
+(11); MIRV je Muster 0..4 und Detonation 0..2, dazu mit Ton (16); Herb, Vick, beide, Wand 0 mit Lenkung, Ziel = Schütze (9);
+Abwehr: Schild teilweise und ganz, Inertia beim Fallen (mit `post`), Repulser lenkt ab (auch zurück auf den Schützen) und nutzt sich
+ab (`Random:Real` < Rest / 40) (14); Erdrutsch nach Sonic Blaster und Xplosive Dirt bei Crumble 0, 10, 100 (6). Spalten: Fall,
+Schuss, `RandSeed` vorher, Pfad (nur `O4:01B7`), Einschläge, Schäden, `RandSeed`/Zufallsaufrufe danach, `screen_field`, Puffer,
+DAC (Hash und Einträge), Sätze (Hash der Rohbytes und Kurzform), bei `post` dasselbe nach Erdrutsch und Fallen.
+
+Befunde der Probe: Die bisherigen Hashes (`hashes`, `post`; alle Werte in `ShotProbeData.cs` und `AfterShotProbeTests.cs`) bleiben
+gleich. Der MIRV ruft kein `Random:Real` für den Selbstschaden (§5.1 gilt nur für `O4:01B7` und den Laser). Sonic Blaster ruft den
+Erdrutsch unabhängig von Crumble; Xplosive Dirt zieht immer ein `Random:Real`. Stick, Elastic und Accel geben beim Laser dasselbe
+Ergebnis (Spiegelung ohne Faktor, `runde.md` §5.10 L3).
+
+### 8.2 Sprengwaffen, Dirt, Xplosive Dirt, `Circle` (Teil 2)
+
+- **Sprengwaffen** {1, 2, 3, 4, 11}: liefen schon über `Impact.ExplosionRadius`; jetzt je Gelände, Volltreffer, Wand 1–4 und Ton
+  gegen die Probe geprüft (`WeaponProbeTests`), ohne Änderung. MIRV (7) folgt mit Teil 5.
+- **Graph `Circle`** `0E26:11EA` (`BgiDraw.Circle`): y-Radius = r · XAsp div YAsp (`0E26:11B7`), dann Bogen 0..360° über
+  Treiberfunktion 14h, die VGA256 2.00 der Emulation der Graph-Unit überlässt (Sprungziel nach InitGraph: Verteiler
+  `BOMB.EXE 0x11EEB`, Bogen `0x12346`); der geschlossene Bogen endet in der Ganzzahl-Ellipse `BOMB.EXE 0x12913` (beide Radien
+  ≥ 1, S = max(rx, ry)² · 100, Kx = S div rx div rx, Ky = S div ry div ry, je Schritt vier Punkte, erst x-, dann y-geführt bis
+  y = 0; der Winkeltest lässt bei Start = Ende jeden Punkt durch). Abgleich mit der Probe: Radius 0..63 an zwei Mittelpunkten
+  bitgleich, dazu Kreise am Rand der Fensters 11..309 × 31..189 mit Clip (je Punkt). **Seitenverhältnis:** der Treiber setzt
+  8500 / 10000, das Spielfeld aber `SetAspectRatio(1, 1)` in `O8:09F7` – im Spiel sind die Kreise rund.
+- **Dirt** {13..16} (`O6:1014`): Fenster mit Clip, Mittelpunkt x − 11, y − 31 (Real48), je i = 0..R drei Kreise um
+  (Trunc(x + 1), Trunc(y)), (Trunc(x − 1), Trunc(y)), (Trunc(x), Trunc(y)), Farbe 2. Kein Schaden, kein Zufall.
+- **Xplosive Dirt** 17 (`O6:1197`): erst alle Lagen (je Ring i, Korn j: `Random(20 · i)`, dann `Random(r + 1)`), dann alle
+  Körner `PutPixel` (Treiberfunktion 30h, Clip am Fenster) mit `Random(200)` bei Ton, am Ende `Random:Real · 100 < 2 · Crumble`
+  → Erdrutsch. Die Probe trägt jetzt den tatsächlichen Crumble-Wert vor dem Schuss in die Liste ein (Voreinstellung 75).
+- Abnahme: `WeaponProbeTests` (alle Fälle der Waffen 0–4, 11, 13–17 ohne Lenkung, Abwehr und `post`) und `BgiDrawTests`
+  (Kreise mit Treiber- und Spielfeld-Seitenverhältnis, Clip).
+
+### 8.3 CRI, Sonic Blaster, Abwehr (Teil 3)
+
+- **CRI** {6, 8, 9, 10} (`O6:084E`, `Impact.Cri`): wie `runde.md` §5.7 K5; ergänzt: Startpunkt ab (Trunc(x), Trunc(y)) abwärts, bis
+  ein Nachbar Gelände ist; je Durchgang erst alle Äste bewegen, dann übernimmt jeder tote Ast die Lage des ersten lebenden
+  Eintrags 1..20 (ohne sich selbst) der **globalen** Liste `DS:E820` – auch Einträge jenseits der Astzahl aus früheren CRIs; Ende,
+  wenn zu Beginn dieser Prüfung alle Äste tot waren. `[APPROX]` Die Liste lebt hier im Spielfeld (je Runde leer).
+- **Sonic Blaster** 12 (`O6:0E66`): Schusspunkt, 2 × 100 Takte Farbe 19 bzw. 19 und 2, dann Farbe 19 weiß, Farbe 2 = (0, 42, 0),
+  Erdrutsch unabhängig von Crumble.
+- **Abwehr:** Schild und Inertia (über das Fallen, `post`) laufen durch `Damage.Apply` (O10:0000). **Repulser im Flug** (Q5,
+  `O4:0788–0A34`, `BallisticShot.Repel`): d² = Trunc(dy · Int(dy) + dx · Int(dx)) mit dx = x_Panzer − ix, dy = iy − y_Panzer,
+  f = −600 / d² / SS, Winkel über `ArcTan` (`12CE:14D8`, jetzt `Real48.ArcTan`: `real48.py` Op `arctan`, 20000 Fälle bitgleich)
+  und Grad (`0DBD:011B`), Geschwindigkeit mit der Gradtabelle `0B25` (`Real48.SinDegrees`/`CosDegrees`; die Tabelle ist
+  Sin(a · π / 180) der Laufzeit, Test gegen die Bytes des Originals). Die Linie Farbe 14 zum Panzer wird sofort wieder aus
+  `DS:E5BC` hergestellt und bleibt nicht sichtbar.
+- Abnahme: `WeaponProbeTests` für alle Waffen von `O4:01B7` (ohne Laser und MIRV) mit allen Abwehrarten, ohne Lenkung (132 Fälle,
+  davon 2 mit Erdrutsch und Fallen), `Real48TrigProbeTests` (`arctan`), `Real48DegreeTableTests`.
+
+### 8.4 Laser (Teil 4)
+
+`LaserShot` nach `O4:3426`, über `WeaponShot.Fire` (Auswahl wie `O4:4977`): Kraft 0 → nichts; Kraft ≤ Laserbestand +38h, der
+Bestand verliert sie; Farbe 254 = Farbe des Schützen (`O10:021C` ohne Prüfung Energie > 0), Rohr in 254, Panzerkörper;
+**Aufladebild:** Verlauf DS:E5C4 + 3i = Trunc(c + i · (63 − c) / 100) (Blau gegen 0) für i = 1..100, zweimal auf- und abwärts mit
+`Delay(LS div k)`, einmal aufwärts – kein Zufall. Dann E = 10 · Kraft, Richtung a bzw. 180 − a, `Random:Real` < 0,2 → 1 Schaden am
+Schützen, Start 7 Pixel entlang des Rohrs, Spurfarben 100 − i. **Strahl:** je Schritt Farbe 254 = (g, g, 0); Gelände → 15 Funken
+(x − Random(20) · vx, y − Random(20) · vy) aus dem Hintergrund, außer auf 254 und Panzerpixeln; Panzer mit Energie > 0 → erster
+Kontakt +1 Treffer (auch gleiches Team, nicht der Schütze), E − 10, ohne Schild 15 Funken in der Panzerfarbe (neu gewürfelt, bis
+das Pixel kein anderer Panzer und nicht 254 ist; je `Delay(LS)`), wieder aus dem Hintergrund, 3 Schaden, ein Schritt zurück; keine
+Punkte. Wände wie L3; Spitze in 254. Am Ende Farbe 254 schwarz und alle Pixel der Farbe 254 (Strahl **und Rohr**) aus dem
+Hintergrund (`U431:0594`, Adressen 64000..1, also nicht Pixel 0). Abnahme: alle 18 Laserfälle der Liste bitgleich.
+
+### 8.5 Lenkung und MIRV (Teil 5)
+
+- **Lenkung** (`O4:0A37–0C01`, `BallisticShot.Guide`) wie `runde.md` §5.12 G1, nach dem Repulser im Teilschritt; ergänzt: Wand-0-Regel
+  (y := 300) nur ohne Lenkung, und bei Waffe 12..16 setzt der Abprall am Panzer die Lenkung +26h auf 0 (`O4:0E31`). Abnahme: alle
+  9 Lenkfälle der Liste bitgleich.
+- **MIRV** (`O4:1AD0–3423`, `MirvShot`, Muster und Detonation als Eingabe; der Dialog `O4:13D4–1AB9` gehört zu `zug`): Bestand − 1,
+  Lenkung aus; Mutter wie `O4:01B7` (Startwerte Q3, Teilschritt Q4, Repulser Q5), aber ohne Lenkung, ohne Kraftregel G2 und ohne
+  Trefferzähler; Teile enden an Gelände oder lebendem Panzer, über 30, nach 1000 Ticks, ohne Prallwände bei y < −5000 oder y ≥ 190,
+  mit Prallwänden am Boden erst bei |vx| und |vy| < 0,1. Die Mutter endet zusätzlich bei vy > 0 (Scheitel); dann starten fünf Teile
+  an ihrer Stelle mit ihrer Geschwindigkeit, geändert je Muster (§5.11 `runde.md`, Vorzeichen jetzt geklärt). Während Teile fliegen,
+  ist SS je Tick SS div (fliegende Teile), aufgerundet. Detonation 0 explodiert jedes Teil bei seinem Ende (auch außerhalb des
+  Felds), 1 alle fünf am Schluss, 2 keine; nach jeder Explosion alle Panzer neu. Abnahme: alle 23 MIRV-Fälle der Liste bitgleich –
+  damit laufen alle 182 Fälle der Probe (`WeaponProbeTests`).
+
+### 8.6 Darstellung, `bombtool`, Bestand (Teil 6)
+
+- `WeaponShot.Fire` (Auswahl `O4:4977`) für alle Waffen; `PlayfieldShotScreen.Fire` nutzt es (MIRV-Muster und Detonation als
+  Parameter, `Result` nur für `O4:01B7`) und spielt Laser-Aufladebild, Strahl, MIRV-Teile und alle Einschläge als Bilder ab.
+- `bombtool render playfield --shot ANGLE,POWER[,WEAPON[,PATTERN[,DETONATION]]] [--guidance KIND,TARGET]`: jede Waffe 0..17, Crumble
+  aus der Konfiguration auch für Xplosive Dirt. `[APPROX]` Ohne Konten setzt das Werkzeug den Bestand wie die Probe (Laser: Kraft,
+  sonst mindestens 1).
+- **Bestand:** `PlayfieldTank.Stock` (18 Waffen), `Herbs`, `Vicks`, `Guidance`, `GuidanceTarget`; `O4:01B7` zieht Waffe und
+  Lenkkörper ab (Q1), der MIRV die Waffe, der Laser die Kraft. Übertrag `TakeStock(PlayerAccount)` beim Rundenbeginn und
+  `ReturnStock(PlayerAccount)` beim Rundenende über die öffentliche API von `PlayerAccount` (unverändert); aufrufen müssen ihn
+  `spielfolge`/`runde`, im Original sind Konto und Panzer derselbe Satz.

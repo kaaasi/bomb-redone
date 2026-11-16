@@ -35,6 +35,50 @@ public sealed class PlayfieldShotScreenTests
         return (screen, shot, before);
     }
 
+    /// <summary>Laser and MIRV play back too (spur waffen, Teil 6): the last picture is the field of Core after the shot.</summary>
+    [Theory]
+    [InlineData(5, 4, 500, MirvPattern.Random, MirvDetonation.Impact)]
+    [InlineData(7, 60, 300, MirvPattern.XFourWay, MirvDetonation.Impact)]
+    [InlineData(7, 60, 300, MirvPattern.Horizontal, MirvDetonation.Simultaneous)]
+    [InlineData(13, 45, 262, MirvPattern.Random, MirvDetonation.Impact)]
+    public void Every_weapon_plays_back_to_the_field_of_the_core(int weapon, int angle, int power, MirvPattern pattern,
+        MirvDetonation detonation)
+    {
+        (Playfield Field, PlayfieldScreen Screen, PlayfieldTank Shooter, TurboPascalRandom Random) Round()
+        {
+            var random = new TurboPascalRandom(0x12345678);
+            var field = Playfield.Build(new PlayfieldOptions(2), random);
+            var wind = Wind.Choose(2, random);
+            StartPlayer.Choose(new int[2], [true, true], random);
+            var shooter = field.Tanks[0];
+            shooter.Aim(angle, power);
+            shooter.Weapon = weapon;
+            shooter.Stock[weapon] = power;
+            return (field, new PlayfieldScreen(Fonts, field, wind, ["Player 1", "Player 2"]), shooter, random);
+        }
+
+        var (_, screen, shooter, random) = Round();
+        var shot = PlayfieldShotScreen.Fire(screen, shooter, new ShotSettings(10, -44), 0, true, random, Timing, () => null,
+            pattern, detonation);
+        var surface = new Surface();
+        while (shot.Update(TimeSpan.FromMilliseconds(5), ScreenInput.None) == shot)
+        {
+        }
+
+        shot.Draw(surface);
+
+        var (field, _, core, coreRandom) = Round();
+        WeaponShot.Fire(field, core, new ShotSettings(10, -44), coreRandom, pattern, detonation);
+        AfterShot.Run(field, 0, true, coreRandom);
+        Assert.True(shot.FrameCount > 1);
+        Assert.Equal(weapon is 5 or 7, shot.Result is null);
+        for (var y = 31; y <= 189; y++)
+        {
+            for (var x = 11; x <= 309; x++)
+                Assert.Equal(field.Screen[x, y], surface.Pixels[y * 320 + x]);
+        }
+    }
+
     [Fact]
     public void Last_picture_is_the_field_of_the_probe_after_falling()
     {
