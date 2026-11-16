@@ -203,13 +203,13 @@ internal static class TurnHarness
             case "energy": SetInternal(t, nameof(t.Energy), value); break;
             case "alive": SetInternal(t, nameof(t.Active), value != 0); break;
             case "weapon": t.Weapon = value; break;
-            case "herb": p.GuidanceStock[0] = (short)value; break;
-            case "vick": p.GuidanceStock[1] = (short)value; break;
+            case "herb": t.Herbs = unchecked((short)value); break;
+            case "vick": t.Vicks = unchecked((short)value); break;
             case "shield": t.Defense[0] = value; break;
             default:
                 if (!name.StartsWith("stock", StringComparison.Ordinal))
                     throw new ArgumentException(name);
-                p.WeaponStock[int.Parse(name[5..], CultureInfo.InvariantCulture)] = (short)value;
+                t.Stock[int.Parse(name[5..], CultureInfo.InvariantCulture)] = unchecked((short)value);
                 break;
         }
     }
@@ -223,8 +223,8 @@ internal static class TurnHarness
     {
         var t = p.Tank;
         return string.Create(CultureInfo.InvariantCulture,
-            $"{t.Angle},{t.Power},{t.Direction},{t.Energy},{t.Weapon},{p.Guidance},{p.Target},{p.GuidanceStock[0]},"
-            + $"{p.GuidanceStock[1]},{t.Field5E},{p.Turns};{string.Join(",", p.WeaponStock)}");
+            $"{t.Angle},{t.Power},{t.Direction},{t.Energy},{t.Weapon},{t.Guidance},{t.GuidanceTarget},{t.Herbs},"
+            + $"{t.Vicks},{t.Field5E},{p.Turns};{string.Join(",", t.Stock)}");
     }
 
     /// <summary>Runs of equal values as "v" or "vxN", like compress() of zug.py.</summary>

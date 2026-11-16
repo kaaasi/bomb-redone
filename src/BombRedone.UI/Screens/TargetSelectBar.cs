@@ -19,7 +19,7 @@ public static class TargetSelectBar
         MenuGraphics.Rectangle(s, 0, 0, 319, 28, 13);
         text.SetTextJustify(HorizontalJustify.Center, VerticalJustify.Top);
         text.Color = shooter.Tank.Color;
-        text.OutTextXY(s, 160, 4, shooter.Name + ": Guidance Type " + PlayfieldTurnView.Str(shooter.Guidance));
+        text.OutTextXY(s, 160, 4, shooter.Name + ": Guidance Type " + PlayfieldTurnView.Str(shooter.Tank.Guidance));
         if (mouse)
             text.OutTextXY(s, 160, 15, "Please click on target");
         text.SetTextJustify(HorizontalJustify.Left, VerticalJustify.Top);

@@ -233,10 +233,10 @@ internal static class PlayfieldTurnHarness
             case "energy": SetInternal(t, nameof(t.Energy), value); break;
             case "alive": SetInternal(t, nameof(t.Active), value != 0); break;
             case "weapon": t.Weapon = value; break;
-            case "herb": p.GuidanceStock[0] = (short)value; break;
-            case "vick": p.GuidanceStock[1] = (short)value; break;
+            case "herb": t.Herbs = unchecked((short)value); break;
+            case "vick": t.Vicks = unchecked((short)value); break;
             case "shield": t.Defense[0] = value; break;
-            default: p.WeaponStock[int.Parse(name[5..], CultureInfo.InvariantCulture)] = (short)value; break;
+            default: t.Stock[int.Parse(name[5..], CultureInfo.InvariantCulture)] = unchecked((short)value); break;
         }
     }
 

@@ -60,7 +60,7 @@ public sealed class TurnSession
         _field.DrawTank(p.Tank);
         p.Tank.Field5E++;
         p.Turns++;
-        if (p.WeaponStock[p.Tank.Weapon] == 0)
+        if (p.Tank.Stock[p.Tank.Weapon] == 0)
         {
             do
             {
@@ -68,7 +68,7 @@ public sealed class TurnSession
                 if (p.Tank.Weapon > TurnPlayer.Weapons - 1)
                     p.Tank.Weapon = 0;
             }
-            while (p.WeaponStock[p.Tank.Weapon] <= 0);
+            while (p.Tank.Stock[p.Tank.Weapon] <= 0);
         }
 
         WeaponBar.SetColors(Palette, p);
@@ -111,7 +111,7 @@ public sealed class TurnSession
         // O7:0E97: until both buttons are up.
         foreach (var w in WaitForButtons("mouse fire"))
             yield return w;
-        if (p.Guidance > 0)
+        if (p.Tank.Guidance > 0)
         {
             foreach (var w in SelectTarget(p, control))
                 yield return w;
@@ -182,9 +182,9 @@ public sealed class TurnSession
         }
 
         // O7:0C05: after every command the laser's power is at most its stock.
-        if (tank.Weapon == TurnPlayer.Laser && tank.Power > p.WeaponStock[TurnPlayer.Laser])
+        if (tank.Weapon == TurnPlayer.Laser && tank.Power > p.Tank.Stock[TurnPlayer.Laser])
         {
-            tank.Power = p.WeaponStock[TurnPlayer.Laser];
+            tank.Power = p.Tank.Stock[TurnPlayer.Laser];
             if (_settings.Sound)
             {
                 foreach (var w in Tone(1500, 10))
@@ -271,8 +271,8 @@ public sealed class TurnSession
                 tank.Weapon = TurnPlayer.Weapons - 1;
             if (tank.Weapon > TurnPlayer.Weapons - 1)
                 tank.Weapon = 0;
-            ok = p.WeaponStock[tank.Weapon] > 0;
-            if (tank.Weapon == TurnPlayer.Laser && p.WeaponStock[tank.Weapon] < 100)
+            ok = p.Tank.Stock[tank.Weapon] > 0;
+            if (tank.Weapon == TurnPlayer.Laser && p.Tank.Stock[tank.Weapon] < 100)
                 ok = false;
         }
         while (!ok);
@@ -292,8 +292,8 @@ public sealed class TurnSession
     /// </summary>
     private void ToggleGuidance(TurnPlayer p, int kind)
     {
-        if (p.GuidanceStock[kind] > 0)
-            p.Guidance ^= 1 << kind;
+        if (p.GuidanceStock(kind) > 0)
+            p.Tank.Guidance ^= 1 << kind;
         WeaponBar.SetGuidanceColors(Palette, p);
     }
 
@@ -304,7 +304,7 @@ public sealed class TurnSession
     private IEnumerable<TurnWait> ReadCommand(TurnPlayer p, PlayerControl control, Action<TurnCommand> result)
     {
         yield return TurnWait.Poll(TurnPollSite.Input);
-        var stock = p.WeaponStock[p.Tank.Weapon];
+        var stock = p.Tank.Stock[p.Tank.Weapon];
         if (stock <= 0 || (stock <= 100 && p.Tank.Weapon == TurnPlayer.Laser))
         {
             result(TurnCommand.NextWeapon);
@@ -550,9 +550,9 @@ public sealed class TurnSession
             if (k[Scancode.C])
                 RestoreColor(2, 2);
             if (k[Scancode.W])
-                Array.Fill(p.WeaponStock, (short)999);
+                Array.Fill(p.Tank.Stock, 999);
             if (k[Scancode.G])
-                Array.Fill(p.GuidanceStock, (short)10);
+                p.Tank.Herbs = p.Tank.Vicks = 10;
             if (k[Scancode.D])
                 Array.Fill(p.Tank.Defense, 1000);
         }
@@ -647,14 +647,14 @@ public sealed class TurnSession
         {
             if (!_players.Any(q => q.Number != shooter.Number && q.Tank.Active))
                 throw new InvalidOperationException("[APPROX] The original loops forever without another live player.");
-            while (!(shooter.Target >= 1 && shooter.Target <= n && Player(shooter.Target).Tank.Active
-                     && shooter.Target != shooter.Number))
+            while (!(shooter.Tank.GuidanceTarget >= 1 && shooter.Tank.GuidanceTarget <= n && Player(shooter.Tank.GuidanceTarget).Tank.Active
+                     && shooter.Tank.GuidanceTarget != shooter.Number))
             {
-                shooter.Target++;
-                if (shooter.Target > n)
-                    shooter.Target = 1;
-                if (shooter.Target < 1)
-                    shooter.Target = n;
+                shooter.Tank.GuidanceTarget++;
+                if (shooter.Tank.GuidanceTarget > n)
+                    shooter.Tank.GuidanceTarget = 1;
+                if (shooter.Tank.GuidanceTarget < 1)
+                    shooter.Tank.GuidanceTarget = n;
             }
 
             _view.ShowTargetBar(shooter, mouse: false);
@@ -662,7 +662,7 @@ public sealed class TurnSession
             byte key;
             do
             {
-                _view.DrawTarget(shooter, Player(shooter.Target));
+                _view.DrawTarget(shooter, Player(shooter.Tank.GuidanceTarget));
                 do
                 {
                     yield return TurnWait.Poll(TurnPollSite.TargetKey);
@@ -676,15 +676,15 @@ public sealed class TurnSession
                     do
                     {
                         if (key == 77)
-                            shooter.Target++;
+                            shooter.Tank.GuidanceTarget++;
                         if (key == 75)
-                            shooter.Target--;
-                        if (shooter.Target > n)
-                            shooter.Target = 1;
-                        if (shooter.Target < 1)
-                            shooter.Target = n;
+                            shooter.Tank.GuidanceTarget--;
+                        if (shooter.Tank.GuidanceTarget > n)
+                            shooter.Tank.GuidanceTarget = 1;
+                        if (shooter.Tank.GuidanceTarget < 1)
+                            shooter.Tank.GuidanceTarget = n;
                     }
-                    while (shooter.Target == shooter.Number || !Player(shooter.Target).Tank.Active);
+                    while (shooter.Tank.GuidanceTarget == shooter.Number || !Player(shooter.Tank.GuidanceTarget).Tank.Active);
                 }
             }
             while (key is not (13 or 32));
@@ -701,7 +701,7 @@ public sealed class TurnSession
                     var color = _field.Screen[Input.MouseX, Input.MouseY];
                     if (color >= 20 && color <= 19 + n && Player(color - 19).Tank.Active)
                     {
-                        shooter.Target = color - 19;
+                        shooter.Tank.GuidanceTarget = color - 19;
                         done = true;
                     }
                 }

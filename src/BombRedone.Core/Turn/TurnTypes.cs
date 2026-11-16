@@ -105,8 +105,9 @@ public readonly record struct TurnWait(TurnWaitKind Kind, TurnPollSite Site = Tu
 public sealed record TurnSettings(bool Sound = false, int Delay = 8, bool TeamPlay = false);
 
 /// <summary>
-/// The player record fields of the turn beyond <see cref="PlayfieldTank"/> (docs/formate/spielstand.md): stocks,
-/// guidance and target, the turn counter. Kept here until the game flow merges the record (spur runde).
+/// The player record fields of the turn beyond <see cref="PlayfieldTank"/> (docs/formate/spielstand.md): name, team name,
+/// the turn counter. Stocks, guidance and target are those of the tank. Kept here until the game flow merges the record
+/// (spur runde).
 /// </summary>
 public sealed class TurnPlayer
 {
@@ -129,17 +130,11 @@ public sealed class TurnPlayer
     /// <summary>Team name shown in the tank info with team play.</summary>
     public string TeamName { get; set; } = "";
 
-    /// <summary>Weapon stocks (+2Eh, Word[18]).</summary>
-    public short[] WeaponStock { get; } = new short[Weapons];
-
-    /// <summary>Guidance stocks (+2Ah Herb, +2Ch Vick).</summary>
-    public short[] GuidanceStock { get; } = new short[2];
-
-    /// <summary>Guidance switched on for the shot (+26h): bit 0 Herb, bit 1 Vick.</summary>
-    public int Guidance { get; set; }
-
-    /// <summary>Target of the guidance (+28h), a player number.</summary>
-    public int Target { get; set; }
+    /// <summary>
+    /// Guidance stock (+2Ah Herb for <paramref name="kind"/> 0, +2Ch Vick for 1). Stocks, guidance (+26h) and target (+28h)
+    /// live in <see cref="Tank"/> only (spur waffen, docs/arbeitspakete.md); the shot takes one per shot (O4:01B7).
+    /// </summary>
+    public int GuidanceStock(int kind) => kind == 0 ? Tank.Herbs : Tank.Vicks;
 
     /// <summary>Turns taken (+70h).</summary>
     public int Turns { get; set; }
@@ -156,11 +151,12 @@ public sealed class TurnPlayer
     /// </summary>
     public void SetDefaultStocks()
     {
-        Array.Clear(WeaponStock);
-        WeaponStock[0] = 100;
-        WeaponStock[1] = 30;
-        WeaponStock[11] = 100;
-        Array.Clear(GuidanceStock);
+        Array.Clear(Tank.Stock);
+        Tank.Stock[0] = 100;
+        Tank.Stock[1] = 30;
+        Tank.Stock[11] = 100;
+        Tank.Herbs = 0;
+        Tank.Vicks = 0;
         Tank.Weapon = 1;
     }
 }

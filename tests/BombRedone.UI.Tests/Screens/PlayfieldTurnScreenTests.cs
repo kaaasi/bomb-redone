@@ -27,6 +27,7 @@ public sealed class PlayfieldTurnScreenTests
         public readonly bool[] Held = new bool[Scancode.Count];
         public readonly List<TurnPlayer> Players;
         public readonly PlayfieldTurnScreen Screen;
+        public readonly Playfield Field;
         public int NextRounds;
 
         public Rig(params PlayerControl[] controls)
@@ -37,7 +38,7 @@ public sealed class PlayfieldTurnScreenTests
         public Rig(TurnSettings turn, params PlayerControl[] controls)
         {
             var random = new TurboPascalRandom(0x12345678);
-            var field = Playfield.Build(new PlayfieldOptions(controls.Length, 0, 0, 0xFFFF, 2, false), random);
+            var field = Field = Playfield.Build(new PlayfieldOptions(controls.Length, 0, 0, 0xFFFF, 2, false), random);
             var wind = Wind.Choose(2, random);
             var names = Enumerable.Range(1, controls.Length).Select(n => "Player " + n).ToArray();
             var playfield = new PlayfieldScreen(Fonts, field, wind, names);
@@ -146,7 +147,7 @@ public sealed class PlayfieldTurnScreenTests
     {
         var rig = new Rig(PlayerControl.Mouse, PlayerControl.Keyboard);
         foreach (var p in rig.Players)
-            Array.Fill(p.WeaponStock, (short)999);
+            Array.Fill(p.Tank.Stock, 999);
         var start = rig.Players[0].Tank.Weapon;
         var click = new ScreenInput(Mouse: MouseButtons.Right) { MouseX = 2 * WeaponBar.FieldLeft(8), MouseY = 20 };
         rig.Run(10, click);
@@ -161,9 +162,9 @@ public sealed class PlayfieldTurnScreenTests
         var rig = new Rig(PlayerControl.Mouse, PlayerControl.Keyboard);
         var both = new ScreenInput(Mouse: MouseButtons.Left | MouseButtons.Right) { MouseX = 320, MouseY = 100 };
         Assert.Same(rig.Screen, rig.Run(10, both));
-        Assert.Equal(30, rig.Players[0].WeaponStock[1]);
+        Assert.Equal(30, rig.Players[0].Tank.Stock[1]);
         Assert.IsType<PlayfieldShotScreen>(rig.Run(1));
-        Assert.Equal(29, rig.Players[0].WeaponStock[1]);
+        Assert.Equal(29, rig.Players[0].Tank.Stock[1]);
     }
 
     [Fact]
@@ -173,12 +174,60 @@ public sealed class PlayfieldTurnScreenTests
         rig.Held[Scancode.Space] = true;
         var screen = rig.Run(1);
         Assert.IsType<PlayfieldShotScreen>(screen);
-        Assert.Equal(29, rig.Players[0].WeaponStock[1]);
+        Assert.Equal(29, rig.Players[0].Tank.Stock[1]);
         rig.Held[Scancode.Space] = false;
         var after = rig.Run(1000, default);
         Assert.Equal(1, rig.Players[1].Turns);
         Assert.Equal(0, rig.NextRounds);
         _ = after;
+    }
+
+    [Fact]
+    public void One_shot_takes_one_from_the_tank_stock()
+    {
+        // Review zug P2-3: the stock lives in PlayfieldTank only (spur waffen); Core/Shot (O4:01B7) takes one per shot and
+        // the host takes nothing, so the turn and the shot see the same count.
+        var rig = new Rig(PlayerControl.Keyboard, PlayerControl.Keyboard);
+        var tank = rig.Players[0].Tank;
+        var before = tank.Stock[tank.Weapon];
+        Assert.Equal(30, before);
+        rig.Held[Scancode.Space] = true;
+        Assert.IsType<PlayfieldShotScreen>(rig.Run(1));
+        Assert.Equal(before - 1, tank.Stock[tank.Weapon]);
+    }
+
+    [Fact]
+    public void The_mirv_fires_with_the_choice_of_its_dialog()
+    {
+        // Same field and seed, the dialog differs only in the detonation: Impact explodes the parts, None does not
+        // (O4:13D4 through WeaponShot.Fire); the stock drops by one either way.
+        var impact = MirvShotThroughDialog(detonationY: 80);
+        var none = MirvShotThroughDialog(detonationY: 120);
+        Assert.Equal((4, 4), (impact.Stock, none.Stock));
+        Assert.NotEqual(impact.Screen, none.Screen);
+    }
+
+    private static (int Stock, byte[] Screen) MirvShotThroughDialog(int detonationY)
+    {
+        var rig = new Rig(PlayerControl.Mouse, PlayerControl.Keyboard);
+        var tank = rig.Players[0].Tank;
+        tank.Stock[TurnPlayer.Mirv] = 5;
+        tank.Weapon = TurnPlayer.Mirv;
+        IScreen? Until(int frames, ScreenInput input)
+        {
+            IScreen? current = rig.Screen;
+            for (var i = 0; i < frames && current == rig.Screen; i++)
+                current = rig.Screen.Update(Frame, input);
+            return current;
+        }
+
+        var at = new ScreenInput { MouseX = 320, MouseY = 100 };
+        Assert.Same(rig.Screen, Until(10, at with { Mouse = MouseButtons.Left | MouseButtons.Right }));
+        Assert.Same(rig.Screen, Until(5, at));                                                 // dialog page 1
+        Assert.Same(rig.Screen, Until(5, at with { Mouse = MouseButtons.Left, MouseY = 95 }));  // pattern Horizontal
+        Assert.Same(rig.Screen, Until(5, at with { MouseY = detonationY }));                    // page 2
+        Assert.IsType<PlayfieldShotScreen>(Until(5, at with { Mouse = MouseButtons.Left, MouseY = detonationY }));
+        return (tank.Stock[TurnPlayer.Mirv], rig.Field.Screen.Pixels.ToArray());
     }
 
     [Fact]

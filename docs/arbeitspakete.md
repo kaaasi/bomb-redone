@@ -190,6 +190,8 @@ Integrationsfolge: `waffen` → `zug` → `spielfolge`. Gemeinsame Dateien: Absc
 - 15.11.2026: Teil 4 (Desktop) fertig: `PlayfieldTurnScreen` statt Vorschau. Spur fertig – Review.
 - 15.11.2026: Fixlauf 1: P2-1 (Warten auf Loslassen, Option A), P2-2 (TS, Teamspiel), P3-1, P3-2, P3-4 behoben; P2-3 offen
   (nach Merge von `waffen` #147).
+- 16.11.2026: Fixlauf 2: auf `main` mit `waffen`; P2-3 (Option A): Bestand, Lenkung und Ziel nur noch in `PlayfieldTank`,
+  Abzug je Schuss nur in Core/Shot; MIRV-Dialog über `WeaponShot.Fire` angebunden.
 
 ### Status spielfolge
 

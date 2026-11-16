@@ -21,7 +21,7 @@ public static class WeaponBar
         ArgumentNullException.ThrowIfNull(player);
         for (var w = 0; w < TurnPlayer.Weapons; w++)
         {
-            if (player.WeaponStock[w] > 0)
+            if (player.Tank.Stock[w] > 0)
                 palette.Set(ColorBase + w, 63, 63, 63);
             else
                 palette.Set(ColorBase + w, 0, 0, 0);
@@ -29,24 +29,24 @@ public static class WeaponBar
                 palette.Set(ColorBase + w, 63, 0, 0);
         }
 
-        if (player.GuidanceStock[0] > 0)
+        if (player.GuidanceStock(0) > 0)
         {
             palette.Set(HerbColor, 63, 63, 63);
         }
         else
         {
             palette.Set(HerbColor, 0, 0, 0);
-            player.Guidance &= 2;
+            player.Tank.Guidance &= 2;
         }
 
-        if (player.GuidanceStock[1] > 0)
+        if (player.GuidanceStock(1) > 0)
         {
             palette.Set(VickColor, 63, 63, 63);
         }
         else
         {
             palette.Set(VickColor, 0, 0, 0);
-            player.Guidance &= 1;
+            player.Tank.Guidance &= 1;
         }
 
         GuidanceRed(palette, player);
@@ -57,18 +57,18 @@ public static class WeaponBar
     {
         ArgumentNullException.ThrowIfNull(palette);
         ArgumentNullException.ThrowIfNull(player);
-        palette.Set(HerbColor, player.GuidanceStock[0] > 0 ? 63 : 0, player.GuidanceStock[0] > 0 ? 63 : 0,
-            player.GuidanceStock[0] > 0 ? 63 : 0);
-        palette.Set(VickColor, player.GuidanceStock[1] > 0 ? 63 : 0, player.GuidanceStock[1] > 0 ? 63 : 0,
-            player.GuidanceStock[1] > 0 ? 63 : 0);
+        palette.Set(HerbColor, player.GuidanceStock(0) > 0 ? 63 : 0, player.GuidanceStock(0) > 0 ? 63 : 0,
+            player.GuidanceStock(0) > 0 ? 63 : 0);
+        palette.Set(VickColor, player.GuidanceStock(1) > 0 ? 63 : 0, player.GuidanceStock(1) > 0 ? 63 : 0,
+            player.GuidanceStock(1) > 0 ? 63 : 0);
         GuidanceRed(palette, player);
     }
 
     private static void GuidanceRed(VgaPalette palette, TurnPlayer player)
     {
-        if ((player.Guidance & 1) == 1)
+        if ((player.Tank.Guidance & 1) == 1)
             palette.Set(HerbColor, 63, 0, 0);
-        if ((player.Guidance & 2) == 2)
+        if ((player.Tank.Guidance & 2) == 2)
             palette.Set(VickColor, 63, 0, 0);
     }
 }

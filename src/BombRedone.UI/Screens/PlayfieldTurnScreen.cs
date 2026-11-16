@@ -216,16 +216,18 @@ public sealed class PlayfieldTurnScreen : IScreen
 
     private IScreen? Fire()
     {
-        var p = Current;
-        var tank = p.Tank;
-        var supported = Impact.IsSupported(tank.Weapon) && tank.Weapon != TurnPlayer.Mirv
-                        && !_playfield.Field.Tanks.Any(t => t.Active && t.Defense[Damage.Repulser] > 0);
-        if (p.WeaponStock[tank.Weapon] > 0)
-            p.WeaponStock[tank.Weapon]--;
-        if (!supported)
+        // The shot takes the stock itself (O4:01B7, O4:13D4, O4:3426 in Core/Shot); the host takes nothing (review zug P2-3).
+        var tank = Current.Tank;
+        if (!(tank.Weapon is TurnPlayer.Laser or TurnPlayer.Mirv || Impact.IsSupported(tank.Weapon)))
             return NextTurn();
 
-        return PlayfieldShotScreen.Fire(_playfield, tank, _settings, _crumble, _fallDown, _random, _timing, NextTurn);
+        // [ORIGINAL] O4:4977–49C8: MIRV with the choice of its dialog. [APPROX] Computer players fire at once without the
+        // dialog until the game flow (spur runde) and use the defaults of WeaponShot.
+        var (pattern, detonation) = _mirvDone && _session.MirvChoice is { } choice
+            ? ((MirvPattern)choice.Pattern, (MirvDetonation)choice.Detonation)
+            : (MirvPattern.Random, MirvDetonation.Impact);
+        return PlayfieldShotScreen.Fire(_playfield, tank, _settings, _crumble, _fallDown, _random, _timing, NextTurn,
+            pattern, detonation);
     }
 
     private IScreen? NextTurn()

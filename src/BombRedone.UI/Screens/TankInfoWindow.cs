@@ -21,8 +21,8 @@ public static class TankInfoWindow
         var h = BaseHeight;
         if (ShowsTeam(p, teamPlay))
             h += LineHeight;
-        h += LineHeight * p.WeaponStock.Count(s => s > 0);
-        h += LineHeight * p.GuidanceStock.Count(s => s > 0);
+        h += LineHeight * p.Tank.Stock.Count(s => s > 0);
+        h += LineHeight * ((p.Tank.Herbs > 0 ? 1 : 0) + (p.Tank.Vicks > 0 ? 1 : 0));
         h += LineHeight * p.Tank.Defense.Count(d => d > 0);
         return h;
     }
@@ -76,21 +76,21 @@ public static class TankInfoWindow
         var y = 40;
         for (var w = 0; w < TurnPlayer.Weapons; w++)
         {
-            if (p.WeaponStock[w] <= 0)
+            if (p.Tank.Stock[w] <= 0)
                 continue;
             y += LineHeight;
             var chosen = p.Tank.Weapon == w;
             var x = Item(s, text, left + 4, top + y, catalog.Get(ItemKind.Weapon, w).Name + ":", chosen ? (byte)4 : (byte)5);
-            Item(s, text, x, top + y, PlayfieldTurnView.Str(p.WeaponStock[w]), chosen ? (byte)4 : (byte)14);
+            Item(s, text, x, top + y, PlayfieldTurnView.Str(p.Tank.Stock[w]), chosen ? (byte)4 : (byte)14);
         }
 
         for (var g = 0; g < 2; g++)
         {
-            if (p.GuidanceStock[g] <= 0)
+            if (p.GuidanceStock(g) <= 0)
                 continue;
             y += LineHeight;
             var x = Item(s, text, left + 4, top + y, catalog.Get(ItemKind.Guidance, g).Name + ":", 2);
-            Item(s, text, x, top + y, PlayfieldTurnView.Str(p.GuidanceStock[g]), 14);
+            Item(s, text, x, top + y, PlayfieldTurnView.Str(p.GuidanceStock(g)), 14);
         }
 
         for (var d = 0; d < 3; d++)

@@ -21,7 +21,7 @@ public sealed class TankInfoWindowTests
     {
         var p = Player();
         Assert.Equal(60 + 3 * 12, TankInfoWindow.Height(p, teamPlay: false));
-        p.GuidanceStock[1] = 2;
+        p.Tank.Vicks = 2;
         p.Tank.Defense[0] = 5;
         p.Tank.Defense[2] = -1;
         Assert.Equal(60 + 5 * 12, TankInfoWindow.Height(p, teamPlay: false));
