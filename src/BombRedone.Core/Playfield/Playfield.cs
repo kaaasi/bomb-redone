@@ -347,13 +347,6 @@ public sealed class Playfield
     }
 
     /// <summary>
-    /// End of the barrel relative to (x, y) for angle 0..180°: (Trunc(Cos(Rad(a)) · 8), Trunc(Sin(Rad(a)) · 8)).
-    /// [ORIGINAL] U431:07BA (BOMB.EXE 0x0616A): LongInt → Real 12CE:11DC, Rad 0DBD:00D9, Cos 12CE:12EE / Sin 12CE:1301,
-    /// Mul by 8 (12CE:11C8, the trig value as left operand), Trunc 12CE:11E0. The runtime's results differ from exact
-    /// trigonometry (cos 0° gives 7, sin 30° gives 4); the table measured with <c>feld.py barrel</c> is now a test
-    /// (Real48TrigBarrelTests).
-    /// </summary>
-    /// <summary>
     /// Takes over the CRI list (DS:E820, a global of the original) of the previous round's playfield (#165): later CRIs see
     /// the branches of earlier ones (docs/analyse/feld.md section 8.3).
     /// </summary>
@@ -363,6 +356,13 @@ public sealed class Playfield
         Array.Copy(previous.CriList, CriList, CriList.Length);
     }
 
+    /// <summary>
+    /// End of the barrel relative to (x, y) for angle 0..180°: (Trunc(Cos(Rad(a)) · 8), Trunc(Sin(Rad(a)) · 8)).
+    /// [ORIGINAL] U431:07BA (BOMB.EXE 0x0616A): LongInt → Real 12CE:11DC, Rad 0DBD:00D9, Cos 12CE:12EE / Sin 12CE:1301,
+    /// Mul by 8 (12CE:11C8, the trig value as left operand), Trunc 12CE:11E0. The runtime's results differ from exact
+    /// trigonometry (cos 0° gives 7, sin 30° gives 4); the table measured with <c>feld.py barrel</c> is now a test
+    /// (Real48TrigBarrelTests).
+    /// </summary>
     public static (int Dx, int Dy) BarrelOffset(int angle)
     {
         var radians = Real48.DegreesToRadians(Real48.FromInt32(angle));

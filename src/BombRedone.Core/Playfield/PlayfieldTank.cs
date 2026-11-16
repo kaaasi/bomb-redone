@@ -118,7 +118,6 @@ public sealed class PlayfieldTank
             account.SetStock(ItemKind.Defense, d, Defense[d]);
     }
 
-    /// <summary>Sets the barrel and the power for the next shot (the turn input of O7:040C, Teil 3 of runde.md).</summary>
     /// <summary>
     /// Record 0 (DS:402E): the shooter of the explosions of the death picture O5:29A0 and of the lightning; never on the field.
     /// </summary>
@@ -153,6 +152,7 @@ public sealed class PlayfieldTank
         other.Stock.CopyTo(Stock, 0);
     }
 
+    /// <summary>Sets the barrel and the power for the next shot (the turn input of O7:040C, Teil 3 of runde.md).</summary>
     public void Aim(int angle, int power)
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(angle, 0);
