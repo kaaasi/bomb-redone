@@ -35,7 +35,7 @@ Je Spiel der Schlacht (`DS:47E2` = 1 .. `DS:E8A6`) (S1):
   und tauscht die Steuerart (`DS:E5A6 + 2i`) (S4). **Steuerart und Intelligenz bleiben also beim Satz** – die offene Frage aus
   `spielstand.md` ist damit beantwortet; ein Spielstand gibt stets die aktuelle Reihenfolge wieder.
 
-Umsetzung mit der Spielfolge in Runde 3 (R2-D4): Tausch als eine Operation über Satz, Steuerart, Intelligenz und Nummern.
+Umsetzung (Runde 3, Spur `spielfolge`): `Core/Battle/BattleRecords` – Tausch als eine Operation über Satz, Steuerart, Intelligenz und Nummern; Mischen, Sortierung der Wertung und Siegerbonus darüber, geprüft gegen die Probe `tools/reverse-engineering/folge.py` (führt `O3:0000`, `O3:2417`, `O3:5AEF`, `O3:6696`, den Bonus, den Einkauf und `O3:7847` mit einem Testdouble der Runde aus). Die Probe belegt auch: `O3:6696` ordnet die Sätze nicht um; der Einkauf läuft über die Sätze 1..N in der Reihenfolge nach der Wertung.
 
 ## 2. Rundenbeginn `O4:44A7` (`BOMB.OVR 0x151AC`)
 
