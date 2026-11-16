@@ -431,3 +431,51 @@ Hintergrund (`U431:0594`, Adressen 64000..1, also nicht Pixel 0). Abnahme: alle 
   Lenkkörper ab (Q1), der MIRV die Waffe, der Laser die Kraft. Übertrag `TakeStock(PlayerAccount)` beim Rundenbeginn und
   `ReturnStock(PlayerAccount)` beim Rundenende über die öffentliche API von `PlayerAccount` (unverändert); aufrufen müssen ihn
   `spielfolge`/`runde`, im Original sind Konto und Panzer derselbe Satz.
+
+## 9. Rundenablauf (Spur `runde`, Stand 16.11.2026)
+
+### 9.1 Probe `tod.py` (Teil 1)
+
+`tools/reverse-engineering/tod.py` setzt einen Fall von `feld.py` bei **S** (`O4:479A`) fort und lässt `O4:44A7` bis zu seinem
+`retf` (`O4:4EF2`) laufen: Zugbeginn Z1, Waffe (`O4:01B7`, Laser `O4:3426`, MIRV `O4:13D4` mit Dialog über die Tastaturflags wie
+`feld_schuss.py`), Panzer, Crumble und Fallen (K11), Schussprotokoll `DS:4A80`, Todesschleife K12 mit den Todesexplosionen `O5`
+(K15, K16), Blitz `O6:14C5` (K13), Rundenende K14. **Nicht** läuft der Zug `O7:040C` selbst (Spur `zug`, [zug.md](zug.md)): beim
+Aufruf `O4:4960` schreibt die Probe das Ergebnis des Zugs aus dem Skript (Winkel +1Dh, Kraft +1Bh, Waffe +24h, Lenkung +26h/+28h,
+Bestand der Waffe mindestens 1 bzw. beim Laser die Kraft) und springt nach `O4:4965`. `Crt.Delay` wird übersprungen und gezählt.
+
+| Aufruf | Ergebnis |
+|---|---|
+| `python3 -I tools/reverse-engineering/tod.py befunde` | SHA-256 von `O4:4704–4A0A` (Zugfolge, Z1, Waffenwahl), `O4:4A0B–4EF2` (Schussprotokoll bis Rundenende), O5 ganz, O6 ganz, O7 `0000–040B`, O10 `0000–02A3`, `U431:0000–000B`; 7/7 ok |
+| `… run --seed <hex> [Fall wie feld.py] --turns "W,K[,Waffe[,Lenkung,Ziel[,Muster,Detonation]]];…" [--set [N:]FELD=W …] [--sound] [--crumble C] [--pass P] [--death-seed HEX,…] [--lightning-seed HEX,…] [--json]` | eine Runde nach `analyse/feld/runde-…/` (`result.json`, Bildschirm, Puffer, DAC und Sätze je Messpunkt) |
+| `… runden [--only I …] [--jobs N]` | feste Liste (26 Runden, `ROUNDS`) → `analyse/feld/runden-hashes.tsv` (eine Zeile je Messpunkt) und `runden-hashes.json` (Züge, Tode, Blitze, Einschläge, Schäden); mit `--jobs 2` etwa 13 min |
+
+`--set` schreibt Felder der Sätze bei S (vor Z1 des ersten Zugs; ohne `N:` der Startspieler), `--pass` den Durchgangszähler
+`DS:47EA` bei S, `--death-seed` setzt `RandSeed` vor dem `Random(7)` des j-ten Tods (`O4:4C10`), `--lightning-seed` vor dem j-ten
+Blitz (`O4:4D9A`). **Messpunkte:** `turn` (`O4:4960`, Zugergebnis geschrieben, nach Z1), `post` (`O4:4A0B`, nach Waffe, Panzern,
+Crumble, Fallen), `death` (`O4:4D50`, nach einem Tod samt Bild, Punkten, Rahmen, `O7:03C1` und Fallen), `bolt` (`O4:4D9F`, nach
+einem Blitz), `next` (`O4:4E68`, Runde geht weiter), `end` (`O4:4EF2`, nach K14), `exhausted` (Skript ohne Zug). Je Messpunkt:
+`RandSeed`, Zahl der `Random(n)`/`Random:Real` seit S, Rahmen und Feld (`field_crop` wie §5.2), Puffer `DS:E5C0`, seit S gesetzte
+DAC-Einträge, Rohbytes aller Sätze und Kurzform (x, y, Energie, lebt, Punkte, Abwehr, +5Eh, Treffer +6Ch, Tode +6Eh, Züge +70h,
+Rundensumme +68h, Waffe), Schussprotokoll, Durchgang, Spieler am Zug, Siegerteam `DS:47E0`, Zahl und Summe der Delays.
+
+**Liste** (`ROUNDS`): Fall A (2 Spieler, Startspieler 2) – Tod durch Baby Missile mit der Wahl des Originals (0), jede der sieben
+Todesexplosionen über `--death-seed` (1–7), dieselben mit Ton für die Wahl 0, 1, 2, 5, 6 (8–12), Selbstmord (13), Tod im eigenen
+Team (14), zehn Züge bis zum Tod mit Punkten +1500 (15), Blitze bei Durchgang 40–61 ohne und mit Ton und bei Energie 3 (16–18),
+Durchgang 9 bis 16 mit `Random(100)` ohne Blitz (19), kein Fallen und Crumble 0 (24), Laser, MIRV und CRI in einer Runde (25); Fall
+B (4 Spieler, Startspieler 3) – zwei Tote durch eine Nuke, niemand bleibt (Sieger 0, 20), Nuke mit Selbsttod, die Runde geht
+weiter (21), Teams zu zweit mit zweimal −1000 (22), vier Panzer mit Energie 1 und Splittern (23). Die Läufe sind byte-gleich
+wiederholbar; 14 Runden enden mit `end`, 7 laufen bis zum Ende ihres Skripts (`exhausted`).
+
+**Befunde** (Ergänzung zu [runde.md](runde.md) §5.9, alles aus Code und Probe):
+
+- Ein Tod: `U431:07BA(Satz)`, Kopfzeile `Bar(109, 0, 211, 7)` mit dem Namen zentriert bei x = 160 in Farbe Satz + 19 (BGI,
+  außerhalb des Felds), `Random(7)`, Bild, Punkte, `O7:0364`, `O7:03C1` (Rahmen,
+  `Random:Real · 100 ≤ Crumble`, also **ein `Random:Real` je Tod**), Fallen. Bei einem Panzer, der nach dem Schuss Energie ≤ 0 hat, aber nicht mehr lebt (+23h = 0), passiert nichts.
+- Zufallsaufrufe der Bilder ohne Ton (einschließlich `Random(7)`, ohne `O7:03C1`): `O5:001F` 2032, `O5:0DA0(0)` 22.897,
+  `O5:1BDE` 1064, `O5:0DA0(1)` 25.537, `O5:2662` 14.759, `O5:28DE` keiner, `O5:29A0` 2 + Explosionen; mit Ton mehr. `O5:001F`
+  und `O5:1BDE` ziehen außerdem 22 `Random:Real`. Delays: `O5:001F` 245, `O5:1BDE` 285, `O5:28DE` 202, `O5:29A0` 436 Aufrufe
+  (Summe 1960, 2280, 1616, 264 ms bei ES/FS des Beispiels), `O5:0DA0` und `O5:2662` keine.
+- Rundenende: `DS:4744` = Team des letzten lebenden Satzes, `DS:4813` = 1, solange alle lebenden dasselbe Team haben – auch wenn
+  keiner lebt (dann Team 0); Runde aus bei `DS:4813` = 1, Sieger `DS:47E0`. Rundensumme +68h += 100 − Energie, bei Energie < 0 oder
+  > 100 aber + 100 (Fall 13: Energie 84 → 16; Tote mit −1 → 100).
+- Der Blitz wiederholt sich, solange kein Tod folgt und `Random(100)` < Durchgang ist (bei Durchgang ≥ 100 also bis zum ersten Tod).
