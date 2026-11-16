@@ -50,6 +50,13 @@ public sealed class DesktopGame : Game
     /// </summary>
     public static IReadOnlyList<TextLine> Results { get; private set; } = [];
 
+    /// <summary>
+    /// The playfield of the last round of the program run, for the CRI list DS:E820 (#165, review P3-3 #176). [ORIGINAL] Every
+    /// reference to offset E820h lies in the CRI (BOMB.OVR 0x19964–0x19D35); nothing else clears the global, so the list goes
+    /// on over the rounds of all battles.
+    /// </summary>
+    private static Playfield? _lastField;
+
     public DesktopGame()
     {
         _rgba = new uint[_surface.Width * _surface.Height];
@@ -175,14 +182,13 @@ public sealed class DesktopGame : Game
         var battle = new BattleSequence(records, Math.Max(1, cfg.GamesToPlay), options.TeamPlay, random, null,
             ItemCatalog.Original);
         var teamNames = setup.Teams.ToDictionary(t => t.Number, t => t.Name);
-        Playfield? previous = null;
 
         IScreen? PlayRound(Func<int, IScreen?> complete)
         {
             var playfieldOptions = new PlayfieldOptions(records.Count, (int)options.Walls, options.Background,
                 cfg.UserBackgroundMask, (int)options.Wind, options.InvisibleShot);
-            var game = RoundGame.Prepare(records, playfieldOptions, random, previous);
-            previous = game.Field;
+            var game = RoundGame.Prepare(records, playfieldOptions, random, _lastField);
+            _lastField = game.Field;
             if (options.TeamPlay)
             {
                 for (var i = 0; i < records.Count; i++)
