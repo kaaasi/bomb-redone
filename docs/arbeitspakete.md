@@ -203,3 +203,5 @@ Integrationsfolge: `waffen` → `zug` → `spielfolge`. Gemeinsame Dateien: Absc
 - Teil 3 fertig: `BattleSequence` (Ablauf je Spiel gegen die Schlachtfälle der Probe, Runde als `IBattleRound`), `ScoreBattleFlow` (Wertung, Teamwertung, Einkauf je Satz); Spur fertig – Review.
 
 ### Status runde
+
+- 16.11.2026: begonnen (Claude Code, geplanter Lauf), Branch `paket/runde`, Base `28ffb8d`, PR folgt.
