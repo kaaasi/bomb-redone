@@ -22,7 +22,8 @@ public sealed class ScoreBattleFlowTests
         }
     }
 
-    private static (ScoreBattleFlow Flow, BattleSequence Battle, List<string> Log) Flow(int games, bool teamPlay)
+    private static (ScoreBattleFlow Flow, BattleSequence Battle, List<string> Log) Flow(int games, bool teamPlay,
+        Func<BattlePlayer, (int, int, int)>? color = null)
     {
         var records = new BattleRecords(Enumerable.Range(1, 3).Select(i =>
             new BattlePlayer(new PlayerAccount(i, PlayerSlot.DefaultName(i)), PlayerControl.Keyboard, null,
@@ -30,7 +31,7 @@ public sealed class ScoreBattleFlowTests
         var battle = new BattleSequence(records, games, teamPlay, new TurboPascalRandom(0x12345678), new DoubleRound(),
             ItemCatalog.Original);
         var log = new List<string>();
-        var flow = new ScoreBattleFlow(ShopScreenTests.Fonts, battle, ItemCatalog.Original, false, _ => (63, 0, 0),
+        var flow = new ScoreBattleFlow(ShopScreenTests.Fonts, battle, ItemCatalog.Original, false, color ?? (_ => (63, 0, 0)),
             t => $"Team {t}", () =>
             {
                 log.Add("finished");
@@ -59,6 +60,23 @@ public sealed class ScoreBattleFlowTests
         Assert.Equal(["finished"], log);
         Assert.Equal(BattleStepKind.Finished, battle.Current.Kind);
         Assert.Equal(1, battle.Records.NumberOf(battle.Records.InOrder.Single(r => r.Name == "Player 2")));
+    }
+
+    [Fact]
+    public void The_shop_colours_the_name_with_entry_nineteen_plus_the_record_not_the_account()
+    {
+        // Player 2 (account 2) wins and is sorted onto record 1 by the rating, so the shop uses DAC entry 19 + 1 (#151).
+        var (flow, battle, _) = Flow(2, teamPlay: false, r => r.Name == "Player 2" ? (10, 20, 30) : (40, 50, 60));
+
+        var screen = flow.Start();
+        Assert.IsType<ScoreScreen>(screen);
+        var shop = Assert.IsType<ShopScreen>(Press(screen!, BiosKey.Enter));
+        Assert.Equal(1, battle.Current.Record);
+        Assert.Equal(2, shop.Shop.Account.Number);
+
+        // The rating left entry 19 + 2 with the colour of record 2; the shop must not overwrite it with Player 2.
+        Assert.Equal(new byte[] { 10, 20, 30 }, shop.Dac.Slice((ShopScreen.PlayerColorBase + 1) * 3, 3).ToArray());
+        Assert.NotEqual(new byte[] { 10, 20, 30 }, shop.Dac.Slice((ShopScreen.PlayerColorBase + 2) * 3, 3).ToArray());
     }
 
     [Fact]
