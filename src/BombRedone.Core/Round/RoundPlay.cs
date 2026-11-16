@@ -68,17 +68,39 @@ public sealed class RoundPlay
     public (Real48 X, Real48 Y) ShotPosition { get; set; }
 
     /// <summary>
-    /// Plays the round. <paramref name="turn"/> is called after Z1 with the record to move; it sets angle, power, weapon,
-    /// guidance and target on the tank and returns the MIRV choice, or null if there is no turn (the loop stops with
-    /// <see cref="RoundPointKind.Exhausted"/>). The enumeration reports each measuring point.
+    /// The decision of the turn for the next step after <see cref="RoundPointKind.TurnStart"/>: the record to move has angle,
+    /// power, weapon, guidance and target set on its tank; null ends the loop with <see cref="RoundPointKind.Exhausted"/>.
+    /// </summary>
+    public TurnOutcome? NextTurn { get; set; }
+
+    /// <summary>
+    /// Plays the round step by step. At <see cref="RoundPointKind.TurnStart"/> (after Z1) the caller runs the turn of
+    /// <see cref="ToMove"/> (over as many frames as it needs) and sets <see cref="NextTurn"/> before the next step.
+    /// </summary>
+    public IEnumerable<RoundPoint> Steps() => PlayLoop();
+
+    /// <summary>
+    /// Plays the round with <paramref name="turn"/> as the turn: called at each turn start with the record to move, it sets
+    /// the tank's fields and returns the MIRV choice, or null if there is no turn. Reports every point but the turn start.
     /// </summary>
     public IEnumerable<RoundPoint> Play(Func<TurnPlayer, TurnOutcome?> turn)
     {
         ArgumentNullException.ThrowIfNull(turn);
-        return PlayLoop(turn);
+        return PlayWith(turn);
     }
 
-    private IEnumerable<RoundPoint> PlayLoop(Func<TurnPlayer, TurnOutcome?> turn)
+    private IEnumerable<RoundPoint> PlayWith(Func<TurnPlayer, TurnOutcome?> turn)
+    {
+        foreach (var point in PlayLoop())
+        {
+            if (point.Kind == RoundPointKind.TurnStart)
+                NextTurn = turn(Record(ToMove));
+            else
+                yield return point;
+        }
+    }
+
+    private IEnumerable<RoundPoint> PlayLoop()
     {
         var count = 0;
         while (true)
@@ -86,15 +108,16 @@ public sealed class RoundPlay
             // [ORIGINAL] O4:479A–4958: Z1 (tank, +5Eh, +70h, weapon with stock, weapon bar, header, power ≤ 10 · energy).
             var player = Record(ToMove);
             _session.Begin(ToMove);
-            var outcome = turn(player);
-            if (outcome is null)
+            NextTurn = null;
+            yield return new RoundPoint(RoundPointKind.TurnStart, count, ToMove);
+            if (NextTurn is not { } outcome)
             {
                 yield return new RoundPoint(RoundPointKind.Exhausted, count);
                 yield break;
             }
 
             yield return new RoundPoint(RoundPointKind.Turn, count);
-            Fire(player.Tank, outcome.Value);
+            Fire(player.Tank, outcome);
 
             // [ORIGINAL] O4:49CB–4A0A: all tanks U431:07BA, Crumble > 0 → O7:03C1, Fall down → O7:0020.
             AfterShot.Run(_field, _settings.Crumble, _settings.FallDown, _random, _settings.Frame);

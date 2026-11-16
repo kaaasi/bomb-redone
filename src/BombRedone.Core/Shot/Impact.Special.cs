@@ -42,8 +42,8 @@ public static partial class Impact
     /// Other colours: nothing.
     /// </summary>
     /// <remarks>
-    /// [APPROX] The list DS:E820 is a global of the original and keeps the branches of earlier CRIs for the whole game;
-    /// here it lives in the playfield, so it starts empty in every round. [APPROX] Reads below the screen give 0 and
+    /// The list DS:E820 is a global of the original and keeps the branches of earlier CRIs for the whole game; it lives in
+    /// the playfield and the game flow hands it on (Playfield.TakeOverCriList, #165). [APPROX] Reads below the screen give 0 and
     /// writes there are dropped (the original reads and writes the rest of the video segment).
     /// </remarks>
     private static void Cri(Playfield.Playfield field, PlayfieldTank shooter, int color, Real48 x, Real48 y,

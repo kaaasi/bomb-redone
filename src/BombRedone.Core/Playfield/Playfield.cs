@@ -91,8 +91,8 @@ public sealed class Playfield
     private IReadOnlyList<(int R, int G, int B)>? _divisors;
 
     /// <summary>
-    /// Branch list DS:E820 of the CRI (entries 1..20, x = 0 for a dead branch). [APPROX] A global of the original that
-    /// keeps its entries for the whole game; here it starts empty with every playfield.
+    /// Branch list DS:E820 of the CRI (entries 1..20, x = 0 for a dead branch). A global of the original that keeps its
+    /// entries for the whole game; the game flow hands it on with <see cref="TakeOverCriList"/> (#165).
     /// </summary>
     internal (short X, short Y)[] CriList { get; } = new (short X, short Y)[21];
 
@@ -353,6 +353,16 @@ public sealed class Playfield
     /// trigonometry (cos 0° gives 7, sin 30° gives 4); the table measured with <c>feld.py barrel</c> is now a test
     /// (Real48TrigBarrelTests).
     /// </summary>
+    /// <summary>
+    /// Takes over the CRI list (DS:E820, a global of the original) of the previous round's playfield (#165): later CRIs see
+    /// the branches of earlier ones (docs/analyse/feld.md section 8.3).
+    /// </summary>
+    public void TakeOverCriList(Playfield previous)
+    {
+        ArgumentNullException.ThrowIfNull(previous);
+        Array.Copy(previous.CriList, CriList, CriList.Length);
+    }
+
     public static (int Dx, int Dy) BarrelOffset(int angle)
     {
         var radians = Real48.DegreesToRadians(Real48.FromInt32(angle));

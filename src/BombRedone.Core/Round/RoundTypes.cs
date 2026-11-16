@@ -18,6 +18,9 @@ public readonly record struct TurnOutcome(MirvPattern Pattern = MirvPattern.Rand
 /// <summary>Points of the round loop at which <see cref="RoundPlay.Play"/> reports (the measuring points of tod.py).</summary>
 public enum RoundPointKind
 {
+    /// <summary>Z1 is done; the turn of <see cref="RoundPlay.ToMove"/> comes next (O4:4960, the call of O7:040C).</summary>
+    TurnStart,
+
     /// <summary>The turn is decided (after Z1 and the turn, before the weapon; tod.py "turn", O4:4960).</summary>
     Turn,
 

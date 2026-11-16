@@ -31,6 +31,12 @@ public enum BattleStepKind
 
     /// <summary>All games are played; the end result O3[1] follows when the program ends.</summary>
     Finished,
+
+    /// <summary>
+    /// The records are shuffled and the round O4[0] is due; the caller plays it (over many frames) and reports the winning
+    /// team with <see cref="BattleSequence.CompleteRound"/>. Only without an <see cref="IBattleRound"/>.
+    /// </summary>
+    Round,
 }
 
 /// <summary>A step of the game sequence.</summary>
@@ -53,21 +59,20 @@ public readonly record struct BattleStep(BattleStepKind Kind, int Game, int Reco
 public sealed class BattleSequence
 {
     private readonly TurboPascalRandom _random;
-    private readonly IBattleRound _round;
+    private readonly IBattleRound? _round;
     private readonly ItemCatalog _catalog;
 
     /// <param name="records">Records 1..N of the battle.</param>
     /// <param name="games">Games to play (DS:E8A6, option "Number of Games").</param>
     /// <param name="teamPlay">Team Play (DS:E8BC).</param>
     /// <param name="random">The one random generator of the game (RandSeed).</param>
-    /// <param name="round">The round O4[0].</param>
+    /// <param name="round">The round O4[0]; null: the caller plays it at <see cref="BattleStepKind.Round"/>.</param>
     /// <param name="catalog">Items of the shop (for <see cref="BattleRecords.ShopVisits"/>).</param>
-    public BattleSequence(BattleRecords records, int games, bool teamPlay, TurboPascalRandom random, IBattleRound round,
+    public BattleSequence(BattleRecords records, int games, bool teamPlay, TurboPascalRandom random, IBattleRound? round,
         ItemCatalog catalog)
     {
         ArgumentNullException.ThrowIfNull(records);
         ArgumentNullException.ThrowIfNull(random);
-        ArgumentNullException.ThrowIfNull(round);
         ArgumentNullException.ThrowIfNull(catalog);
         ArgumentOutOfRangeException.ThrowIfLessThan(games, 1);
         Records = records;
@@ -130,15 +135,30 @@ public sealed class BattleSequence
             BattleStepKind.Shop => ShopAfter(Current.Record),
             BattleStepKind.Wipe => NextGame(),
             BattleStepKind.Finished => throw new InvalidOperationException("The battle is finished."),
+            BattleStepKind.Round => throw new InvalidOperationException("Complete the round first."),
             _ => throw new InvalidOperationException(),
         };
+        return Current;
+    }
+
+    /// <summary>The winning team of the round played at <see cref="BattleStepKind.Round"/> (0: nobody left).</summary>
+    public BattleStep CompleteRound(int winnerTeam)
+    {
+        if (Current.Kind != BattleStepKind.Round)
+            throw new InvalidOperationException("No round is due.");
+        Current = AfterRound(winnerTeam);
         return Current;
     }
 
     private BattleStep PlayGame()
     {
         Records.Shuffle(_random);
-        WinnerTeam = _round.Play(Records, Game);
+        return _round is null ? new BattleStep(BattleStepKind.Round, Game) : AfterRound(_round.Play(Records, Game));
+    }
+
+    private BattleStep AfterRound(int winnerTeam)
+    {
+        WinnerTeam = winnerTeam;
         Records.AddTeamBonus(WinnerTeam);
         Records.SortForRating();
         return new BattleStep(BattleStepKind.Rating, Game);
