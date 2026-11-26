@@ -36,3 +36,14 @@ Schreibt nur nach `analyse/re-runde/` (Ablage im Referenz-Repo per PR, R2-D5 = A
 
 Die Befunde vergleichen reguläre Ausdrücke über die eigene Disassembly (aus Ziel und Operand gebaut), keine Bytes der Originale;
 wie bei `bombre.py` stehen nur kurze Bildschirmtexte (z. B. „Wind: “, „Maximum Power:“) als Klartext im Skript.
+
+## Abdeckung (`funktionskarte.py`, `markerliste.py`, `abdeckung_grafik.py`)
+
+Übernommen aus `kaaasi/eishockey-manager-redone` und an `BOMB.EXE`/`BOMB.OVR` angepasst (Abweichungen:
+`docs/analyse/abdeckung-grafik/README.md`). Ablauf: `docs/vorlagen/abdeckung-grafik.md`.
+
+| Aufruf | Ergebnis |
+|---|---|
+| `python3 tools/reverse-engineering/funktionskarte.py <gamedata> [--csv out.csv]` | Funktionskarte mit Status je Funktion (stdout; CSV nur außerhalb des Repos) |
+| `python3 tools/reverse-engineering/markerliste.py [--write \| --abweichungen]` | alle `[APPROX]`-Zeilen mit stabiler ID und Klasse (`docs/analyse/restliste-v1.md`), Rückgabe 1 bei unklassifizierten |
+| `python3 tools/reverse-engineering/abdeckung_grafik.py <gamedata> --out <dir>` | Farben je Funktion, `abdeckung.html`, `farben.csv`, Probe |
